@@ -1,20 +1,27 @@
+import '../widgets/sacred_text.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'app_core.dart';
 
 final _marks = RegExp(r'[\u0610-\u061a\u064b-\u065f\u0670\u06d6-\u06edـ]');
+final _harakat = RegExp(r'[\u0610-\u061a\u064b-\u065f\u0670\u06d6-\u06ed]');
+// Harakat or explicit uppercase request the original spelling. Hamza alone
+// remains tolerant, like other unvocalized Arabic input.
+bool preciseSearch(String query) => _harakat.hasMatch(query) || query != query.toLowerCase();
+final preciseTokenPattern = RegExp(r'[\p{L}\p{N}\p{M}]+', unicode: true);
 final tokenPattern = RegExp(r'[\p{L}\p{N}]+', unicode: true);
 String normalize(String value) => value.toLowerCase().replaceAll(_marks, '')
     .replaceAll(RegExp('[أإآٱ]'), 'ا').replaceAll('ى', 'ي');
 
 class MappedText {
   final String original;
-  final bool compact;
+  final bool compact, precise;
   late final String value;
   final List<int> starts = [], ends = [];
-  MappedText(this.original, {this.compact = false}) {
+  MappedText(this.original, {this.compact = false, this.precise = false}) {
     final out = StringBuffer();
     for (final m in RegExp(r'.', dotAll: true, unicode: true).allMatches(original)) {
-      final normalized = normalize(m.group(0)!);
+      final normalized = precise ? m.group(0)! : normalize(m.group(0)!);
       if (normalized.isEmpty) {
         if (ends.isNotEmpty) ends[ends.length - 1] = m.end;
         continue;
@@ -27,9 +34,10 @@ class MappedText {
   }
 }
 
-List<TextRange> matchRanges(String text, String query, {String mode = 'contains', bool compact = false}) {
-  final mapped = MappedText(text, compact: compact);
-  var needle = normalize(query.trim());
+List<TextRange> matchRanges(String text, String query, {String mode = 'contains', bool compact = false, bool? precise}) {
+  final strict = precise ?? preciseSearch(query);
+  final mapped = MappedText(text, compact: compact, precise: strict);
+  var needle = strict ? query.trim() : normalize(query.trim());
   if (compact) needle = needle.replaceAll(' ', '');
   if (needle.isEmpty) return [];
   final matches = <TextRange>[];
@@ -39,8 +47,9 @@ List<TextRange> matchRanges(String text, String query, {String mode = 'contains'
     }
   }
   if (mode == 'fulltext') {
-    final queries = tokenPattern.allMatches(needle).map((m) => m.group(0)!).toSet();
-    for (final token in tokenPattern.allMatches(mapped.value)) {
+    final tokens = strict ? preciseTokenPattern : tokenPattern;
+    final queries = tokens.allMatches(needle).map((m) => m.group(0)!).toSet();
+    for (final token in tokens.allMatches(mapped.value)) {
       for (final part in queries) {
         if (token.group(0)!.startsWith(part)) add(token.start, token.start + part.length);
       }
@@ -80,11 +89,13 @@ List<String> noteFieldKeys(String field) {
 String noteFieldQuery(String field, String target, String query) =>
     noteFieldKeys(field).contains(target) ? query : '';
 
-bool matchesNote(AppRecord n, String query, String field) {
-  final needle = normalize(query.trim());
-  return needle.isEmpty || noteFieldKeys(field).any((key) =>
-      normalize(n[key]?.toString() ?? '').contains(needle));
+bool matchesSearch(String text, String query) {
+  final precise = preciseSearch(query);
+  final needle = precise ? query.trim() : normalize(query.trim());
+  return needle.isEmpty || (precise ? text : normalize(text)).contains(needle);
 }
+bool matchesNote(AppRecord n, String query, String field) =>
+    noteFieldKeys(field).any((key) => matchesSearch(n[key]?.toString() ?? '', query));
 String matchExcerpt(String text, String query, {String mode = 'contains'}) {
   final ranges = matchRanges(text, query, mode: mode);
   if (ranges.isEmpty || ranges.first.start < 90) return text;
@@ -103,20 +114,68 @@ class MatchText extends StatelessWidget {
     final ranges = matchRanges(text, query, mode: mode, compact: compact);
     final color = Theme.of(context).brightness == Brightness.dark
         ? const Color(0xff665024) : const Color(0xffffedac);
-    final spans = <InlineSpan>[];
-    var last = 0;
-    for (final range in ranges) {
-      if (range.start > last) spans.add(TextSpan(text: text.substring(last, range.start)));
-      spans.add(TextSpan(text: text.substring(range.start, range.end),
-        style: TextStyle(backgroundColor: color, fontWeight: FontWeight.w700)));
-      last = range.end;
+    // Keep a single shaping run: never change weight, split spans or insert
+    // characters inside a joined Arabic word just to color a match.
+    final effectiveStyle = DefaultTextStyle.of(context).style.merge(style);
+    final Widget content = selectable
+      ? SacredSelectableText(text, style: effectiveStyle,
+          textDirection: direction(text), textAlign: textAlignment(text))
+      : SacredText(text, style: effectiveStyle,
+          textDirection: direction(text), textAlign: textAlignment(text),
+          maxLines: maxLines, overflow: maxLines == null ? TextOverflow.clip : TextOverflow.ellipsis);
+    return _MatchBackground(ranges: ranges, color: color, child: content);
+  }
+}
+
+/// Paint behind the actual laid-out paragraph/editable, without re-shaping it.
+class _MatchBackground extends SingleChildRenderObjectWidget {
+  final List<TextRange> ranges;
+  final Color color;
+  const _MatchBackground({required this.ranges, required this.color, required super.child});
+  @override
+  RenderObject createRenderObject(BuildContext context) =>
+      _RenderMatchBackground(ranges, color);
+  @override
+  void updateRenderObject(BuildContext context, covariant _RenderMatchBackground renderObject) {
+    renderObject.update(ranges, color);
+  }
+}
+class _RenderMatchBackground extends RenderProxyBox {
+  List<TextRange> _ranges;
+  Color _color;
+  _RenderMatchBackground(this._ranges, this._color);
+  void update(List<TextRange> ranges, Color color) {
+    _ranges = ranges; _color = color; markNeedsPaint();
+  }
+  RenderBox? findText(RenderObject? node) {
+    if (node is RenderParagraph) return node;
+    if (node is RenderEditable) return node;
+    RenderBox? found;
+    node?.visitChildren((child) { found ??= findText(child); });
+    return found;
+  }
+  @override
+  void paint(PaintingContext context, Offset offset) {
+    final target = _ranges.isEmpty ? null : findText(child);
+    if (target != null) {
+      final canvas = context.canvas;
+      final paint = Paint()..color = _color;
+      final transform = target.getTransformTo(this);
+      canvas.save();
+      canvas.clipRect(offset & size);
+      for (final range in _ranges) {
+        final selection = TextSelection(baseOffset: range.start, extentOffset: range.end);
+        final boxes = target is RenderParagraph
+            ? target.getBoxesForSelection(selection)
+            : (target as RenderEditable).getBoxesForSelection(selection);
+        for (final box in boxes) {
+          final rect = MatrixUtils.transformRect(transform, box.toRect()).shift(offset);
+          canvas.drawRRect(RRect.fromRectAndRadius(rect, const Radius.circular(2)), paint);
+        }
+      }
+      canvas.restore();
     }
-    if (last < text.length) spans.add(TextSpan(text: text.substring(last)));
-    final span = TextSpan(style: DefaultTextStyle.of(context).style.merge(style), children: spans);
-    if (selectable) return SelectableText.rich(span,
-      textDirection: direction(text), textAlign: textAlignment(text));
-    return Text.rich(span, textDirection: direction(text), textAlign: textAlignment(text),
-      maxLines: maxLines, overflow: maxLines == null ? TextOverflow.clip : TextOverflow.ellipsis);
+    super.paint(context, offset);
   }
 }
 
@@ -124,10 +183,12 @@ class MatchText extends StatelessWidget {
 /// lies beyond the truncated preview. Compact roots are part of the FTS index.
 List<String> evidenceWords(AppRecord entry, String query) {
   final words = <String>[];
-  for (final token in tokenPattern.allMatches(normalize(query)).map((m) => m.group(0)!).toSet()) {
+  final precise = preciseSearch(query);
+  final tokens = precise ? preciseTokenPattern : tokenPattern;
+  for (final token in tokens.allMatches(precise ? query : normalize(query)).map((m) => m.group(0)!).toSet()) {
     for (final key in ['word', 'root', 'definition']) {
       final source = entry[key]?.toString() ?? '';
-      final ranges = matchRanges(source, token, mode: 'fulltext', compact: key == 'root');
+      final ranges = matchRanges(source, token, mode: 'fulltext', compact: key == 'root', precise: precise);
       if (ranges.isNotEmpty) {
         words.add(source.substring(ranges.first.start, ranges.first.end));
         break;
@@ -136,3 +197,7 @@ List<String> evidenceWords(AppRecord entry, String query) {
   }
   return words.toSet().toList();
 }
+
+Widget highlightStudyText(BuildContext context, String text, String query, Widget child) =>
+  _MatchBackground(ranges: matchRanges(text, query),
+    color: Theme.of(context).brightness == Brightness.dark ? const Color(0xff665024) : const Color(0xffffedac), child: child);

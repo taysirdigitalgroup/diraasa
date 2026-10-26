@@ -1,9 +1,9 @@
-# Diraasa · دراسة — 1.1.3+9
+# Diraasa · دراسة — 1.6.0+24
 Carnet d’études arabes et dictionnaire مختار الصحاح, Android, hors ligne.
 Package : **com.tdg.diraasa**.
 
 ## Installer la mise à jour
-L’archive Diraasa_MAJ_1.1.3.tar.gz contient **lib/ complet** et les autres fichiers
+L’archive Diraasa_MAJ_1.6.0.tar.gz contient **lib/ complet** et les autres fichiers
 nécessaires, aux chemins de la racine du projet existant.
 Arrêter flutter run, extraire à côté de pubspec.yaml, puis :
 ```bash
@@ -19,25 +19,29 @@ Ne pas désinstaller, effacer les données ou changer la signature de l’applic
   facultatif, dates automatiques, catégories, épinglage, modal de lecture.
 - Cartes professionnelles ; texte aligné selon sa langue ; menus et épingles
   fixés en haut à droite, indépendamment de la direction du texte.
-- Après une sauvegarde réussie, seul le contenu est vidé. Titre, auteur et
+- Après une sauvegarde réussie, seul le contenu est vidé. Thème, auteur et
   catégorie sont conservés pour la prochaine note et mémorisés entre sessions.
   Le formulaire reste ouvert ; la sauvegarde suivante crée une nouvelle note.
   Une modification sauvegardée passe également en nouvelle saisie, sans risquer
   de réécraser la note précédente. Une erreur ne vide aucun champ.
 - Recherche + deux rangées de filtres dans un en-tête sticky : se fixent en haut
   lors du défilement, ou immédiatement au focus. L’accroche ne revient pas
-  automatiquement à la perte du focus.
-- Notes : filtres catégorie + Tous les champs/Titre/Auteur/Contenu ; harakat ignorés.
+  automatiquement à la perte du focus. Un retour en haut par défilement permet
+  toutefois de la révéler et de faire redescendre la recherche.
+- Notes : filtres catégorie + Tous les champs/Thème/Auteur/Contenu ; recherche adaptative selon la saisie.
 - Dictionnaire : préfixe/mot/racine, contient, texte intégral FTS, lettre,
   pagination de 60. Les racines normalisent aussi les variantes d’alif.
 - Correspondances surlignées en jaune clair en mode clair et en ocre en sombre.
   L’arabe vocalisé original reste intact. Aperçu recentré sur la correspondance.
   Des témoins des termes FTS sont visibles même si le passage est loin dans
   l’article ; la lecture complète conserve aussi le surlignage.
-- Taille de lecture commune aux notes, formulaires et articles, persistante.
+- Taille de lecture persistante pour pages/modals de visualisation et le seul
+  champ Contenu du formulaire. Le picker réagit indépendamment de son parent.
+  Cartes fixes : notes thème 14 px / contenu 19 px, dictionnaire 24/18 px ; auteurs et autres
+  éléments d’interface gardent une taille normale. Accessibilité système respectée.
 - Français, العربية et English ; sélecteur en haut à côté du thème.
 - Premier lancement : langue principale du système parmi fr/ar/en, sinon fr.
-  Le choix manuel est ensuite mémorisé. Interface RTL complète en arabe ;
+  Le choix manuel est ensuite mémorisé. Contenu RTL en arabe ; header et ordre des onglets gardent leur disposition ;
   direction des contenus détectée indépendamment de la langue de l’interface.
 - Apparence : automatique selon le système **par défaut**, clair ou sombre.
   Le choix reste mémorisé, de même que les filtres.
@@ -134,3 +138,136 @@ Les tests conservent les assertions sur les valeurs stockées et contrôlent
 l’amorçage, les accusés de sauvegarde, leur ordre et la reprise après erreur.
 Aucun effacement de notes ou de préférences. Schéma SQLite inchangé.
 Après extraction du correctif cumulatif, relancer les vérifications du haut.
+
+
+## Mise à jour 1.1.4 — typographie et retour de l’accroche
+Le réglage de taille mémorisé ne redimensionne plus les cartes ni le formulaire.
+Il reste appliqué aux modals de notes, aux articles et aux pages de lecture.
+La valeur enregistrée n’est ni effacée ni modifiée par ce changement.
+
+L’accroche reste dans le flux de défilement. Au focus, on défile jusqu’à la
+recherche, sans supprimer l’accroche. En revenant en haut / tirant vers le bas,
+l’accroche se révèle et la recherche descend naturellement. En repartant vers
+le bas de la liste, la recherche et ses filtres se fixent de nouveau sous l’AppBar.
+La perte du focus ne déclenche aucun retour automatique. Les listes courtes
+ou vides reçoivent uniquement l’espace de défilement minimum nécessaire.
+
+
+## Mise à jour 1.2.0 — arabe lié, focus, taille et types
+- Surlignage peint derrière le paragraphe réellement rendu, sans découpage de
+  spans ni changement de gras. Texte original, liaison arabe et copie préservés.
+- Le picker de lecture écoute directement les préférences : curseur, valeur et
+  texte réagissent pendant le déplacement. La valeur est mémorisée à la fin.
+- La taille s’applique aux lecteurs/modals et au champ Contenu du formulaire,
+  pas aux cartes ni aux champs Titre/Auteur.
+- Un geste vertical prend la priorité sur le focus : ferme le clavier et annule
+  tout repositionnement automatique différé. Retour manuel en haut disponible.
+- Étirement vers le bas depuis le vrai haut de Notes : relit les notes sans
+  modifier la recherche, les filtres ou les données. Pas de refresh du dictionnaire.
+- Types : Cours, Vocabulaire, Notion, Définition, Grammaire, Conjugaison, Règle,
+  Exemple, Exercice, Résumé, Vers, Citation, Autre. Libellés fr/ar/en.
+  Les anciens identifiants sont conservés ; aucun remplacement des types existants.
+- Aucun changement de schéma SQLite (version 2), aucune base dans le correctif.
+- Tests supplémentaires : géométrie de texte arabe avant/après surlignage,
+  source sélectionnable intacte, mouvement du slider constant, retour après
+  focus sans unfocus manuel, rafraîchissement et persistance des nouveaux types.
+- Contrôles SQL locaux exécutés ; tests Flutter et rendu Android à valider sur
+  votre poste, faute de SDK Flutter dans cet environnement.
+
+
+## Correctif 1.2.1 — trois tests restants
+L’ancrage de la recherche est conservé lors de la fermeture du clavier ;
+un défilement volontaire annule cet ancrage et permet de révéler l’accroche.
+Les tests mesurent le bloc sticky visible, pas le texte masqué d’un sliver.
+La page d’article fournit un bouton Retour explicite ; le test utilise sa clé
+et contrôle le retour effectif à la liste.
+Aucun changement de note, préférence, type ou taille enregistrée.
+
+## Correctif 1.2.2 — Infos et header
+Les sélecteurs Langue et Apparence sont alignés sur leur libellé, à droite dans Infos. Le header principal conserve sa disposition lors du passage en arabe ; le contenu arabe reste RTL. Notes et préférences conservées.
+
+## Évolution 1.3.0 — Notes et réutilisation
+Le contenu est prioritaire dans les cartes Notes ; le titre reste discret. Les auteurs ont un badge de couleur stable, et le type une petite étiquette sous l’auteur.
+
+Les boutons à côté de Titre et Auteur ouvrent leurs listes avec recherche. Après un enregistrement réussi, les nouvelles valeurs sont disponibles dans ces listes. Casse et espaces ne créent pas de doublons ; les titres et auteurs ont des catalogues distincts. Les entrées restent réutilisables après suppression d’une note.
+
+La migration additive notes.db v3 récupère les titres et auteurs des notes déjà présentes sans réécrire celles-ci. Garder l’identifiant com.tdg.diraasa et la même signature ; ne pas désinstaller ni effacer les données.
+
+## Correctif 1.3.1 — test des sélecteurs
+Le test défile pour construire les champs hors écran avant de cliquer sur leurs sélecteurs. Les assertions restent actives ; aucune modification des notes, catalogues ou préférences.
+
+## Évolution 1.4.0 — Auteurs, Thèmes et texte mis en forme
+- Navigation, de gauche à droite : Auteurs, Notes, Dictionnaire, Thèmes. Notes reste l’onglet ouvert au lancement.
+- Auteurs : recherche, fiche de consultation, ajout et modification du profil. Nom complet unique (casse/espaces normalisés), photo facultative, naissance/décès saisis librement comme date ou année, statut vivant, biographie facultative.
+- Enregistrer une note avec un nouveau nom crée son profil. Les profils ajoutés depuis Auteurs sont immédiatement proposés dans le sélecteur de Notes. Les profils existants sont récupérés depuis les anciens noms d’auteurs.
+- Le lien auteur/notes repose sur un identifiant stable : renommer le profil actualise le nom dans ses notes. La photo apparaît à la place de l’icône dans les cartes associées ; repli sur l’icône si le fichier n’est pas disponible.
+- Photo choisie par le sélecteur de documents Android et copiée dans le stockage privé, sans nouvelle permission ni dépendance Flutter. Les fichiers non utilisés ne sont pas purgés automatiquement.
+- Titre devient Thème dans l’interface ; la clé technique title est conservée pour la compatibilité. Les thèmes sont tronqués sur une ligne dans les cartes. Livre est ajouté avant Cours.
+- Thèmes : recherche, nombre de notes et navigation vers les notes du thème, puis vers leur lecture. Le regroupement ignore casse et espaces multiples. Les filtres de notes se combinent ensuite à ce thème.
+- Éditeurs Notes/Biographie : gras, italique, souligné, titre de paragraphe, listes à puces, collage formaté via bouton ou menu contextuel. Sélectionnez du texte pour le mettre en forme ; sans sélection, le style vise le paragraphe courant. Le contenu mis en forme est affiché dans les lecteurs ; les aperçus de cartes restent sobres.
+- Le collage importe les styles essentiels fournis par le presse-papiers Android (HTML ou texte Spanned). Une source ne fournissant que du texte brut ne permet pas de récupérer sa mise en forme ; tableaux, images et polices personnalisées ne sont pas importés. Pour garantir l’import, utilisez le bouton Coller de l’éditeur ou son menu contextuel.
+- Texte brut conservé pour recherche/copie, styles enregistrés séparément. Les surlignages sont peints sur la géométrie réelle et ne découpent pas le texte arabe. Pas de format propriétaire dans le contenu des notes.
+- Migration additive notes.db v4 : table authors, index notes_author, colonnes author_id et body_format. Les colonnes historiques ne sont ni supprimées ni réécrites pendant la migration. Notes sans auteur inchangées ; catalogue des thèmes et préférences conservés.
+
+Décompresser l’archive à la racine du projet, puis arrêter l’exécution précédente et relancer :
+```bash
+flutter pub get && flutter analyze && flutter test && flutter run
+```
+Le code Android ayant changé, un hot reload ne suffit pas. Conserver la même signature et com.tdg.diraasa, sans désinstallation ni effacement des données.
+
+Contrôles SQL/Python exécutés ici ; tests Flutter ajoutés pour navigation, profils, formatage, sélection et collage. Flutter/SDK Android absents de cet environnement : analyze, tests Flutter, compilation Android et essai du sélecteur photo/collage réel restent à exécuter sur le poste de développement.
+
+## Évolution 1.4.1 — navigation Thèmes et cartes formatées
+- Ordre fixe : Notes | Thèmes | Auteurs | Dictionnaire.
+- Un thème ouvre ThemeNotesPage, une sous-page dédiée sans barre d’onglets. Lecture en modal, modification, épinglage et suppression se font depuis cette sous-page. Retour vers Thèmes, sans bascule vers Notes.
+- Cartes partagées entre Notes et sous-page Thème : styles gras/italique/souligné/titres/citation visibles dans le contenu, taille d’aperçu fixe, aperçu de recherche recentré en conservant les styles. Surlignage géométrique sans découpage supplémentaire des mots arabes.
+- Type en bandeau oblique miniature au coin supérieur gauche, palette fixe distincte pour les 14 types ; thème sur une ligne. Les commandes restent en haut à droite.
+- Citation (double guillemet) dans les deux éditeurs : style citation, italique et encadré avec icône de guillemets dans les affichages, sans ajout de caractères au contenu. Sélectionnez le passage ou placez le curseur dans le paragraphe, puis utilisez Citation. Le même bouton désactive ce style.
+- Dates de naissance/décès retirées du formulaire et de l’affichage des profils. Les valeurs historiques restent en base et sont préservées lors d’une modification. Le statut vivant/décédé reste disponible.
+- Schéma v4 inchangé : aucun effacement, aucune migration supplémentaire nécessaire. Après extraction, relancer complètement l’application (import de citation native mis à jour).
+
+Contrôles locaux Python réussis. Tests Flutter ajoutés/adaptés pour vérifier ordre des onglets, sous-page Thèmes, retour après lecture, rendu formaté et citation. Flutter et SDK Android absents ici : analyse, tests et compilation à exécuter sur le poste de développement.
+
+## Correctif 1.4.2 — recherche adaptative
+- Sans harakat ni majuscules : recherche normalisée, insensible à la casse, aux harakat et au tatweel ; ا/أ/إ/آ/ٱ sont équivalents, ainsi que ى/ي. Une hamza seule ne déclenche pas le mode précis.
+- Avec au moins un haraka ou une majuscule : recherche littérale sur la graphie originale, sensible à la casse et aux signes saisis. Exemple : علم trouve عِلْم et عَلَم ; عِلْم exige cette suite de lettres/signes. cours ignore la casse ; Cours la respecte.
+- Cette règle concerne Notes, Dictionnaire, leurs extraits, surlignages et témoins FTS. Depuis 1.4.3, les sélecteurs et pages Auteurs/Thèmes appliquent également la recherche adaptative ; leur déduplication reste inchangée.
+- Les modes Préfixe/Contient/Texte intégral conservent leur fonction : « précis » signifie caractères exacts, pas égalité obligatoire avec tout le texte. En texte intégral, les termes restent des préfixes de mots combinés avec ET.
+- Dictionnaire : candidats via index existants, raffinement sur les champs originaux. En FTS précis, raffinement avant pagination pour ne pas masquer de résultats entre les pages. Aucun changement du fichier du livre ou du schéma notes.db v4.
+- Correction du test : conversion InlineSpan vers TextSpan avant lecture de children.
+- Contrôles SQL et Python réussis, nouveaux cas de recherche ajoutés aux tests Flutter. Flutter/SDK Android absents ici : analyse, tests Flutter et compilation restent à exécuter sur le poste utilisateur. Relance complète nécessaire pour le changement Kotlin.
+
+## Correctif 1.4.3 — règle commune à toutes les recherches
+La recherche adaptative s’applique aussi aux listes Auteurs/Thèmes et aux sélecteurs de Thèmes/Auteurs. Saisie sans harakat ni majuscules : tolérante ; avec harakat ou majuscules : précise. La comparaison pour éviter les doublons reste insensible à la casse et aux espaces multiples. Données et schéma v4 inchangés.
+
+## Correctif 1.4.4 — constructeur MatchText
+Suppression du paramètre initialisant inexistant precise dans MatchText. La précision reste détectée par matchRanges à partir de la saisie. Règles de recherche, données et schéma inchangés.
+
+## Correctif 1.4.5 — cohérence des données de tests
+Le test des sélecteurs vérifie désormais qu’une requête vocalisée ne trouve pas une entrée non vocalisée, puis qu’une requête simple la trouve. Le test des cartes crée les styles et vérifie le rendu sur le même contenu vocalisé que la note. Assertions conservées ; aucune modification du comportement de recherche ou des données.
+
+## Évolution 1.5.0 — thèmes, suppression et noms mis en valeur
+- Ajouter un thème depuis l’onglet Thèmes, même sans note. Les variantes de casse/espaces réutilisent le thème existant.
+- Supprimer un thème uniquement lorsqu’il est vide : commande affichée pour les thèmes à zéro note, vérification transactionnelle dans SQLite au moment de la suppression.
+- Supprimer un auteur depuis sa fiche : ses notes restent enregistrées, mais leur auteur et leur lien au profil sont vidés. Le nom quitte les sélections. Les dates, épingles, contenus et styles des notes restent inchangés. Les brouillons correspondants sont nettoyés pour éviter une réapparition involontaire.
+- Toutes les suppressions proposées dans l’app (note, thème, auteur, retrait de photo du formulaire) passent par une première boîte Alerte avec Continuer, puis une seconde boîte Confirmation avec Supprimer. Annuler ou revenir en arrière ne déclenche aucune suppression.
+- الله est rouge et gras ; محمد est bleu et gras, dans les listes, lecteurs, cartes, formulaires et recherches. Harakat, tatweel et ligature ﷲ reconnus ; préfixes arabes usuels accolés conservés dans le même segment visuel. Les mots plus longs sans rapport ne sont pas colorés.
+- Styles uniquement visuels : aucun changement du contenu stocké, des caractères copiés, de la recherche ou des règles de déduplication. Les styles traversent aussi les plages déjà mises en forme. La taille de lecture garde sa portée existante.
+- Schéma notes.db v4 et environnement de développement inchangés ; pas de nouvelle dépendance. Les anciens fichiers photo non référencés restent gérés comme auparavant (pas de purge automatique).
+
+Nouveaux contrôles : tools/check_deletions.py et tests Flutter pour double confirmation, thèmes et texte arabe intact. Contrôles SQL/Python exécutés ici ; Flutter et SDK Android absents, analyse/tests Flutter/build à exécuter sur le poste utilisateur. Extraire à la racine puis relancer complètement, sans désinstaller :
+```bash
+flutter pub get && flutter analyze && flutter test && flutter run
+```
+
+## Correctif 1.5.1 — chemin de texte simple
+Lorsqu’aucun nom ne nécessite de coloration, SacredText et SacredSelectableText utilisent les widgets simples Text/SelectableText, au lieu de leur constructeur rich. Cela évite le parent TextSpan supplémentaire et conserve le chemin de rendu original. La coloration des noms et les contenus mis en forme restent actifs. Les assertions de géométrie et d’intégrité du texte arabe sont conservées.
+
+## Évolution 1.6.0 — renommage et appui long
+- Thèmes : menu Modifier pour tous les thèmes ; Supprimer uniquement lorsqu’ils sont vides. Accessible par bouton d’options ou appui long sur la ligne.
+- Renommer un thème met à jour ses notes et le brouillon correspondant dans une opération transactionnelle. Casse et espaces multiples sont normalisés pour l’unicité ; un autre thème portant déjà ce nom est refusé, sans fusion ni déplacement de notes. Contenus, dates, épingles et styles inchangés.
+- Appui long sur une carte Note (onglet Notes ou sous-page Thème) : même menu Épingler/Détacher, Modifier, Supprimer que le bouton existant.
+- Appui long sur un auteur : Modifier/Supprimer, également accessibles par bouton d’options. La suppression conserve ses notes sans auteur et demande toujours les deux confirmations.
+- Appui long sur un article du dictionnaire : Ouvrir ou Étudier dans une note. Le clic court garde la lecture habituelle.
+- Les compteurs et options des thèmes sont rechargés au retour de leur sous-page pour tenir compte des notes supprimées ou déplacées.
+- Schéma v4, données et environnement conservés. Nouveau contrôle tools/check_theme_rename.py ; test Flutter d’appui long et renommage ajouté. Contrôles SQL/Python réussis ; Flutter absent ici, analyse/tests/build à exécuter sur le poste utilisateur.

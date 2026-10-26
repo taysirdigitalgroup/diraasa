@@ -1,13 +1,15 @@
+import '../widgets/sacred_text.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../core/app_core.dart';
 import '../core/search.dart';
 import '../widgets/controls.dart';
 import 'editor.dart';
+import '../widgets/rich_editor.dart';
 
 Future<void> copyText(BuildContext context, String text) async {
   await Clipboard.setData(ClipboardData(text: text));
-  if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(tr('copied'))));
+  if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: SacredText(tr('copied'))));
 }
 class NotePreview extends StatelessWidget {
   final AppRecord note;
@@ -20,7 +22,7 @@ class NotePreview extends StatelessWidget {
       key: const ValueKey('note-preview'), top: false,
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         Padding(padding: const EdgeInsets.fromLTRB(20, 0, 8, 8), child: Row(children: [
-          Expanded(child: Text(tr('readNote'), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold))),
+          Expanded(child: SacredText(tr('readNote'), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold))),
           IconButton(tooltip: tr('copy'), icon: const Icon(Icons.copy_outlined),
             onPressed: () => copyText(context, [title, body, if (author.isNotEmpty) author].join('\n\n'))),
           IconButton(tooltip: tr('close'), onPressed: () => Navigator.pop(context), icon: const Icon(Icons.close)),
@@ -28,7 +30,7 @@ class NotePreview extends StatelessWidget {
         const Divider(height: 1),
         Expanded(child: SingleChildScrollView(padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
           child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-            Text(tr(note['kind'].toString()), style: const TextStyle(color: Color(0xffb18b4b))),
+            SacredText(tr(note['kind'].toString()), style: const TextStyle(color: Color(0xffb18b4b))),
             const SizedBox(height: 12),
             MatchText(title, selectable: true, query: noteFieldQuery(field, 'title', query),
               style: TextStyle(fontSize: settings.textSize + 3, fontWeight: FontWeight.bold, height: 1.5)),
@@ -37,10 +39,10 @@ class NotePreview extends StatelessWidget {
               MatchText(author, selectable: true, query: noteFieldQuery(field, 'author', query), style: const TextStyle(fontSize: 17)),
               const SizedBox(height: 8),
             ],
-            Text(tr('created') + ' ' + date(note['created']), style: const TextStyle(fontSize: 12)),
+            SacredText(tr('created') + ' ' + date(note['created']), style: const TextStyle(fontSize: 12)),
             const ReadingSize(),
             const SizedBox(height: 16),
-            MatchText(body, selectable: true, query: noteFieldQuery(field, 'body', query),
+            StudyText(body, format: note['body_format']?.toString() ?? '', query: noteFieldQuery(field, 'body', query),
               style: TextStyle(fontSize: settings.textSize, height: 1.9)),
           ]),
         )),
@@ -54,24 +56,27 @@ class Article extends StatelessWidget {
   const Article({super.key, required this.entry, this.query = '', this.mode = 'prefix'});
   @override
   Widget build(BuildContext context) => AnimatedBuilder(animation: settings, builder: (context, _) => Scaffold(
-    appBar: AppBar(title: const Text('مختار الصحاح'), actions: [
+    appBar: AppBar(
+      leading: BackButton(key: const ValueKey('article-back'),
+        onPressed: () => Navigator.of(context).maybePop()),
+      title: const SacredText('مختار الصحاح'), actions: [
       IconButton(tooltip: tr('copy'), icon: const Icon(Icons.copy),
         onPressed: () => copyText(context, entry['word'].toString() + '\n' + entry['definition'].toString() + '\nمختار الصحاح — الرازي')),
     ]),
     body: ListView(padding: const EdgeInsets.all(24), children: [
-      Text(tr('entry') + ' ' + entry['page'].toString() + ' · الرازي', style: const TextStyle(color: Color(0xffb18b4b))),
+      SacredText(tr('entry') + ' ' + entry['page'].toString() + ' · الرازي', style: const TextStyle(color: Color(0xffb18b4b))),
       const SizedBox(height: 12),
       MatchText(entry['word'], query: query, mode: mode, selectable: true,
         style: TextStyle(fontSize: settings.textSize + 12, height: 1.7, fontWeight: FontWeight.bold)),
       if (entry['root'].toString().isNotEmpty) ...[
-        const SizedBox(height: 10), Text(tr('root')),
+        const SizedBox(height: 10), SacredText(tr('root')),
         MatchText(entry['root'], query: query, mode: mode, compact: true, selectable: true),
       ],
       const ReadingSize(),
       MatchText(entry['definition'], query: mode == 'fulltext' ? query : '', mode: 'fulltext', selectable: true,
         style: TextStyle(fontSize: settings.textSize, height: 1.9)),
       const SizedBox(height: 24),
-      FilledButton.icon(icon: const Icon(Icons.edit_note), label: Text(tr('study')),
+      FilledButton.icon(icon: const Icon(Icons.edit_note), label: SacredText(tr('study')),
         onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => Editor(note: {
           'title': entry['word'], 'body': entry['definition'], 'author': 'الرازي — مختار الصحاح', 'kind': 'Vocabulaire',
         })))),
@@ -81,23 +86,25 @@ class Article extends StatelessWidget {
 class About extends StatelessWidget {
   const About({super.key});
   @override
-  Widget build(BuildContext context) => AnimatedBuilder(animation: settings, builder: (context, _) => Scaffold(appBar: AppBar(title: Text(tr('about'))),
+  Widget build(BuildContext context) => AnimatedBuilder(animation: settings, builder: (context, _) => Scaffold(appBar: AppBar(title: SacredText(tr('about'))),
     body: ListView(padding: const EdgeInsets.all(24), children: [
       Center(child: Image.asset('assets/images/diraasa_internal.png', width: 112, height: 112, semanticLabel: 'Diraasa')),
       const SizedBox(height: 18),
-      const Text('Diraasa · دراسة', textAlign: TextAlign.center, style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold)),
-      const SizedBox(height: 24), Text(tr('aboutText')),
-      const SizedBox(height: 16), Text(tr('language')), const LanguageMenu(),
-      Text(tr('theme')), const ThemeMenu(), const ReadingSize(),
-      ListTile(title: Text(tr('developer')), subtitle: const Text('Aliou Mbengue\nTaysir Digital Group (TDG)')),
+      const SacredText('Diraasa · دراسة', textAlign: TextAlign.center, style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold)),
+      const SizedBox(height: 24), SacredText(tr('aboutText')),
+      const SizedBox(height: 16),
+      SettingsMenuRow(label: tr('language'), menu: const LanguageMenu()),
+      SettingsMenuRow(label: tr('theme'), menu: const ThemeMenu()),
+      const ReadingSize(),
+      ListTile(title: SacredText(tr('developer')), subtitle: const SacredText('Aliou Mbengue\nTaysir Digital Group (TDG)')),
       ...['+221 76 455 03 58', 'taysirdigitalgroup@gmail.com', 'https://taysirdigitalgroup.github.io/'].map((value) => ListTile(
-        title: SelectableText(value, textDirection: TextDirection.ltr), trailing: IconButton(
+        title: SacredSelectableText(value, textDirection: TextDirection.ltr), trailing: IconButton(
           tooltip: tr('copy'), icon: const Icon(Icons.copy), onPressed: () => copyText(context, value)))),
-      TextButton(child: Text(tr('bookIntro')), onPressed: () async {
+      TextButton(child: SacredText(tr('bookIntro')), onPressed: () async {
         try {
           final pages = await Store.rows('intro');
           if (context.mounted) Navigator.push(context, MaterialPageRoute(builder: (_) => Scaffold(
-            appBar: AppBar(title: Text(tr('bookIntro'))),
+            appBar: AppBar(title: SacredText(tr('bookIntro'))),
             body: ListView(padding: const EdgeInsets.all(24), children: pages.map((p) => Padding(
               padding: const EdgeInsets.only(bottom: 24),
               child: MatchText(p['content'], selectable: true, style: TextStyle(fontSize: settings.textSize, height: 1.9)))).toList()),
@@ -105,7 +112,7 @@ class About extends StatelessWidget {
         } catch (e) { if (context.mounted) errorMessage(context, e); }
       }),
       const SizedBox(height: 24),
-      const Text('1.1.3 · © 2026 Taysir Digital Group', textAlign: TextAlign.center),
+      const SacredText('1.6.0 · © 2026 Taysir Digital Group', textAlign: TextAlign.center),
     ]),
   ));
 }

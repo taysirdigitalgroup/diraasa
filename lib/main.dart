@@ -7,6 +7,11 @@ export 'core/search.dart';
 export 'screens/home.dart';
 export 'screens/editor.dart';
 export 'screens/readers.dart';
+export 'screens/catalogs.dart';
+export 'widgets/rich_editor.dart';
+export 'widgets/note_card.dart';
+export 'widgets/sacred_text.dart';
+export 'widgets/delete_confirmation.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();

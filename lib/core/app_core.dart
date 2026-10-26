@@ -1,3 +1,4 @@
+import '../widgets/sacred_text.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -80,7 +81,10 @@ class AppSettings extends ChangeNotifier {
   }
 }
 AppSettings settings = AppSettings();
-const kinds = ['Cours', 'Vocabulaire', 'Vers', 'Citation'];
+const kinds = [
+  'Livre', 'Cours', 'Vocabulaire', 'Notion', 'Définition', 'Grammaire', 'Conjugaison',
+  'Règle', 'Exemple', 'Exercice', 'Résumé', 'Vers', 'Citation', 'Autre',
+];
 const noteSearchFields = ['all', 'title', 'author', 'body'];
 const languageLabels = {'fr': 'Français', 'ar': 'العربية', 'en': 'English'};
 
@@ -90,6 +94,39 @@ String tr(String key) {
   return values[settings.language == 'ar' ? 1 : settings.language == 'en' ? 2 : 0];
 }
 const labels = <String, List<String>>{
+  'editTheme': ['Modifier le thème','تعديل الموضوع','Edit theme'],
+  'itemOptions': ['Options','خيارات','Options'],
+  'open': ['Ouvrir','فتح','Open'],
+  'alert': ['Alerte','تنبيه','Warning'],
+  'continue': ['Continuer','متابعة','Continue'],
+  'confirmation': ['Confirmation','تأكيد','Confirmation'],
+  'newTheme': ['Ajouter un thème','إضافة موضوع','Add theme'],
+  'deleteThemeQuestion': ['Supprimer ce thème vide ?','حذف هذا الموضوع الفارغ؟','Delete this empty theme?'],
+  'deleteAuthorQuestion': ['Confirmer la suppression de cet auteur ?','تأكيد حذف هذا المؤلف؟','Confirm deleting this author?'],
+  'deleteAuthorWarning': ['Ses notes seront conservées, avec un auteur vide. Cette suppression est définitive.','ستبقى ملاحظاته بدون مؤلف. لا يمكن التراجع عن الحذف.','Their notes will remain with no author. This deletion is permanent.'],
+  "quote": ["Citation", "اقتباس", "Quote"],
+  "authors": ["Auteurs", "المؤلفون", "Authors"],
+  "themes": ["Thèmes", "المواضيع", "Themes"],
+  "Livre": ["Livre", "كتاب", "Book"],
+  "newAuthor": ["Ajouter un auteur", "إضافة مؤلف", "Add author"],
+  "editAuthor": ["Modifier le profil", "تعديل الملف", "Edit profile"],
+  "fullName": ["Nom complet (unique)", "الاسم الكامل (فريد)", "Full name (unique)"],
+  "requiredName": ["Ajoutez le nom complet", "أضف الاسم الكامل", "Enter the full name"],
+  "birth": ["Naissance (facultatif, date ou année)", "الميلاد (اختياري، تاريخ أو سنة)", "Birth (optional, date or year)"],
+  "death": ["Décès (facultatif, date ou année)", "الوفاة (اختياري، تاريخ أو سنة)", "Death (optional, date or year)"],
+  "alive": ["Vivant", "على قيد الحياة", "Living"],
+  "deceased": ["Décédé", "متوفى", "Deceased"],
+  "biography": ["Biographie (facultative)", "السيرة (اختيارية)", "Biography (optional)"],
+  "photo": ["Photo de profil", "صورة الملف", "Profile photo"],
+  "removePhoto": ["Retirer la photo", "إزالة الصورة", "Remove photo"],
+  "emptyAuthors": ["Aucun auteur. Ajoutez un profil ou enregistrez une note avec un auteur.", "لا يوجد مؤلفون. أضف ملفًا أو احفظ ملاحظة باسم مؤلف.", "No authors. Add a profile or save a note with an author."],
+  "emptyThemes": ["Aucun thème enregistré", "لا توجد مواضيع محفوظة", "No saved themes"],
+  "bold": ["Gras", "عريض", "Bold"],
+  "italic": ["Italique", "مائل", "Italic"],
+  "underline": ["Souligné", "تسطير", "Underline"],
+  "heading": ["Titre de paragraphe", "عنوان فقرة", "Heading"],
+  "list": ["Liste à puces", "قائمة نقطية", "Bullet list"],
+  "paste": ["Coller avec mise en forme", "لصق مع التنسيق", "Paste with formatting"],
   'notes': ['Notes','ملاحظات','Notes'],
   'dictionary': ['Dictionnaire','المعجم','Dictionary'],
   'introNotes': ['Votre savoir,\nun mot à la fois.','معرفتك،\nكلمةً بعد كلمة.','Your knowledge,\none word at a time.'],
@@ -101,14 +138,27 @@ const labels = <String, List<String>>{
   'clear': ['Effacer','مسح','Clear'],
   'all': ['Tout','الكل','All'],
   'allFields': ['Tous les champs','جميع الحقول','All fields'],
-  'title': ['Titre','العنوان','Title'],
+  'title': ['Thème','الموضوع','Theme'],
   'author': ['Auteur','المؤلف','Author'],
+  'chooseTitle': ['Choisir un thème','اختيار موضوع','Choose a theme'],
+  'chooseAuthor': ['Choisir un auteur','اختيار مؤلف','Choose an author'],
+  'searchReferences': ['Rechercher…','بحث…','Search…'],
+  'noReferences': ['Aucun résultat. Les nouvelles saisies seront disponibles après enregistrement de la note.','لا توجد نتائج. ستتوفر الإدخالات الجديدة بعد حفظ الملاحظة.','No results. New entries will be available after saving the note.'],
   'optionalAuthor': ['Auteur (optionnel)','المؤلف (اختياري)','Author (optional)'],
   'body': ['Contenu de la note','محتوى الملاحظة','Note content'],
   'content': ['Contenu','المحتوى','Content'],
   'type': ['Type de note','نوع الملاحظة','Note type'],
   'Cours': ['Cours','درس','Lesson'],
   'Vocabulaire': ['Vocabulaire','مفردات','Vocabulary'],
+  'Notion': ['Notion','مفهوم','Concept'],
+  'Définition': ['Définition','تعريف','Definition'],
+  'Grammaire': ['Grammaire','نحو','Grammar'],
+  'Conjugaison': ['Conjugaison','تصريف','Conjugation'],
+  'Règle': ['Règle','قاعدة','Rule'],
+  'Exemple': ['Exemple','مثال','Example'],
+  'Exercice': ['Exercice','تمرين','Exercise'],
+  'Résumé': ['Résumé','ملخص','Summary'],
+  'Autre': ['Autre','أخرى','Other'],
   'Vers': ['Vers','أبيات','Verse'],
   'Citation': ['Citation','اقتباس','Quotation'],
   'prefix': ['Mot / racine','كلمة / جذر','Word / root'],
@@ -129,7 +179,7 @@ const labels = <String, List<String>>{
   'save': ['Enregistrer','حفظ','Save'],
   'saving': ['Enregistrement…','جارٍ الحفظ…','Saving…'],
   'saved': ['Note enregistrée. Le contenu est prêt pour une nouvelle saisie.','تم حفظ الملاحظة. يمكنك إدخال محتوى جديد.','Note saved. Ready for new content.'],
-  'requiredTitle': ['Ajoutez un titre','أضف عنوانًا','Add a title'],
+  'requiredTitle': ['Ajoutez un thème','أضف موضوعًا','Add a theme'],
   'requiredBody': ['Ajoutez le contenu de la note','أضف محتوى الملاحظة','Add note content'],
   'autoDate': ['Date ajoutée automatiquement','يُضاف التاريخ تلقائيًا','Date added automatically'],
   'created': ['Créée le','تاريخ الإنشاء','Created on'],
@@ -172,10 +222,10 @@ String date(dynamic ms) {
   return '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year}';
 }
 void errorMessage(BuildContext context, Object error) {
-  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(tr('error') + ' : ' + error.toString())));
+  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: SacredText(tr('error') + ' : ' + error.toString())));
 }
 Future<void> savePreference(BuildContext context, AppRecord patch) async {
   try { await settings.update(patch); } catch (e) {
-    if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(tr('settingsSaveError'))));
+    if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: SacredText(tr('settingsSaveError'))));
   }
 }

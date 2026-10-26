@@ -1,12 +1,12 @@
 # Diraasa — Fiche technique et historique
-Version application : **1.1.3+9**  
-Date : **25 octobre 2026**  
+Version application : **1.6.0+24**  
+Date : **26 octobre 2026**  
 Application Android : **com.tdg.diraasa**  
 Éditeur : Taysir Digital Group — Aliou Mbengue
 
 ## 1. Architecture
 Flutter Material 3, Dart >=3.9 / Flutter >=3.35.
-Deux onglets Notes / Dictionnaire. Canal natif tdg.diraasa/data.
+Quatre onglets : Notes / Thèmes / Auteurs / Dictionnaire. Canal natif tdg.diraasa/data.
 SQLite Android pour la persistance ; requêtes sur un exécuteur dédié.
 Gradle 8.14.1, AGP 8.11.1, Kotlin 2.2.20, Java 17, SDK 36.
 Ces versions TDG ne sont pas modifiées par cette mise à jour.
@@ -20,10 +20,12 @@ Localisation via flutter_localizations (SDK Flutter), fr/ar/en.
 - Anciennes versions : user_version=0, table existante non versionnée.
 - Version 1 : schéma de référence (prévue pour compatibilité).
 - Version 2 : même table + index notes_order(pinned DESC,updated DESC).
-- Adoption v0 : CREATE TABLE IF NOT EXISTS ne touche pas la table existante ;
-  création idempotente de l’index puis user_version=2.
+- Version 3 : ajout du catalogue note_references(field, identity, label), sans changer les colonnes de notes.
+- Adoption v0 : CREATE TABLE IF NOT EXISTS ne touche pas la table existante ; création de l’index et du catalogue puis user_version=3.
 - Migration v1→v2 : ajout de l’index uniquement.
-- Réouverture v2 : aucune réinitialisation ni import des notes.
+- Migration v1/v2→v3 : création du catalogue et récupération des titres/auteurs, notes inchangées.
+- Version 4 (actuelle) : table authors, colonnes author_id/body_format et index notes_author. Récupération des auteurs et liens vers les notes sans modifier leurs champs historiques.
+- Réouverture v4 : aucune réinitialisation ni réimportation.
 - Migration transactionnelle via SQLiteOpenHelper ; erreur => transaction annulée.
 - Retour à une version de schéma antérieure : refus explicite, jamais suppression.
 - Toute évolution future doit ajouter une migration incrémentale, vérifier les
@@ -217,8 +219,173 @@ language et noteField null dans deux tests de widgets malgré l’interface mise
   absent : nouveaux tests à exécuter sur le poste utilisateur, sans présumer
   de leur résultat.
 
+### 1.1.4 — Taille de lecture limitée et accroche réversible (25/10/2026)
+- La préférence textSize reste persistante (18–36), mais son application est
+  limitée aux lecteurs : modal de note, page d’article et introduction du livre.
+- Cartes : tailles fixes 21/17 pour Notes, 24/18 pour Dictionnaire ; métadonnées
+  14/12. Saisie du contenu : 20, sans picker de lecture dans le formulaire.
+- Le sélecteur global reste accessible dans À propos et dans les lecteurs.
+- Le facteur d’accessibilité du système reste indépendant et respecté.
+- Suppression du drapeau introHidden : l’accroche reste toujours dans le flux.
+- Au focus, mesure de la hauteur réelle du bloc via GlobalKey et défilement
+  jusqu’à cette hauteur pour fixer la recherche sous l’en-tête.
+- En revenant à la position zéro, l’accroche réapparaît progressivement et
+  le bloc de recherche redescend ; dans l’autre sens le header redevient pinned.
+- Aucun retour automatique à la perte du focus.
+- SliverLayoutBuilder ajoute seulement le complément de hauteur nécessaire
+  aux listes courtes/vides pour autoriser ce cycle, sans scroll imbriqué.
+- Tests adaptés : l’accroche est hors de la zone visible au focus plutôt que
+  supprimée de l’arbre ; test du retour manuel, descente et nouvelle fixation.
+- Test de typographie : réglage à 36 conservé dans lecteurs/modals, dimensions
+  inchangées des cartes et du formulaire.
+- Version 1.1.4+10. Notes, préférences et schéma SQLite 2 conservés.
+- Contrôles locaux habituels exécutés ; tests Flutter/rendu Android à vérifier
+  sur le poste de développement, faute de SDK Flutter ici.
+
+### 1.2.0 — Surlignage arabe et interactions (26/10/2026)
+- Le surlignage ne crée plus de TextSpan de styles distincts au milieu d’un mot.
+  Il n’ajoute aucun caractère et ne change pas le gras.
+- Un RenderProxyBox peint le fond à partir des boîtes de sélection du
+  RenderParagraph/RenderEditable réellement utilisé. Un seul texte original
+  est rendu ; la géométrie, les ligatures, les diacritiques et la copie sont préservés.
+- Le picker ReadingSize possède son propre AnimatedBuilder pour que même une
+  instance const réagisse aux valeurs. Mémorisation sur onChangeEnd.
+- Taille persistante : lecteurs et modals + champ Contenu du formulaire.
+  Taille des cartes et des autres champs inchangée.
+- Le défilement vertical principal annule les requêtes différées de focus et
+  défocalise la recherche. Le caret ne peut plus repositionner la page après
+  un geste volontaire de retour en haut ; onTap volontaire permet de refixer.
+- RefreshIndicator Notes, à partir du bord supérieur réel ; relit les données
+  sans réinitialiser la recherche, la catégorie ou le filtre de champ.
+  NotificationPredicate exclut l’onglet Dictionnaire et les scrolls imbriqués.
+- 13 types de note, libellés en 3 langues, valeurs stables : Cours, Vocabulaire,
+  Notion, Définition, Grammaire, Conjugaison, Règle, Exemple, Exercice, Résumé,
+  Vers, Citation, Autre. Menu de saisie défilant, limité en hauteur.
+- Nouveaux tests : texte et boîtes de glyphes identiques avec/sans surlignage,
+  sélection du texte intacte, slider animé même const, taille dans Contenu,
+  retour d’accroche alors que la recherche est encore focalisée, refresh
+  sans perte de filtre et exclusion du Dictionnaire, types persistants.
+- NotesDatabase reste version 2 : kind est déjà TEXT libre, pas d’ALTER/DROP.
+  Les 4 types historiques et toutes les notes existantes sont conservés.
+- Version application 1.2.0+11. Application ID, signature et fichiers de données
+  inchangés ; aucun nouvel accès réseau.
+- Contrôles SQL/migration/manifestes/échappements exécutés ici ; SDK Flutter
+  absent, compilation, tests et rendu sur appareil à confirmer sur le poste.
+
+### 1.2.1 — Ancrage au clavier et bouton Retour d’article (26/10/2026)
+Retour utilisateur : analyse sans erreur, 17 tests réussis et 3 échecs :
+deux mesures d’introduction masquée à 233 px et un retour de page introuvable.
+- Les tests sur petit écran mesurent désormais l’en-tête réellement visible,
+  à la hauteur de l’AppBar, avant et après fermeture du clavier.
+  Ils ne déduisent plus sa position des transformations d’un sliver masqué.
+- Ancre keepSearchPinned après focus : au changement de hauteur du viewport
+  (ouverture/fermeture du clavier), repositionnement après mise en page.
+- La conservation d’ancre est annulée au début d’un défilement vertical
+  volontaire et au changement d’onglet. Le retour manuel de l’introduction
+  reste possible et prioritaire.
+- Les callbacks différés sont invalidés par le compteur de requêtes de focus ;
+  les notifications de métriques de scroll imbriqué/horizontal sont exclues.
+- Article : BackButton explicite, clé article-back, utilisant Navigator.maybePop.
+- Le test clique ce bouton puis vérifie que la route Article a disparu et que
+  Home est revenu, sans supposer un type de bouton généré par la plateforme.
+- Version 1.2.1+12. Aucun changement métier, de schéma, de base ou de préférences.
+- Contrôles SQL, migration, XML et échappements exécutés ici ; les trois parcours
+  Flutter corrigés restent à valider sur le poste utilisateur (SDK absent ici).
+
+### 1.2.2 — alignement des réglages et header stable
+- Infos : Langue et Apparence sur deux lignes distinctes, chaque libellé et son sélecteur sur la même ligne ; boutons de 48 px alignés au bord droit.
+- Header principal : disposition LTR stable pour logo, nom et actions, quelle que soit la langue. Le corps et les textes arabes gardent leur direction RTL.
+- Aucun changement du schéma, des notes ou des préférences.
+- Vérification statique et contrôles Python ; Flutter absent ici, validation visuelle et tests Flutter à exécuter sur le poste de développement.
+
+### 1.3.0 — contenu prioritaire et catalogues réutilisables
+- Cartes Notes : titre discret (14 px), contenu principal (19 px), badge auteur avec couleur déterministe, type en petite étiquette (11 px) sous l’auteur. Taille indépendante du réglage de lecture.
+- Deux sélecteurs dans les champs Titre/Auteur : modal recherchable, liste à construction progressive, sélection sans écraser le contenu. Recherche insensible aux harakat et variantes d’alif.
+- SQLite notes.db v3 : ajout de note_references, clé unique (field,identity). Migration additive v0/v1/v2 vers v3, récupération des valeurs historiques sans réécriture des notes.
+- Titres et auteurs séparés ; déduplication NFC, casse et espaces ; accents et voyelles arabes conservés comme distinctions. Première graphie conservée et réutilisée dans les nouvelles notes. Historique du catalogue conservé après suppression d’une note.
+- Ajout au catalogue uniquement lors d’un enregistrement réussi, dans la même transaction que la note. Une saisie abandonnée ne crée aucune entrée.
+- Contrôles locaux Python réussis. Test widget ajouté pour sélection/recherche et conservation du contenu ; Flutter/Android absents ici, analyze/test/build restent à exécuter sur le poste utilisateur.
+
+### 1.3.1 — parcours du test des sélecteurs
+- Le test défile désormais dans le Scrollable du formulaire avec scrollUntilVisible : les champs hors écran sont construits par le ListView avant calcul de leur position.
+- Clic sur les sélecteurs vérifié via hitTestable ; vérification du contenu via son contrôleur, y compris lorsque le champ est hors écran.
+- Les assertions de recherche, sélection Titre/Auteur et conservation du contenu sont maintenues. Aucun changement de schéma ou de données.
+- Retour utilisateur 1.3.0 : analyze sans erreur, 20 tests réussis, 1 échec dans le parcours corrigé. Flutter absent ici, suite à relancer sur le poste utilisateur.
+
+### 1.4.0 — profils, thèmes et éditeurs
+- Quatre onglets dans un ordre physique stable (Auteurs, Notes, Dictionnaire, Thèmes) ; Notes au lancement.
+- Profils : nom unique normalisé NFC/casse/espaces, image facultative copiée en stockage privé, naissance/décès facultatifs, vivant, biographie. Ajout depuis Auteurs ou création automatique à l’enregistrement d’une note ; modification depuis la fiche.
+- Table authors : id, identity UNIQUE, name, birth, death, alive, bio, bio_format, photo. Les notes utilisent author_id ; affichage du nom/photo actuels par jointure. Renommage du profil synchronisé aux notes liées.
+- Migration notes.db v4 : création de authors, ajout author_id/body_format et index. Les noms historiques alimentent les profils et leurs liens. Le dictionnaire reste inchangé, notes et préférences conservées.
+- Titre renommé Thème dans les libellés uniquement ; clé title conservée. Livre en tête des types. Thème sur une ligne dans les cartes.
+- Page Thèmes recherchable : compteur et navigation vers les notes correspondantes ; filtre de thème appliqué avant recherche/catégorie. Calcul des compteurs en un parcours des notes.
+- Nouveau StudyController : texte brut + styles JSON par plages UTF-16 (start/end/attrs). Préservation du texte arabe ; mise en forme explicite seulement, sans balises ajoutées au contenu. Les lecteurs affichent les styles et gardent le surlignage géométrique.
+- Toolbar : gras, italique, souligné, titre, puces, collage. Import de styles Android HTML/Spanned par bouton ou menu contextuel. Seuls les styles essentiels fournis par la source sont conservés ; aucun import de tableau/image ou de police. Collage via clavier tiers : le bouton/menu de l’éditeur est la voie garantie pour les styles.
+- Photos via ACTION_OPEN_DOCUMENT/onActivityResult, copie en fichiers privés, sans permission ni nouvelle dépendance Flutter ; les fichiers orphelins ne sont pas purgés dans cette version.
+- Fichiers nouveaux : lib/screens/catalogs.dart et lib/widgets/rich_editor.dart. Environnement Gradle/Kotlin/SDK inchangé.
+- Contrôles Python SQL/migrations/recherche/intégrité/échappements/debug exécutés. Tests Flutter ajoutés pour profils, navigation thèmes, formatage et collage ; Flutter/Android absents ici, pas de build ou de tests Flutter revendiqués.
+
+### 1.4.1 — sous-page Thèmes, citation et cartes communes
+- Ordre Notes / Thèmes / Auteurs / Dictionnaire, stable physiquement dans les trois langues.
+- ThemeNotesPage est une route dédiée sans Home ni NavigationBar ; requête des notes, filtrage par thème, recherche locale, rafraîchissement et actions explicites. Le modal se ferme sur la sous-page ; retour vers l’onglet Thèmes conservé.
+- StudyNoteCard partagé : contenu formaté dans toutes les listes, bandeau oblique miniature supérieur gauche, couleur propre à chaque type, options et épingle à droite. Thème tronqué sur une ligne.
+- StudyText accepte un aperçu non sélectionnable avec maxLines. Les plages de styles sont recalées sur l’extrait de recherche ; les surlignages restent peints derrière le texte réellement mis en page.
+- Citation : attribut q dans le sidecar existant, bouton format_quote, style en italique et encadré visuel de citation dans cartes/lecteurs. Aucune insertion de guillemets ni modification du texte brut. QuoteSpan du presse-papiers Android reconnu.
+- Dates naissance/décès retirées des écrans de profil et formulaire. Colonnes historiques conservées, valeurs préservées à l’enregistrement ; statut vivant conservé. Schéma toujours v4.
+- Nouveaux composants : widgets/note_card.dart et widgets/author_avatar.dart ; pas de dépendance ajoutée.
+- Tests adaptés : ordre des onglets et navigation confinée à Thèmes ; tests citation et carte formatée. Contrôles Python réussis ; Flutter/SDK Android absents, tests Flutter non exécutés ici.
+
+### 1.4.2 — recherche adaptative et typage du test
+- Détection commune Dart/Kotlin : harakat présents ou caractères majuscules => graphie précise ; sinon normalisation tolérante (casse, harakat, tatweel, alif/hamza portés sur alif, ى/ي). Hamza seule sans harakat : saisie tolérante.
+- Notes : filtre et plages de surlignage utilisent le même mode ; extraits recalés sur ces plages. Saisie précise = sous-chaîne littérale, sans imposer égalité avec toute la note.
+- Dictionnaire : présélection existante, contrainte binaire substr/instr pour Préfixe/Contient précis ; raffinement des mots originaux des candidats FTS avec signes combinatoires conservés, puis pagination. Les termes FTS restent combinés avec ET et préfixe par terme.
+- Témoins FTS : mode précis de la requête conservé pour tous les termes.
+- Test cartes : accès à children après conversion explicite de InlineSpan en TextSpan.
+- Tests SQL : prédicats exacts récupérés du Kotlin, cas vocalisés/casse et jeux contrôlés ; cas Dart ajoutés pour recherche et surlignage. Contrôles locaux réussis. Flutter/Android absents ici, analyse/tests/build non exécutés.
+- Schéma v4, données, préférences, profils et dictionnaire conservés ; aucune migration nécessaire.
+
+### 1.4.3 — recherche uniforme
+- matchesSearch centralise la règle adaptative côté Dart. Utilisé par Notes, sous-page des notes d’un thème, listes Auteurs/Thèmes et sélecteurs.
+- Dictionnaire natif et surlignages conservent la même détection harakat/majuscules. Déduplication des noms/thèmes inchangée : casse et espaces normalisés.
+- Aucun changement de schéma ou de données. Contrôles locaux réussis ; Flutter absent ici, tests/analyse Flutter à exécuter sur le poste utilisateur.
+
+### 1.4.4 — correction du constructeur de surlignage
+- Retrait de this.precise du constructeur MatchText : ce champ n’existe pas dans ce widget et avait été ajouté par erreur lors de la modification de MappedText.
+- MappedText conserve son champ precise ; matchRanges détecte toujours le mode adapté à la requête. Aucun changement fonctionnel, de schéma ou de données.
+- Occurrences precise relues, contrôles Python exécutés. Flutter absent ici ; analyse et tests Flutter à relancer sur le poste utilisateur.
+
+### 1.4.5 — données cohérentes dans les tests
+- Retour utilisateur : analyze sans erreur, 26 tests réussis, deux échecs d’attente.
+- Sélecteurs : recherche vocalisée vérifiée comme absente pour le libellé non vocalisé, puis saisie simple et sélection vérifiées. La règle adaptative reste inchangée.
+- Carte : le StudyController de préparation, le sidecar et le texte attendu utilisent tous le body vocalisé de la même note. Vérification du gras et du bandeau conservée.
+- Aucun changement métier, de schéma ou de données. Contrôles locaux réussis ; Flutter absent ici, suite Flutter à relancer sur le poste utilisateur.
+
+### 1.5.0 — thèmes et suppressions, styles des noms
+- saveTheme réutilise le catalogue title existant. deleteTheme vérifie sous transaction qu’aucune note ne correspond à l’identité normalisée du thème avant de supprimer le catalogue.
+- deleteAuthor : transaction de détachement des notes (author vide, author_id NULL), retrait du catalogue auteur et du profil. Les autres champs des notes ne changent pas. Brouillons associés nettoyés si nécessaire.
+- confirmDeletion commun : Alerte/Continuer puis Confirmation/Supprimer, annulation possible à chaque étape ; utilisé pour toutes les suppressions UI, y compris le retrait d’une photo du formulaire.
+- emphasizeNames analyse le texte complet et applique un style d’affichage rouge/gras pour الله et bleu/gras pour محمد. Reconnaissance des harakat/tatweel/ﷲ et préfixes usuels ; parcours des spans déjà formatés, aucun caractère ajouté ou remplacé.
+- SacredText/SacredSelectableText/SacredController communs dans les affichages et champs. StudyController applique les mêmes styles sur ses spans, sans les écrire dans le sidecar JSON. Surlignage des recherches toujours géométrique.
+- Nouveaux fichiers : widgets/sacred_text.dart, widgets/delete_confirmation.dart, tools/check_deletions.py. Schéma v4 inchangé, aucune dépendance/permission nouvelle.
+- Contrôles SQL : suppression auteur préserve notes/identifiants/dates/épingles/styles, autre auteur intact ; thème non vide refusé. Tests Flutter ajoutés pour étapes de confirmation, création de thème et graphie arabe inchangée.
+- Contrôles Python réussis. Flutter/SDK Android absents, analyze/test/build non exécutés ici ; relance complète requise pour le code natif.
+
+### 1.5.1 — rendu simple sans span supplémentaire
+- Retour utilisateur : analyze sans erreur, 30 tests réussis, un échec sur un parent TextSpan supplémentaire.
+- SacredText utilise Text simple pour une chaîne non enrichie si emphasizeNames renvoie la source inchangée. SacredSelectableText utilise dans ce cas SelectableText simple, préservant également sa propriété data.
+- Text.rich/SelectableText.rich réservés aux noms colorés et contenus déjà enrichis. Aucun changement des recherches, couleurs ou données.
+- Test de géométrie arabe maintenu sans assouplissement. Contrôles locaux réussis ; Flutter absent ici, analyse et tests Flutter à relancer sur le poste utilisateur.
+
+### 1.6.0 — thèmes modifiables et accès par appui long
+- renameTheme sous transaction : vérifie l’ancien catalogue et l’unicité de la nouvelle identité, actualise les titres des notes correspondantes, remplace le libellé du catalogue. Les autres champs ne changent pas. Mise à jour du brouillon correspondant côté Flutter.
+- Thèmes : menu explicite et onLongPress, Modifier toujours disponible, Supprimer seulement à zéro note. Double confirmation conservée ; vérification native de vacuité inchangée.
+- Notes : onLongPress appelle showButtonMenu sur le même PopupMenuButton, y compris dans ThemeNotesPage. Auteurs : menu et appui long Modifier/Supprimer ; traitement de suppression partagé avec la fiche.
+- Dictionnaire : appui long pour Ouvrir/Étudier dans une note. Clic court inchangé.
+- Retour depuis une sous-page Thème : rechargement des compteurs et menus. Schéma v4 inchangé.
+- Contrôles ajoutés : tools/check_theme_rename.py (SQL réel UPDATE, contenu/dates/styles préservés, casse/espaces et doublons refusés), test widget appui long et renommage. Contrôles Python réussis ; Flutter/SDK Android absents, tests/analyse/build à lancer sur le poste utilisateur.
+
 ## 4. Fichiers de cette mise à jour
-Archive cumulative depuis 1.0.1 : **Diraasa_MAJ_1.1.3.tar.gz**.
+Archive cumulative depuis 1.0.1 : **Diraasa_MAJ_1.6.0.tar.gz**.
 - lib/ complet : main.dart, core/app_core.dart, core/search.dart,
   screens/home.dart, screens/editor.dart, screens/readers.dart, widgets/controls.dart.
 - android/app/src/main/kotlin/com/tdg/diraasa/MainActivity.kt
@@ -246,7 +413,7 @@ Une erreur d’écriture de préférences n’annule pas une note déjà enregis
 
 ## 5. Vérifications
 Exécutés ici :
-- check_migrations.py : SQL réel du helper sur données historiques v0/v1/v2 ;
+- check_migrations.py : SQL réel du helper sur données historiques v0/v1/v2/v3/v4 ;
   comparaison de toutes les valeurs avant/après, index idempotent, insertion.
 - check_kotlin_escapes.py : échappements des sources Kotlin.
 - check_data.py : intégrité et recherche dans le dictionnaire inchangé.
