@@ -1,5 +1,5 @@
 # Diraasa — Fiche technique et historique
-Version application : **1.6.0+24**  
+Version application : **2.0.0+25**  
 Date : **26 octobre 2026**  
 Application Android : **com.tdg.diraasa**  
 Éditeur : Taysir Digital Group — Aliou Mbengue
@@ -384,21 +384,35 @@ deux mesures d’introduction masquée à 233 px et un retour de page introuvabl
 - Retour depuis une sous-page Thème : rechargement des compteurs et menus. Schéma v4 inchangé.
 - Contrôles ajoutés : tools/check_theme_rename.py (SQL réel UPDATE, contenu/dates/styles préservés, casse/espaces et doublons refusés), test widget appui long et renommage. Contrôles Python réussis ; Flutter/SDK Android absents, tests/analyse/build à lancer sur le poste utilisateur.
 
+### 2.0.0 — Coran, Hisn, prières, compteur et notifications
+- Hub accessible dans le header fixe ; les quatre onglets existants sont conservés.
+- Coran local Hafs/Warsh avec leurs polices, recherches adaptatives et références numériques.
+- SQL Hisn fourni importé en 132 chapitres/267 entrées, conservation de 90 blocs originaux.
+- Compteurs et chaînes modifiables, progression persistante ; rappels hebdomadaires
+  configurables par horloge, ouverture du compteur depuis la notification.
+- AlarmManager natif, notifications Android, replanification au redémarrage et
+  changement de fuseau ; annulation des rappels lors de suppression de leur cible.
+- Horaires HTTPS AlAdhan, cache courant + mois suivant, réglages et corrections.
+  Azan audio importé par l’utilisateur, service foreground mediaPlayback et arrêt.
+- Permissions ajoutées : INTERNET, POST_NOTIFICATIONS, SCHEDULE_EXACT_ALARM,
+  RECEIVE_BOOT_COMPLETED, FOREGROUND_SERVICE, FOREGROUND_SERVICE_MEDIA_PLAYBACK, WAKE_LOCK.
+- notes.db reste v4, aucune table ni donnée utilisateur remplacée. Préférences
+  devotion/azan/reminders séparées et ajoutées sans clear global.
+- Validation : contrôles Python des données et migrations, syntaxe Dart ; compilation
+  Kotlin 2.2.20, Java 17, API 36 réussie ; test JVM du calendrier réussi.
+  Flutter analyze/test et APK non exécutés : démarrage Flutter rejeté par le contrôle
+  automatique après tentative de contact avec une adresse de métadonnées cloud.
+
 ## 4. Fichiers de cette mise à jour
-Archive cumulative depuis 1.0.1 : **Diraasa_MAJ_1.6.0.tar.gz**.
-- lib/ complet : main.dart, core/app_core.dart, core/search.dart,
-  screens/home.dart, screens/editor.dart, screens/readers.dart, widgets/controls.dart.
-- android/app/src/main/kotlin/com/tdg/diraasa/MainActivity.kt
-- android/app/src/main/kotlin/com/tdg/diraasa/NotesDatabase.kt
-- android/app/src/debug/AndroidManifest.xml
-- android/app/src/profile/AndroidManifest.xml
-- pubspec.yaml
-- test/widget_test.dart
-- tools/check_migrations.py, check_search.py, check_android_debug.py,
-  check_kotlin_escapes.py, check_data.py.
-- README.md et FICHE_TECHNIQUE.md.
-Aucune base, aucun asset ni changement Gradle dans le correctif.
-Les icônes et données déjà installées sont réutilisées.
+Archive cumulative depuis 1.0.1 : **Diraasa_MAJ_2.0.0.tar.gz**.
+- lib/ complet, dont lib/devotion/ et les modifications de navigation/rendu.
+- Sources Kotlin de MainActivity, NotesDatabase, DevotionNative, AzanAlarms,
+  AzanService et ZikrReminders ; manifestes main/debug/profile.
+- assets/devotion/ : données importées ; assets/fonts/ : polices fournies.
+- source/devotion/ : SQL originaux, rapports et documentation de provenance.
+- pubspec.yaml, test/ et outils de validation/import modifiés.
+- README.md, FICHE_TECHNIQUE.md et MANIFEST_MAJ_2.0.0.txt.
+Aucune base utilisateur n’est incluse. Les nouvelles données sont des assets distincts.
 
 ## 4 bis. Préférences : format et évolution
 Fichier Android SharedPreferences nommé diraasa_preferences_v1 :
@@ -421,8 +435,9 @@ Exécutés ici :
 Tests Flutter ajoutés : localisation, préférences, saisie successive,
 surlignage, filtres, sticky au défilement, RTL/LTR, focus et clavier simulé
 sur écran 360×640 dans les deux onglets, filtres Titre/Auteur, notes/article/formulaire.
-Flutter et SDK Android absents ici : ces tests, flutter analyze, la compilation
-et l’exécution Android doivent être lancés sur le poste de développement.
+Pour 2.0.0, la syntaxe Dart et la compilation Kotlin isolée ont été contrôlées.
+Flutter analyze, les tests Flutter et la compilation/exécution Android complète
+restent à lancer sur le poste de développement (blocage automatique décrit ci-dessus).
 Le test SQL ne remplace pas un essai de mise à jour sur appareil.
 
 ## 6. Procédure pour les prochaines évolutions

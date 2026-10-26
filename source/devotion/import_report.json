@@ -1,0 +1,17 @@
+{
+  "hafs": {
+    "editorial_prefixes_removed": [
+      16,
+      17
+    ],
+    "chapters": 114,
+    "verses": 6236,
+    "source_sha256": "ec6f59100f51c042c742b8b7cebb4434f08de626f99ccc8b814f8b6556d39461"
+  },
+  "warsh": {
+    "editorial_prefixes_removed": [],
+    "chapters": 114,
+    "verses": 6214,
+    "source_sha256": "95b990ab3af63a82d97d79c01d6960f1161d427ab93810c7ad2e3829f5abc6fd"
+  }
+}

@@ -1,9 +1,9 @@
-# Diraasa · دراسة — 1.6.0+24
+# Diraasa · دراسة — 2.0.0+25
 Carnet d’études arabes et dictionnaire مختار الصحاح, Android, hors ligne.
 Package : **com.tdg.diraasa**.
 
 ## Installer la mise à jour
-L’archive Diraasa_MAJ_1.6.0.tar.gz contient **lib/ complet** et les autres fichiers
+L’archive Diraasa_MAJ_2.0.0.tar.gz contient **lib/ complet** et les autres fichiers
 nécessaires, aux chemins de la racine du projet existant.
 Arrêter flutter run, extraire à côté de pubspec.yaml, puis :
 ```bash
@@ -79,7 +79,8 @@ bash tools/setup.sh
 ```
 Pour une mise à jour, ne pas régénérer le projet : utiliser les commandes du haut.
 Les manifestes debug/profile incluent INTERNET pour le service de débogage Dart.
-La release garde le manifeste principal hors ligne.
+Le manifeste principal autorise désormais HTTPS pour télécharger les horaires AlAdhan.
+Les lectures Coran/Hisn, notes et compteurs restent locales.
 
 ## Dictionnaire et vérifications
 3 772 blocs SQL, dont 3 767 articles et renvois et cinq blocs liminaires.
@@ -271,3 +272,37 @@ Lorsqu’aucun nom ne nécessite de coloration, SacredText et SacredSelectableTe
 - Appui long sur un article du dictionnaire : Ouvrir ou Étudier dans une note. Le clic court garde la lecture habituelle.
 - Les compteurs et options des thèmes sont rechargés au retour de leur sous-page pour tenir compte des notes supprimées ou déplacées.
 - Schéma v4, données et environnement conservés. Nouveau contrôle tools/check_theme_rename.py ; test Flutter d’appui long et renommage ajouté. Contrôles SQL/Python réussis ; Flutter absent ici, analyse/tests/build à exécuter sur le poste utilisateur.
+
+
+## Évolution 2.0.0 — espace spirituel et rappels
+L’icône dédiée près du sélecteur de langue ouvre quatre cartes : Coran,
+حصن المسلم, prières/azan et compteur de dhikr.
+
+- Coran : textes et polices Hafs/Warsh fournis, lecture locale, recherche globale
+  ou dans une sourate. `3` trouve la sourate, `3:` ses versets, `3:23` un verset.
+  Chaque lecture garde sa numérotation source ; Warsh n’est pas renuméroté comme Hafs.
+- حصن المسلم : import du SQL fourni, 132 chapitres et 267 entrées ; les 90 blocs
+  originaux et leurs notes restent consultables dans Source. Les nombres du compteur
+  sont à définir/vérifier avant utilisation, aucune prescription n’est déduite du texte.
+- Compteur : formulations, objectifs, chaînes ordonnées et progression persistante.
+  L’horloge permet plusieurs rappels par formulation ou chaîne, heure et jours choisis.
+  Toucher une notification ouvre le compteur correspondant. Les rappels suivent
+  l’heure locale du téléphone, y compris après redémarrage ou changement de fuseau.
+- Prières : horaires AlAdhan pour ville/pays ou coordonnées, méthode, école et
+  corrections par prière. Téléchargement explicite du mois courant et suivant,
+  puis cache hors ligne ; le fuseau affiché est celui fourni pour le lieu.
+- Azan : importer un audio local, autoriser notifications et alarmes exactes,
+  puis activer. Actualiser avant la date de fin affichée : pas de téléchargement
+  automatique perpétuel. Le volume d’alarme et les restrictions batterie du téléphone
+  peuvent influer sur la réception. Comparer les horaires à ceux de la mosquée.
+
+Notes et dictionnaire conservés ; schéma notes.db inchangé (v4).
+Nouveaux paramètres dans des préférences séparées, sans effacement des anciennes.
+Aucune dépendance Flutter ajoutée ni modification des versions du DEV ENV.
+
+Vérifié ici : import des données/polices, migrations SQL, syntaxe Dart et compilation
+Kotlin 2.2.20 / Java 17 / API 36, test natif du calendrier de rappels.
+Flutter a été bloqué par le contrôle automatique après une tentative de contact avec
+une adresse de métadonnées cloud : analyze, tests Flutter et APK restent à exécuter
+sur le poste de développement. La compilation Kotlin isolée ne produit pas d’APK.
+Voir source/devotion/README.md pour provenance, règles d’import et limites.

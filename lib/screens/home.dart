@@ -9,6 +9,8 @@ import 'readers.dart';
 import 'catalogs.dart';
 import '../widgets/note_card.dart';
 import '../widgets/delete_confirmation.dart';
+import '../devotion/hub.dart';
+import '../devotion/core.dart';
 
 class Home extends StatefulWidget {
   const Home({super.key});
@@ -168,6 +170,8 @@ class _HomeState extends State<Home> {
             style: TextStyle(fontWeight: FontWeight.w900, fontSize: 24))),
         ]),
         actions: [
+          IconButton(key: const ValueKey('devotion-hub'), tooltip: dt('hub'), icon: const Icon(Icons.mosque_outlined, size: 22),
+            onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const DevotionHub()))),
           const LanguageMenu(), const ThemeMenu(),
           IconButton(tooltip: tr('about'), icon: const Icon(Icons.info_outline, size: 22),
             onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const About()))),

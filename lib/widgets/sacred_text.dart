@@ -9,9 +9,9 @@ TextSpan emphasizeNames(TextSpan source) {
     final normalized = token.group(0)!.replaceAll('\uFDF2', 'الله')
       .replaceAll(RegExp(r'[\u0610-\u061a\u064b-\u065f\u0670\u06d6-\u06edـ]'), '')
       .replaceAll(RegExp('[أإآٱ]'), 'ا');
-    final match = RegExp(r'^[وفبلك]{0,2}(الله|محمد)$').firstMatch(normalized);
+    final match = RegExp(r'^[وفبلك]{0,2}(الله(?:م)?|لله|محمد(?:ا)?)$').firstMatch(normalized);
     if (match != null) ranges.add((start: token.start, end: token.end,
-      color: match.group(1) == 'الله' ? const Color(0xffe53935) : const Color(0xff2196f3)));
+      color: !match.group(1)!.startsWith('محمد') ? const Color(0xffe53935) : const Color(0xff2196f3)));
   }
   if (ranges.isEmpty) return source;
   var offset = 0;

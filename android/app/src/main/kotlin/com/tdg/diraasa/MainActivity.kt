@@ -10,6 +10,8 @@ import io.flutter.plugin.common.MethodChannel
 import java.util.concurrent.Executors
 
 class MainActivity : FlutterActivity() {
+    private var dataChannel: MethodChannel? = null
+    private val devotion by lazy { DevotionNative(this) }
     private var photoResult: MethodChannel.Result? = null
     private val worker = Executors.newSingleThreadExecutor()
     private val main = Handler(Looper.getMainLooper())
@@ -20,7 +22,10 @@ class MainActivity : FlutterActivity() {
         .replace(Regex("[أإآٱ]"), "ا").replace('ى','ي').lowercase(java.util.Locale.ROOT)
     override fun configureFlutterEngine(engine: FlutterEngine) {
         super.configureFlutterEngine(engine)
-        MethodChannel(engine.dartExecutor.binaryMessenger, "tdg.diraasa/data").setMethodCallHandler { call, result ->
+        val channel = MethodChannel(engine.dartExecutor.binaryMessenger, "tdg.diraasa/data")
+        dataChannel = channel
+        channel.setMethodCallHandler { call, result ->
+            if (devotion.accepts(call.method)) { devotion.handle(call,result); return@setMethodCallHandler }
             if (call.method == "pickPhoto") {
                 if (photoResult != null) { result.error("BUSY", "Sélection déjà ouverte", null); return@setMethodCallHandler }
                 photoResult = result
@@ -126,7 +131,7 @@ class MainActivity : FlutterActivity() {
                                 notes.rawQuery("SELECT id,title FROM notes",null).use { c ->
                                     while (c.moveToNext()) if (NotesDatabase.identity(c.getString(1) ?: "") == oldIdentity) ids.add(c.getLong(0))
                                 }
-                                for (id in ids) notes.execSQL("UPDATE notes SET title=? WHERE id=?",arrayOf(label,id))
+                                for (id in ids) notes.execSQL("UPDATE notes SET title=? WHERE id=?",arrayOf<Any>(label,id))
                                 notes.delete("note_references","field='title' AND identity=?",arrayOf(oldIdentity))
                                 val canonical = NotesDatabase.remember(notes,"title",label)
                                 notes.setTransactionSuccessful(); canonical
@@ -176,7 +181,7 @@ class MainActivity : FlutterActivity() {
                                 val savedId = if (id == null) notes.insertOrThrow("authors",null,v) else {
                                     check(notes.update("authors",v,"id=?",arrayOf(id.toString())) == 1); id
                                 }
-                                notes.execSQL("UPDATE notes SET author=? WHERE author_id=?",arrayOf(canonical,savedId))
+                                notes.execSQL("UPDATE notes SET author=? WHERE author_id=?",arrayOf<Any>(canonical,savedId))
                                 if (id != null) notes.execSQL("DELETE FROM note_references WHERE field='author' AND identity NOT IN (SELECT identity FROM authors)")
                                 notes.setTransactionSuccessful(); savedId
                             } finally { notes.endTransaction() }
@@ -263,9 +268,15 @@ class MainActivity : FlutterActivity() {
             }
         }
     }
+    override fun onNewIntent(intent: android.content.Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        if(intent.hasExtra("devotionTarget"))dataChannel?.invokeMethod("devotionPending",null)
+    }
     @Deprecated("Android activity result bridge")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: android.content.Intent?) {
         super.onActivityResult(requestCode,resultCode,data)
+        if (devotion.activityResult(requestCode,resultCode,data)) return
         if (requestCode != 8401) return
         val result = photoResult ?: return
         photoResult = null

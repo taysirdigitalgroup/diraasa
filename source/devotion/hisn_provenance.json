@@ -1,0 +1,9 @@
+{
+  "source": "hisnul_muslim.sql",
+  "source_sha256": "8b0f2af5800c50ccbef5423083b0eef05f0532e03c3619ea45bda0e061559200",
+  "blocks": 90,
+  "chapters": 132,
+  "entries": 267,
+  "footnote_blocks": 138,
+  "counter_counts": "User-defined: default 1, reviewed in editor; never inferred from the book prose."
+}

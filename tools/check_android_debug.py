@@ -7,5 +7,7 @@ for variant in ('debug','profile'):
     permissions=[p.get(attr) for p in manifest.findall('uses-permission')]
     assert 'android.permission.INTERNET' in permissions
 main=ET.parse(root/'android/app/src/main/AndroidManifest.xml')
-assert not any(p.get(attr)=='android.permission.INTERNET' for p in main.findall('uses-permission'))
-print('OK : INTERNET disponible en debug/profile ; non ajouté au manifeste release.')
+assert any(p.get(attr)=='android.permission.INTERNET' for p in main.findall('uses-permission'))
+for name in ('SCHEDULE_EXACT_ALARM','POST_NOTIFICATIONS','FOREGROUND_SERVICE_MEDIA_PLAYBACK'):
+    assert any(p.get(attr)=='android.permission.'+name for p in main.findall('uses-permission'))
+print('OK : INTERNET pour les horaires en release/debug/profile ; permissions notifications/azan déclarées.')

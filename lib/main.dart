@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+
 import 'core/app_core.dart';
 import 'screens/home.dart';
+import 'devotion/tasbih.dart';
 export 'core/app_core.dart';
 export 'core/search.dart';
 export 'screens/home.dart';
@@ -15,25 +17,99 @@ export 'widgets/delete_confirmation.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  try { await settings.load(); } catch (e) { debugPrint('Diraasa preferences: $e'); }
+  try {
+    await settings.load();
+  } catch (e) {
+    debugPrint('Diraasa preferences: $e');
+  }
   runApp(const Diraasa());
 }
-class Diraasa extends StatelessWidget {
+
+final appNavigatorKey = GlobalKey<NavigatorState>();
+
+class Diraasa extends StatefulWidget {
   const Diraasa({super.key});
+  @override
+  State<Diraasa> createState() => _DiraasaState();
+}
+
+class _DiraasaState extends State<Diraasa> with WidgetsBindingObserver {
+  bool checkingLaunch = false;
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    Store.channel.setMethodCallHandler((call) async {
+      if (call.method == 'devotionPending') await openPending();
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) => openPending());
+  }
+
+  Future<void> openPending() async {
+    if (!mounted || checkingLaunch) return;
+    checkingLaunch = true;
+    try {
+      final value = await Store.call('devotionLaunch');
+      if (mounted && value is Map && value['id'] is String) {
+        appNavigatorKey.currentState?.push(
+          MaterialPageRoute(
+            builder: (_) => CounterPage(
+              id: value['id'] as String,
+              chain: value['chain'] == true,
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      debugPrint('Diraasa reminder: $e');
+    } finally {
+      checkingLaunch = false;
+    }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) openPending();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    Store.channel.setMethodCallHandler(null);
+    super.dispose();
+  }
+
   ThemeData theme(Brightness brightness) => ThemeData(
     useMaterial3: true,
-    colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xff174e40), brightness: brightness),
-    scaffoldBackgroundColor: brightness == Brightness.dark ? const Color(0xff10231e) : const Color(0xfff7f5ef),
-    inputDecorationTheme: InputDecorationTheme(filled: true,
-      border: OutlineInputBorder(borderRadius: BorderRadius.circular(18), borderSide: BorderSide.none)),
+    colorScheme: ColorScheme.fromSeed(
+      seedColor: const Color(0xff174e40),
+      brightness: brightness,
+    ),
+    scaffoldBackgroundColor: brightness == Brightness.dark
+        ? const Color(0xff10231e)
+        : const Color(0xfff7f5ef),
+    inputDecorationTheme: InputDecorationTheme(
+      filled: true,
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(18),
+        borderSide: BorderSide.none,
+      ),
+    ),
   );
   @override
-  Widget build(BuildContext context) => AnimatedBuilder(animation: settings, builder: (context, _) => MaterialApp(
-    debugShowCheckedModeBanner: false, title: 'Diraasa',
-    locale: Locale(settings.language),
-    supportedLocales: const [Locale('fr'), Locale('ar'), Locale('en')],
-    localizationsDelegates: GlobalMaterialLocalizations.delegates,
-    theme: theme(Brightness.light), darkTheme: theme(Brightness.dark), themeMode: settings.themeMode,
-    home: const Home(),
-  ));
+  Widget build(BuildContext context) => AnimatedBuilder(
+    animation: settings,
+    builder: (context, _) => MaterialApp(
+      navigatorKey: appNavigatorKey,
+      debugShowCheckedModeBanner: false,
+      title: 'Diraasa',
+      locale: Locale(settings.language),
+      supportedLocales: const [Locale('fr'), Locale('ar'), Locale('en')],
+      localizationsDelegates: GlobalMaterialLocalizations.delegates,
+      theme: theme(Brightness.light),
+      darkTheme: theme(Brightness.dark),
+      themeMode: settings.themeMode,
+      home: const Home(),
+    ),
+  );
 }
