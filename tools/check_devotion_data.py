@@ -26,6 +26,17 @@ assert [(c['title'],c['text']) for c in hisn['sourceBlocks']]==rows
 assert [e['id'] for c in hisn['chapters'] for e in c['entries']]==list(range(1,268))
 assert all(e['customCount'] and e['count']==1 for c in hisn['chapters'] for e in c['entries'])
 assert len(hisn['footnotes'])==138
+entries=[e for c in hisn['chapters'] for e in c['entries']]
+assert all(e['references'] for e in entries)
+assert sum(len(e['references']) for e in entries)==300
+for e in entries:
+ assert '\ue000' not in e['text'] and '\ue001' not in e['text']
+ for reference in e['references']:
+  assert any(reference in block for block in hisn['footnotes'])
+assert 'البخاري' in entries[0]['references'][0]
+assert '٦٣١٤' in entries[0]['references'][0]
+assert '١١٥٤' in entries[1]['references'][0]
+
 manifest=ET.parse(r/'android/app/src/main/AndroidManifest.xml');name='{http://schemas.android.com/apk/res/android}name'
 receivers={e.get(name) for e in manifest.findall('application/receiver')}
 assert {'.AzanReceiver','.ZikrReminderReceiver'}<=receivers

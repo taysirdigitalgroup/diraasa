@@ -32,3 +32,8 @@ Rappels de dhikr : horaires locaux du téléphone et jours sélectionnés, un pr
 Autorisations Android notifications/alarmes exactes requises. Le téléphone peut
 restreindre les alarmes selon sa politique batterie. Les compteurs, chaînes,
 progressions et rappels sont persistants ; pas de modification du schéma notes.db.
+
+2.0.1 : les appels de références sont résolus dans leur segment source avant la
+reconstruction des chapitres. Chaque entrée dispose d’une liste references distincte
+du texte ; le numéro d’invocation parenthésé en début de ligne est conservé.
+Les appels répétés ne se confondent pas entre les différents segments de notes.

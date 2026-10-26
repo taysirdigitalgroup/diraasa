@@ -243,7 +243,7 @@ class _TasbihPageState extends State<TasbihPage> {
             children: [
               Expanded(
                 child: SacredText(
-                  dt('zikr'),
+                  dt('azkar'),
                   style: const TextStyle(
                     fontSize: 23,
                     fontWeight: FontWeight.bold,

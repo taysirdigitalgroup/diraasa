@@ -1,5 +1,5 @@
 # Diraasa — Fiche technique et historique
-Version application : **2.0.0+25**  
+Version application : **2.0.1+26**  
 Date : **26 octobre 2026**  
 Application Android : **com.tdg.diraasa**  
 Éditeur : Taysir Digital Group — Aliou Mbengue
@@ -403,15 +403,25 @@ deux mesures d’introduction masquée à 233 px et un retour de page introuvabl
   Flutter analyze/test et APK non exécutés : démarrage Flutter rejeté par le contrôle
   automatique après tentative de contact avec une adresse de métadonnées cloud.
 
+### 2.0.1 — références sous les invocations et vocabulaire
+- Association des notes par appel dans chaque segment source : les numéros de
+  référence se répètent au fil du livre et ne sont pas traités comme des IDs globaux.
+- Références séparées du corps et affichées dessous, taille 13 et couleur disabledColor.
+- Contrôle des 267 entrées, 300 références liées, aucune altération des 90 blocs originaux.
+- Chapelet et Azkar / Azkar / Wird (chaîne de zikr), traductions adaptées.
+- Clés de persistance inchangées, notamment chains : aucun impact sur les wirds existants.
+- Contrôle des données réussi ; Dart/Flutter indisponibles dans cette session.
+  Aucun nouveau résultat analyze/test revendiqué.
+
 ## 4. Fichiers de cette mise à jour
-Archive cumulative depuis 1.0.1 : **Diraasa_MAJ_2.0.0.tar.gz**.
+Archive cumulative depuis 1.0.1 : **Diraasa_MAJ_2.0.1.tar.gz**.
 - lib/ complet, dont lib/devotion/ et les modifications de navigation/rendu.
 - Sources Kotlin de MainActivity, NotesDatabase, DevotionNative, AzanAlarms,
   AzanService et ZikrReminders ; manifestes main/debug/profile.
 - assets/devotion/ : données importées ; assets/fonts/ : polices fournies.
 - source/devotion/ : SQL originaux, rapports et documentation de provenance.
 - pubspec.yaml, test/ et outils de validation/import modifiés.
-- README.md, FICHE_TECHNIQUE.md et MANIFEST_MAJ_2.0.0.txt.
+- README.md, FICHE_TECHNIQUE.md et MANIFEST_MAJ_2.0.1.txt.
 Aucune base utilisateur n’est incluse. Les nouvelles données sont des assets distincts.
 
 ## 4 bis. Préférences : format et évolution

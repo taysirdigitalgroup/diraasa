@@ -124,7 +124,7 @@ class _HisnPageState extends State<HisnPage> {
                             style: const TextStyle(fontSize: 21, height: 1.6),
                           ),
                           subtitle: SacredText(
-                            '${(c['entries'] as List).length} ${dt('zikr')}',
+                            '${(c['entries'] as List).length} ${dt('azkar')}',
                           ),
                           onTap: () => Navigator.push(
                             context,
@@ -270,6 +270,20 @@ class _HisnChapterState extends State<HisnChapter> {
                         height: 1.9,
                       ),
                     ),
+                    for (final reference in entry['references'] as List? ?? [])
+                      Padding(
+                        padding: const EdgeInsets.only(top: 8),
+                        child: MatchText(
+                          reference.toString(),
+                          query: widget.query,
+                          selectable: true,
+                          style: TextStyle(
+                            fontSize: 13,
+                            height: 1.6,
+                            color: Theme.of(context).disabledColor,
+                          ),
+                        ),
+                      ),
                     const SizedBox(height: 12),
                     SacredText(dt('counterReview')),
                     Row(
@@ -294,7 +308,7 @@ class _HisnChapterState extends State<HisnChapter> {
             );
           }),
           SacredText(
-            '${dt('source')} : حصن المسلم · hisnul_muslim.sql\n132 ${dt('chapter')} · 267 ${dt('zikr')}',
+            '${dt('source')} : حصن المسلم · hisnul_muslim.sql\n132 ${dt('chapter')} · 267 ${dt('azkar')}',
             style: const TextStyle(fontSize: 12),
           ),
         ],

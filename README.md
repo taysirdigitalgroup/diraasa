@@ -1,9 +1,9 @@
-# Diraasa · دراسة — 2.0.0+25
+# Diraasa · دراسة — 2.0.1+26
 Carnet d’études arabes et dictionnaire مختار الصحاح, Android, hors ligne.
 Package : **com.tdg.diraasa**.
 
 ## Installer la mise à jour
-L’archive Diraasa_MAJ_2.0.0.tar.gz contient **lib/ complet** et les autres fichiers
+L’archive Diraasa_MAJ_2.0.1.tar.gz contient **lib/ complet** et les autres fichiers
 nécessaires, aux chemins de la racine du projet existant.
 Arrêter flutter run, extraire à côté de pubspec.yaml, puis :
 ```bash
@@ -306,3 +306,13 @@ Flutter a été bloqué par le contrôle automatique après une tentative de con
 une adresse de métadonnées cloud : analyze, tests Flutter et APK restent à exécuter
 sur le poste de développement. La compilation Kotlin isolée ne produit pas d’APK.
 Voir source/devotion/README.md pour provenance, règles d’import et limites.
+
+## Évolution 2.0.1 — références et terminologie
+Les références bibliographiques sont rattachées au zikr correspondant, sous son
+texte, en petit gris discret. Les appels bibliographiques sont retirés du corps
+affiché ; les numéros des invocations et le texte original dans Source sont conservés.
+267 entrées ont des références (300 rattachements), contrôlées contre les notes source.
+Page « Chapelet et Azkar », section « Azkar », « Wird (chaîne de zikr) »
+et traductions arabe/anglais harmonisées. Zikr reste au singulier dans son formulaire.
+Aucune migration ni suppression de données utilisateur ; identifiants des chaînes
+et des rappels conservés. Tests Flutter non exécutés ici, blocage déjà documenté.
