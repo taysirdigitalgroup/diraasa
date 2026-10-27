@@ -681,12 +681,15 @@ class _PrayersPageState extends State<PrayersPage> with WidgetsBindingObserver {
         const SizedBox(width: 16),
         SizedBox(
           width: 76,
-          child: SacredText(
-            adjustedTime(prayer, lead: lead, draft: true),
-            key: ValueKey('${lead ? 'azan' : 'prayer'}-preview-$prayer'),
-            textDirection: TextDirection.ltr,
-            textAlign: TextAlign.end,
-            style: const TextStyle(fontSize: 23, fontWeight: FontWeight.w600),
+          child: ValueListenableBuilder<TextEditingValue>(
+            valueListenable: (lead ? azanDraft[prayer] : adjustments[prayer])!,
+            builder: (context, value, child) => SacredText(
+              adjustedTime(prayer, lead: lead, draft: true),
+              key: ValueKey('${lead ? 'azan' : 'prayer'}-preview-$prayer'),
+              textDirection: TextDirection.ltr,
+              textAlign: TextAlign.end,
+              style: const TextStyle(fontSize: 23, fontWeight: FontWeight.w600),
+            ),
           ),
         ),
       ],

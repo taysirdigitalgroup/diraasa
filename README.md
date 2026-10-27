@@ -489,3 +489,6 @@ exécuter de travail jusqu’à sa remise en service.
 Contrôles exécutés : données/migrations/audio, syntaxe Dart, calculs Dart et JVM,
 compilation Kotlin isolée avec API 36 et WorkManager 2.9.1 (interfaces Flutter
 simulées). Tests Flutter ajoutés mais non exécutés ; APK et essai réel restent à faire.
+
+### Mise à jour 2.2.2
+Correction du rafraîchissement des aperçus horaires pendant la saisie des minutes. Extraire à la racine du projet existant, sans désinstaller l’application ni effacer ses données. Puis lancer `flutter pub get && flutter analyze && flutter test && flutter run`.

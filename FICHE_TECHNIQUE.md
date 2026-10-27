@@ -603,3 +603,9 @@ Le test SQL ne remplace pas un essai de mise à jour sur appareil.
 4. Mettre à jour cette fiche, la version et les tests concernés.
 5. Livrer au minimum lib/ complet + tous les autres fichiers modifiés,
    aux mêmes chemins relatifs, dans une archive de mise à jour.
+
+## 2.2.2+36 — 27 octobre 2026
+
+- Aperçus des ajustements de prière et des avances d’azan directement abonnés au contrôleur de saisie via ValueListenableBuilder : leur actualisation ne dépend plus du rafraîchissement du modal.
+- Horaires principaux et programmation restent liés aux valeurs appliquées ; aucune modification de la base de données.
+- Flutter indisponible dans cet environnement : analyse, tests widgets et APK à exécuter sur le poste de développement.
