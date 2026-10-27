@@ -615,3 +615,10 @@ Le test SQL ne remplace pas un essai de mise à jour sur appareil.
 - Diagnostic corrigé : l’échec signalé à la ligne 160 concerne l’application du brouillon, pas son aperçu. Le test cliquait sur Appliquer avant la reconstruction activant le bouton après saisie.
 - Ajout d’un pump avant clic, assertion du callback actif et vérification de la valeur persistée (Dhuhr : 20 minutes). Aucune attente arbitraire, aucun assouplissement des résultats attendus.
 - Aucun changement de données ou de logique de programmation. Tests Flutter non exécutés ici.
+
+## 2.2.4+38 — 27 octobre 2026
+
+- Correction du cycle de vie des modals Prières : un rebuild pendant l’animation de sortie pouvait réenregistrer le callback après le nettoyage et bloquer la prochaine ouverture.
+- Verrou d’ouverture explicite, désactivé au retour de la route ; les rebuilds de sortie ne réenregistrent plus les callbacks.
+- Test : vérification explicite de la présence du champ après réouverture. Aucune modification de la base.
+- Tests Flutter et APK non exécutés ici.

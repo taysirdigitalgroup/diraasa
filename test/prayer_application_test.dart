@@ -171,6 +171,7 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.byKey(const ValueKey('prayer-panel-adjustments')));
       await tester.pumpAndSettle();
+      expect(field, findsOneWidget, reason: 'Le modal doit pouvoir être rouvert');
       expect(tester.widget<TextFormField>(field).controller!.text, '20');
       expect(displayed(tester), '12:20');
       await tester.pumpWidget(const SizedBox());

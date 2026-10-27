@@ -88,12 +88,15 @@ class _PrayersPageState extends State<PrayersPage> with WidgetsBindingObserver {
     }
   }
 
+  bool _panelOpen = false;
   StateSetter? _refreshPanel;
   BuildContext? _panelContext;
   void updateState(VoidCallback change) {
     if (!mounted) return;
     setState(change);
-    if (_panelContext?.mounted == true) _refreshPanel?.call(() {});
+    if (_panelOpen && _panelContext?.mounted == true) {
+      _refreshPanel?.call(() {});
+    }
   }
 
   void _reportError(Object value) {
@@ -103,7 +106,8 @@ class _PrayersPageState extends State<PrayersPage> with WidgetsBindingObserver {
   }
 
   Future<void> openPanel(String section) async {
-    if (busy || _refreshPanel != null) return;
+    if (busy || _panelOpen) return;
+    _panelOpen = true;
     if (section != 'location') restoreDraft(appliedOptions);
     try {
       await showModalBottomSheet<void>(
@@ -113,8 +117,12 @@ class _PrayersPageState extends State<PrayersPage> with WidgetsBindingObserver {
         showDragHandle: true,
         builder: (sheet) => StatefulBuilder(
           builder: (panel, setPanelState) {
-            _refreshPanel = setPanelState;
-            _panelContext = panel;
+            // A popped route can rebuild during its reverse animation.
+            // It must not restore callbacks after the modal has been closed.
+            if (_panelOpen) {
+              _refreshPanel = setPanelState;
+              _panelContext = panel;
+            }
             return FractionallySizedBox(
               heightFactor: .9,
               child: Padding(
@@ -184,6 +192,7 @@ class _PrayersPageState extends State<PrayersPage> with WidgetsBindingObserver {
         ),
       );
     } finally {
+      _panelOpen = false;
       _refreshPanel = null;
       _panelContext = null;
       if (mounted)

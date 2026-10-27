@@ -495,3 +495,6 @@ Correction du rafraîchissement des aperçus horaires pendant la saisie des minu
 
 ### Mise à jour 2.2.3
 Le test d’application des ajustements attend désormais la reconstruction du bouton après saisie, vérifie son activation puis la valeur enregistrée. Les attentes horaires restent identiques.
+
+### Mise à jour 2.2.4
+Correction de la réouverture des modals Prières après leur animation de fermeture. Conservation des données et de tous les réglages.
