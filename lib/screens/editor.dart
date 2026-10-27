@@ -131,7 +131,7 @@ class _ReferencePickerState extends State<ReferencePicker> {
             key: const ValueKey('reference-search'),
             textDirection: direction(query, fallback: Directionality.of(context)),
             onChanged: (value) => setState(() => query = value),
-            decoration: InputDecoration(hintText: tr('searchReferences'), prefixIcon: const Icon(Icons.search)))),
+            decoration: InputDecoration(helperText:resultLabel(visible.length),helperStyle:resultStyle,hintText: tr('searchReferences'), prefixIcon: const Icon(Icons.search)))),
           const SizedBox(height: 12),
           Expanded(child: visible.isEmpty
             ? Center(child: Padding(padding: const EdgeInsets.all(24), child: SacredText(tr('noReferences'))))

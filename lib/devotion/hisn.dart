@@ -38,9 +38,9 @@ class _HisnPageState extends State<HisnPage> {
 
   Future<void> load() async {
     try {
-      final raw = jsonDecode(
-        await rootBundle.loadString('assets/devotion/hisn.json'),
-      ) as Map;
+      final raw =
+          jsonDecode(await rootBundle.loadString('assets/devotion/hisn.json'))
+              as Map;
       if (mounted)
         setState(() {
           book = Map<String, dynamic>.from(raw);
@@ -97,6 +97,8 @@ class _HisnPageState extends State<HisnPage> {
               ),
               onChanged: (v) => setState(() => query = v),
               decoration: InputDecoration(
+                helperText: resultLabel(visible.length),
+                helperStyle: resultStyle,
                 hintText: tr('searchReferences'),
                 prefixIcon: const Icon(Icons.search),
               ),
@@ -330,7 +332,11 @@ class HisnSource extends StatelessWidget {
         final block = (book['sourceBlocks'] as List)[i];
         return Card(
           child: ExpansionTile(
-            title: SacredText(block['title'].toString(),textDirection:TextDirection.rtl,textAlign:TextAlign.right),
+            title: SacredText(
+              block['title'].toString(),
+              textDirection: TextDirection.rtl,
+              textAlign: TextAlign.right,
+            ),
             children: [
               Padding(
                 padding: const EdgeInsets.all(16),

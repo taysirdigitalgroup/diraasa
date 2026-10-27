@@ -38,6 +38,7 @@ void main() {
       if (call.method == 'references') return [{'label': 'Cours de langue'}, {'label': 'العربية'}];
       if (call.method == 'notes') return [note];
       if (call.method == 'search') return [article];
+      if (call.method == 'searchCount') return 1;
       if (call.method == 'save') { writes.add(Map<String, dynamic>.from(call.arguments as Map)); return 2; }
       return true;
     });

@@ -194,7 +194,9 @@ class _TasbihPageState extends State<TasbihPage> {
             children: [
               IconButton(
                 tooltip: dt('reminders'),
-                onPressed: chain && (row['steps'] as List).isEmpty ? null : () => reminders(row, chain),
+                onPressed: chain && (row['steps'] as List).isEmpty
+                    ? null
+                    : () => reminders(row, chain),
                 icon: const Icon(Icons.alarm),
               ),
               PopupMenuButton<String>(
@@ -229,6 +231,13 @@ class _TasbihPageState extends State<TasbihPage> {
             ),
             onChanged: (v) => setState(() => query = v),
             decoration: InputDecoration(
+              helperText: resultLabel(
+                [
+                  ...items.map((i) => i['text']),
+                  ...chains.map((c) => c['name']),
+                ].where((t) => matchesSearch(t.toString(), query)).length,
+              ),
+              helperStyle: resultStyle,
               hintText: tr('searchReferences'),
               prefixIcon: const Icon(Icons.search),
             ),
@@ -273,7 +282,7 @@ class _TasbihPageState extends State<TasbihPage> {
               ),
               IconButton(
                 tooltip: dt('newChain'),
-                onPressed: items.isEmpty ? null : () => edit('chains'),
+                onPressed: () => edit('chains'),
                 icon: const Icon(Icons.add),
               ),
             ],
@@ -436,7 +445,10 @@ class _ChainEditorState extends State<ChainEditor> {
       children: [
         TextField(
           controller: name,
-          textDirection: direction(name.text, fallback: Directionality.of(context)),
+          textDirection: direction(
+            name.text,
+            fallback: Directionality.of(context),
+          ),
           onChanged: (_) => setState(() {}),
           decoration: InputDecoration(labelText: dt('name')),
         ),
@@ -450,7 +462,9 @@ class _ChainEditorState extends State<ChainEditor> {
             child: Column(
               children: [
                 ListTile(
-                  title: SacredText(item?['text']?.toString() ?? ''),
+                  title: SacredText(
+                    s['text']?.toString() ?? item?['text']?.toString() ?? '',
+                  ),
                   subtitle: SacredText('${s['max']}'),
                   onTap: () => step(i),
                 ),
@@ -514,17 +528,38 @@ class StepDialog extends StatefulWidget {
 }
 
 class _StepDialogState extends State<StepDialog> {
-  late String id =
-      widget.step?['itemId']?.toString() ?? widget.items.first['id'].toString();
-  late final maximum = SacredController(
+  late final text = SacredController(
     text:
-        widget.step?['max']?.toString() ?? widget.items.first['max'].toString(),
+        widget.step?['text']?.toString() ??
+        widget.items
+            .where((i) => i['id'] == widget.step?['itemId'])
+            .firstOrNull?['text']
+            ?.toString() ??
+        '',
+  );
+  late final maximum = SacredController(
+    text: widget.step?['max']?.toString() ?? '33',
   );
   final form = GlobalKey<FormState>();
   @override
   void dispose() {
+    text.dispose();
     maximum.dispose();
     super.dispose();
+  }
+
+  Future<void> select() async {
+    final item = await showModalBottomSheet<AppRecord>(
+      context: context,
+      showDragHandle: true,
+      isScrollControlled: true,
+      builder: (_) => ZikrSelection(items: widget.items),
+    );
+    if (item != null && mounted)
+      setState(() {
+        text.text = item['text'].toString();
+        maximum.text = item['max'].toString();
+      });
   }
 
   @override
@@ -536,24 +571,26 @@ class _StepDialogState extends State<StepDialog> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            DropdownButtonFormField<String>(
-              initialValue: id,
-              isExpanded: true,
-              items: widget.items
-                  .map(
-                    (i) => DropdownMenuItem(
-                      value: i['id'].toString(),
-                      child: SacredText(
-                        i['text'].toString(),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  )
-                  .toList(),
-              onChanged: (v) {
-                if (v != null) id = v;
-              },
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: TextFormField(
+                    controller: text,
+                    minLines: 3,
+                    maxLines: 6,
+                    textDirection: direction(text.text),
+                    onChanged: (_) => setState(() {}),
+                    decoration: InputDecoration(labelText: dt('formulation')),
+                    validator: (v) => v!.trim().isEmpty ? dt('required') : null,
+                  ),
+                ),
+                IconButton(
+                  onPressed: select,
+                  tooltip: dt('chooseZikr'),
+                  icon: const Icon(Icons.playlist_add),
+                ),
+              ],
             ),
             TextFormField(
               controller: maximum,
@@ -574,7 +611,7 @@ class _StepDialogState extends State<StepDialog> {
         onPressed: () {
           if (form.currentState!.validate())
             Navigator.pop(context, {
-              'itemId': id,
+              'text': text.text.trim(),
               'max': int.parse(westernDigits(maximum.text)),
             });
         },
@@ -582,6 +619,55 @@ class _StepDialogState extends State<StepDialog> {
       ),
     ],
   );
+}
+
+class ZikrSelection extends StatefulWidget {
+  const ZikrSelection({super.key, required this.items});
+  final List<AppRecord> items;
+  @override
+  State<ZikrSelection> createState() => _ZikrSelectionState();
+}
+
+class _ZikrSelectionState extends State<ZikrSelection> {
+  String query = '';
+  @override
+  Widget build(BuildContext context) {
+    final rows = widget.items
+        .where((i) => matchesSearch(i['text'].toString(), query))
+        .toList();
+    return SafeArea(
+      child: SizedBox(
+        height: MediaQuery.sizeOf(context).height * .7,
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: TextField(
+                decoration: InputDecoration(
+                  labelText: dt('chooseZikr'),
+                  helperText: resultLabel(rows.length),
+                ),
+                onChanged: (v) => setState(() => query = v),
+              ),
+            ),
+            Expanded(
+              child: ListView(
+                children: rows
+                    .map(
+                      (i) => ListTile(
+                        title: SacredText(i['text'].toString()),
+                        subtitle: SacredText('${i['max']}'),
+                        onTap: () => Navigator.pop(context, i),
+                      ),
+                    )
+                    .toList(),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 class CounterPage extends StatefulWidget {
@@ -617,7 +703,12 @@ class _CounterPageState extends State<CounterPage> {
         ).where((r) => r['id'] == widget.id).firstOrNull;
         for (final raw in chain?['steps'] as List? ?? []) {
           final item = items.where((i) => i['id'] == raw['itemId']).firstOrNull;
-          if (item != null) steps.add({...item, 'max': raw['max']});
+          if (raw['text'] != null || item != null)
+            steps.add({
+              ...?item,
+              'text': raw['text'] ?? item?['text'],
+              'max': raw['max'],
+            });
         }
       } else {
         steps = items.where((i) => i['id'] == widget.id).toList();

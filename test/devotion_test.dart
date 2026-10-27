@@ -5,20 +5,25 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:diraasa/core/app_core.dart';
 import 'package:diraasa/devotion/core.dart';
 import 'package:diraasa/devotion/prayers.dart';
+import 'package:diraasa/devotion/quran.dart';
+import 'package:diraasa/core/search.dart';
 import 'package:diraasa/devotion/tasbih.dart';
 import 'package:diraasa/devotion/reminders.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   setUp(() => settings = AppSettings(initialLanguage: 'fr'));
-  test('Références coraniques : sourate, tous versets, verset précis et chiffres arabes', () {
-    expect(parseReference('3'), (chapter: 3, verse: null, list: false));
-    expect(parseReference('3:'), (chapter: 3, verse: null, list: true));
-    expect(parseReference('٣:٢٣'), (chapter: 3, verse: 23, list: true));
-    expect(parseReference('۳:۲۳'), (chapter: 3, verse: 23, list: true));
-    expect(parseReference('الفاتحة'), isNull);
-    expect(parseReference('3:23:1'), isNull);
-  });
+  test(
+    'Références coraniques : sourate, tous versets, verset précis et chiffres arabes',
+    () {
+      expect(parseReference('3'), (chapter: 3, verse: null, list: false));
+      expect(parseReference('3:'), (chapter: 3, verse: null, list: true));
+      expect(parseReference('٣:٢٣'), (chapter: 3, verse: 23, list: true));
+      expect(parseReference('۳:۲۳'), (chapter: 3, verse: 23, list: true));
+      expect(parseReference('الفاتحة'), isNull);
+      expect(parseReference('3:23:1'), isNull);
+    },
+  );
   test(
     'Horaires : fuseau ISO, ajustement et retrait des prières déjà passées',
     () {
@@ -40,6 +45,69 @@ void main() {
       );
     },
   );
+  test(
+    'Aperçu coranique : indices du surlignage calculés sur le texte affiché',
+    () {
+      const source =
+          'يكاد البرق يخطف أبصارهم كلما أضاء لهم مشوا فيه وإذا أظلم عليهم قاموا';
+      final excerpt = quranExcerpt(source, 'ال');
+      final ranges = matchRanges(excerpt, 'ال');
+      expect(ranges, isNotEmpty);
+      for (final range in ranges)
+        expect(normalize(excerpt.substring(range.start, range.end)), 'ال');
+    },
+  );
+  test('Sélection de prières : aucune alarme pour une prière désactivée', () {
+    final events = buildPrayerEvents(
+      [
+        {
+          'timings': {
+            'Fajr': '2026-10-27T05:00:00+00:00',
+            'Asr': '2026-10-27T16:00:00+00:00',
+          },
+        },
+      ],
+      {},
+      now: DateTime.utc(2026, 10, 27),
+      enabledPrayers: {'Asr'},
+    );
+    expect(events.length, 1);
+    expect(
+      events.single['at'],
+      DateTime.utc(2026, 10, 27, 16).millisecondsSinceEpoch,
+    );
+  });
+  testWidgets('Wird : formulation manuelle sans zikr enregistré', (
+    tester,
+  ) async {
+    AppRecord? result;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Builder(
+          builder: (context) => Scaffold(
+            body: TextButton(
+              onPressed: () async {
+                result = await showDialog<AppRecord>(
+                  context: context,
+                  builder: (_) => const StepDialog(items: []),
+                );
+              },
+              child: const Text('ouvrir'),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('ouvrir'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextFormField).first, 'أستغفر الله');
+    await tester.enterText(find.byType(TextFormField).last, '7');
+    await tester.tap(find.text(tr('save')));
+    await tester.pumpAndSettle();
+    expect(result?['text'], 'أستغفر الله');
+    expect(result?['max'], 7);
+    expect(result?.containsKey('itemId'), false);
+  });
   testWidgets(
     'Chaîne : maxima par étape, transition et arrêt final persistés',
     (tester) async {
@@ -90,29 +158,54 @@ void main() {
       expect(tester.takeException(), isNull);
     },
   );
-  testWidgets('Rappel : jours choisis, cible et activation persistés', (tester) async {
-    String saved = jsonEncode({'items':[{'id':'a','text':'الله','max':33}], 'chains':[], 'sessions':{}});
-    var configured = false;
-    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(Store.channel, (call) async {
-      if (call.method == 'devotionRead') return saved;
-      if (call.method == 'devotionWrite') { saved=(call.arguments as Map)['value'] as String; return true; }
-      if (call.method == 'azanPermissions') return true;
-      if (call.method == 'azanStatus') return {'exact':true,'notifications':true};
-      if (call.method == 'remindersConfigure') { configured=true; return true; }
-      return null;
+  testWidgets('Rappel : jours choisis, cible et activation persistés', (
+    tester,
+  ) async {
+    String saved = jsonEncode({
+      'items': [
+        {'id': 'a', 'text': 'الله', 'max': 33},
+      ],
+      'chains': [],
+      'sessions': {},
     });
-    addTearDown(()=>TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(Store.channel,null));
-    await tester.pumpWidget(const MaterialApp(home:RemindersPage(targetId:'a',chain:false,label:'الله')));
+    var configured = false;
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(Store.channel, (call) async {
+          if (call.method == 'devotionRead') return saved;
+          if (call.method == 'devotionWrite') {
+            saved = (call.arguments as Map)['value'] as String;
+            return true;
+          }
+          if (call.method == 'azanPermissions') return true;
+          if (call.method == 'azanStatus')
+            return {'exact': true, 'notifications': true, 'background': true};
+          if (call.method == 'remindersConfigure') {
+            configured = true;
+            return true;
+          }
+          return null;
+        });
+    addTearDown(
+      () => TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(Store.channel, null),
+    );
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: RemindersPage(targetId: 'a', chain: false, label: 'الله'),
+      ),
+    );
     await tester.pumpAndSettle();
     await tester.tap(find.byTooltip('Programmer un rappel'));
     await tester.pumpAndSettle();
-    await tester.tap(find.widgetWithText(FilterChip,'Mer'));
+    await tester.tap(find.widgetWithText(FilterChip, 'Mer'));
     await tester.tap(find.text('Enregistrer'));
     await tester.pumpAndSettle();
-    final reminder=(jsonDecode(saved)['reminders'] as List).single as Map;
-    expect(reminder['targetId'],'a');expect(reminder['chain'],false);
-    expect(reminder['enabled'],true);expect(reminder['weekdays'],[1,2,4,5,6,7]);
-    expect(configured,true);expect(tester.takeException(),isNull);
+    final reminder = (jsonDecode(saved)['reminders'] as List).single as Map;
+    expect(reminder['targetId'], 'a');
+    expect(reminder['chain'], false);
+    expect(reminder['enabled'], true);
+    expect(reminder['weekdays'], [1, 2, 4, 5, 6, 7]);
+    expect(configured, true);
+    expect(tester.takeException(), isNull);
   });
-
 }

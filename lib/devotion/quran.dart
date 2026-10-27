@@ -145,6 +145,8 @@ class _QuranPageState extends State<QuranPage> {
                   fallback: Directionality.of(context),
                 ),
                 decoration: InputDecoration(
+                  helperText: resultLabel(hits.length),
+                  helperStyle: resultStyle,
                   hintText: dt('quranHint'),
                   prefixIcon: const Icon(Icons.search),
                   suffixIcon: IconButton(
@@ -207,9 +209,12 @@ class _QuranPageState extends State<QuranPage> {
                                     '${(chapter['verses'] as List).length} ${dt('verse')}',
                                   )
                                 : MatchText(
-                                    verse['text'].toString(),
+                                    quranExcerpt(
+                                      verse['text'].toString(),
+                                      query,
+                                    ),
                                     query: reference == null ? query : '',
-                                    maxLines: 3,
+
                                     style: TextStyle(
                                       fontFamily: reading == 'warsh'
                                           ? 'UthmaniWarsh'
@@ -349,6 +354,8 @@ class _SurahPageState extends State<SurahPage> {
                     fallback: Directionality.of(context),
                   ),
                   decoration: InputDecoration(
+                    helperText: resultLabel(visible.length),
+                    helperStyle: resultStyle,
                     hintText: dt('inSurah'),
                     prefixIcon: const Icon(Icons.search),
                   ),
@@ -420,4 +427,14 @@ class _SurahPageState extends State<SurahPage> {
       );
     },
   );
+}
+
+// Render an actual excerpt, without ellipsis layout boxes spanning hidden glyphs.
+String quranExcerpt(String text, String query) {
+  final ranges = matchRanges(text, query);
+  final start = ranges.isEmpty
+      ? 0
+      : (ranges.first.start - 55).clamp(0, text.length).toInt();
+  final end = (start + 240).clamp(0, text.length).toInt();
+  return '${start > 0 ? '… ' : ''}${text.substring(start, end)}${end < text.length ? ' …' : ''}';
 }

@@ -54,8 +54,8 @@ object ZikrReminders {
         for(i in 0 until live.length())if(live.getJSONObject(i).optString("id")==id&&live.getJSONObject(i).optBoolean("enabled"))allowed=true
         if(!allowed||!reminder.optBoolean("enabled")||!AzanAlarms.notifications(c))return
         val manager=c.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        val channel="diraasa_zikr_reminders"
-        if(Build.VERSION.SDK_INT>=26)manager.createNotificationChannel(NotificationChannel(channel,"Diraasa · أذكار",NotificationManager.IMPORTANCE_DEFAULT))
+        val channel="diraasa_zikr_reminders_v2"
+        if(Build.VERSION.SDK_INT>=26)manager.createNotificationChannel(NotificationChannel(channel,"Diraasa · أذكار",NotificationManager.IMPORTANCE_DEFAULT).apply{setSound(null,null)})
         val open=PendingIntent.getActivity(c,8531,Intent(c,MainActivity::class.java).apply{
             flags=Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
             data=Uri.parse("diraasa://counter/"+Uri.encode(id));putExtra("devotionTarget",reminder.getString("targetId"));putExtra("devotionChain",reminder.optBoolean("chain"))
@@ -64,11 +64,15 @@ object ZikrReminders {
         val notification=builder.setSmallIcon(android.R.drawable.ic_lock_idle_alarm).setContentTitle("Diraasa · أذكار")
             .setContentText(reminder.optString("label").take(120)).setAutoCancel(true).setContentIntent(open).build()
         manager.notify(id,8532,notification)
-        sync(c)
+        try{AzanService.play(c,AlarmSupport.audio(c,reminder.optString("audio","asset:audio/reminder.ogg")),"Diraasa · أذكار",true)}finally{sync(c)}
     }
 }
 class ZikrReminderReceiver:BroadcastReceiver(){
     override fun onReceive(context:Context,intent:Intent){val pending=goAsync();Thread{
-        try{ZikrReminders.fire(context,intent.getStringExtra("id")?:"")}catch(_:Exception){}finally{pending.finish()}
+        try{
+            if(intent.action=="com.tdg.diraasa.TEST"){
+                if(kotlin.math.abs(System.currentTimeMillis()-intent.getLongExtra("at",0))<60000)AzanService.play(context,intent.getStringExtra("audio")?:"","Diraasa · Test",true)
+            }else ZikrReminders.fire(context,intent.getStringExtra("id")?:"")
+        }catch(_:Exception){}finally{pending.finish()}
     }.start()}
 }

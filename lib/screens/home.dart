@@ -24,6 +24,7 @@ class _HomeState extends State<Home> {
   bool loading = false, more = false;
   String? error;
   Timer? debounce;
+  int dictionaryCount=0;
   final search = SacredController();
   final scroll = ScrollController();
   final focus = FocusNode();
@@ -102,7 +103,9 @@ class _HomeState extends State<Home> {
       final data = currentTab == 0 ? await Store.rows('notes') : await Store.rows('search', {
         'q': query, 'letter': letter, 'mode': mode, 'offset': append ? entries.length : 0,
       });
+      final total=currentTab==1?await Store.call('searchCount',{'q':query,'letter':letter,'mode':mode}):0;
       if (!mounted || revision != token || tab != currentTab) return;
+      dictionaryCount=(total as num?)?.toInt()??0;
       setState(() {
         if (currentTab == 0) { notes = data; } else { entries = append ? [...entries, ...data] : data; more = data.length == 60; }
         loading = false;
@@ -155,7 +158,7 @@ class _HomeState extends State<Home> {
       matchesNote(n, query, field)).toList();
     final keyboard = MediaQuery.viewInsetsOf(context).bottom > 0;
     final scaler = MediaQuery.textScalerOf(context);
-    final searchHeight = (scaler.scale(16) + 40).clamp(56, 110).toDouble();
+    final searchHeight = (scaler.scale(16) + 58).clamp(74, 128).toDouble();
     final filterHeight = (scaler.scale(14) + 28).clamp(44, 100).toDouble();
     final headerHeight = searchHeight + 2 * filterHeight + 20;
     return Scaffold(
@@ -236,6 +239,7 @@ class _HomeState extends State<Home> {
                     textDirection: query.isEmpty ? (tab == 1 ? TextDirection.rtl : Directionality.of(context)) : direction(query),
                     textAlign: TextAlign.start, textInputAction: TextInputAction.search,
                     decoration: InputDecoration(
+                      helperText: loading ? '…' : resultLabel(tab==0?visible.length:dictionaryCount),helperStyle:resultStyle,
                       hintText: tr(tab == 0 ? 'searchNotes' : 'searchDictionary'),
                       hintTextDirection: Directionality.of(context),
                       prefixIcon: const Icon(Icons.search), suffixIcon: IconButton(

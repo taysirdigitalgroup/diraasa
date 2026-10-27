@@ -112,7 +112,7 @@ class About extends StatelessWidget {
         } catch (e) { if (context.mounted) errorMessage(context, e); }
       }),
       const SizedBox(height: 24),
-      const SacredText('2.0.1 · © 2026 Taysir Digital Group', textAlign: TextAlign.center),
+      const SacredText('2.1.0 · © 2026 Taysir Digital Group', textAlign: TextAlign.center),
     ]),
   ));
 }

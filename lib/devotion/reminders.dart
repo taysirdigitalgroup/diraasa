@@ -4,6 +4,7 @@ import '../core/app_core.dart';
 import '../widgets/sacred_text.dart';
 import '../widgets/delete_confirmation.dart';
 import 'core.dart';
+import 'alarm_controls.dart';
 import 'counter_store.dart';
 
 Future<void> syncCounterReminders(AppRecord data) async {
@@ -44,22 +45,7 @@ class _RemindersPageState extends State<RemindersPage> {
     }
   }
 
-  Future<bool> permissions() async {
-    if (await Store.call('azanPermissions') != true) {
-      if (mounted)
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: SacredText(dt('permissions'))));
-      return false;
-    }
-    final status = await Store.call('azanStatus') as Map;
-    if (status['exact'] != true) {
-      if (mounted)
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: SacredText(dt('permissions'))));
-      return false;
-    }
-    return true;
-  }
+  Future<bool> permissions() => ensureAlarmReady(context);
 
   Future<void> edit([AppRecord? reminder]) async {
     final value = await Navigator.push<AppRecord>(
@@ -206,6 +192,8 @@ class _ReminderEditorState extends State<ReminderEditor> {
       (widget.reminder?['weekdays'] as List? ?? [1, 2, 3, 4, 5, 6, 7])
           .map((v) => (v as num).toInt())
           .toSet();
+  late String audio =
+      widget.reminder?['audio']?.toString() ?? 'asset:audio/reminder.ogg';
   late bool enabled = widget.reminder?['enabled'] != false;
   @override
   Widget build(BuildContext context) => Scaffold(
@@ -226,6 +214,7 @@ class _ReminderEditorState extends State<ReminderEditor> {
               'minute': time.minute,
               'weekdays': days.toList()..sort(),
               'enabled': enabled,
+              'audio': audio,
             });
           },
           child: SacredText(tr('save')),
@@ -266,6 +255,26 @@ class _ReminderEditorState extends State<ReminderEditor> {
               ),
           ],
         ),
+        ListTile(
+          leading: const Icon(Icons.music_note),
+          title: SacredText(dt('audio')),
+          subtitle: SacredText(
+            audio.startsWith('asset:') ? dt('gentleBell') : dt('phoneAudio'),
+          ),
+          onTap: () async {
+            final v = await chooseAlarmAudio(context, reminder: true);
+            if (v != null && mounted) setState(() => audio = v);
+          },
+        ),
+        TextButton(
+          onPressed: () => Store.call('azanPreview', {'audio': audio}),
+          child: SacredText(dt('testAudio')),
+        ),
+        TextButton(
+          onPressed: () => Store.call('azanStop'),
+          child: SacredText(dt('stopAudio')),
+        ),
+        TextButton(onPressed:()=>testAlarm(context,audio),child:SacredText(dt('alarmTest'))),
         SwitchListTile(
           title: SacredText(dt('activateReminder')),
           value: enabled,

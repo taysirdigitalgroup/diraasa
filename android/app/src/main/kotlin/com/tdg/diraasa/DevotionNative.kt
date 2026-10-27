@@ -20,11 +20,24 @@ class DevotionNative(private val activity: Activity) {
     private val worker = Executors.newSingleThreadExecutor()
     private val main = Handler(Looper.getMainLooper())
     private var audioResult: MethodChannel.Result? = null
-    fun accepts(method: String) = method in setOf("devotionRead","devotionWrite","pickAzan","azanStatus","azanPermissions","azanExactSettings","azanSchedule","azanDisable","azanPreview","azanStop","remindersConfigure","devotionLaunch")
+    fun accepts(method: String) = method in setOf("applicationSettings","alarmTest","audioCatalog","backgroundSettings","detectLocation","devotionRead","devotionWrite","pickAzan","azanStatus","azanPermissions","azanExactSettings","azanSchedule","azanDisable","azanPreview","azanStop","remindersConfigure","devotionLaunch")
     fun handle(call: MethodCall, result: MethodChannel.Result) {
         val a = call.arguments as? Map<*,*> ?: emptyMap<Any,Any>()
         try {
             when (call.method) {
+                "applicationSettings" -> {activity.startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,Uri.parse("package:"+activity.packageName)));result.success(true)}
+                "alarmTest" -> {
+                    check(AzanAlarms.exact(activity)&&AzanAlarms.notifications(activity)&&AlarmSupport.background(activity)){"Autorisez notifications, alarmes exactes et batterie sans restriction"}
+                    val at=System.currentTimeMillis()+10000
+                    val intent=Intent(activity,ZikrReminderReceiver::class.java).setAction("com.tdg.diraasa.TEST").putExtra("at",at).putExtra("audio",AlarmSupport.audio(activity,a["audio"]?.toString()?:"asset:audio/reminder.ogg"))
+                    val pending=android.app.PendingIntent.getBroadcast(activity,8538,intent,android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE)
+                    (activity.getSystemService(Context.ALARM_SERVICE) as AlarmManager).setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP,at,pending)
+                    result.success(true)
+                }
+                "audioCatalog" -> result.success(activity.assets.open("audio/catalog.json").bufferedReader().use{it.readText()})
+                "backgroundSettings" -> {AlarmSupport.requestBackground(activity);result.success(true)}
+                "detectLocation" -> AlarmSupport.locate(activity,result)
+
                 "devotionLaunch" -> {
                     val intent=activity.intent
                     val target=intent?.getStringExtra("devotionTarget")
@@ -54,7 +67,7 @@ class DevotionNative(private val activity: Activity) {
                 "azanDisable" -> { AzanAlarms.disable(activity);result.success(true) }
                 "azanStop" -> { activity.stopService(Intent(activity,AzanService::class.java));result.success(true) }
                 "azanPreview" -> {
-                    val path=a["audio"]?.toString() ?: ""
+                    val path=AlarmSupport.audio(activity,a["audio"]?.toString() ?: "")
                     check(File(path).isFile) { "Audio manquant" }
                     AzanService.play(activity,path,"Diraasa · أذان");result.success(true)
                 }

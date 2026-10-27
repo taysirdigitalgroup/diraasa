@@ -24,7 +24,12 @@ for title,raw in rows:
   body.append(re.sub(r'\(([٠-٩0-9]+)\)',attach,pending))
   pending=paragraphs[1] if len(paragraphs)>1 else ''
  body.append(pending)
-def clean(text):return re.sub(r'\ue000[0-9]+\ue001','',text).strip()
+def clean(text):
+ text=re.sub(r'\ue000[0-9]+\ue001','',text).strip()
+ # Only join scraping line breaks inside invocation delimiters. Keep prose/entries apart.
+ def flow(m):
+  return re.sub(r'\s+([.،؛])',r'\1',re.sub(r'(?<![.])\n\s*',' ',m[0]))
+ return re.sub(r'\s+([.،؛])',r'\1',re.sub(r'\(\(.*?\)\)',flow,text,flags=re.S))
 def references(text):
  return list(dict.fromkeys(linked[int(n)] for n in re.findall(r'\ue000([0-9]+)\ue001',text)))
 body='\n'.join(body);digits=str.maketrans('٠١٢٣٤٥٦٧٨٩','0123456789')

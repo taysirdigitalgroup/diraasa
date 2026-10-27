@@ -20,6 +20,58 @@ String dt(String key) {
 }
 
 const devotionLabels = <String, List<String>>{
+ 'androidSettings':['Réglages Android','إعدادات أندرويد','Android settings'],
+  'alarmTest': [
+    'Tester dans 10 secondes',
+    'اختبار بعد 10 ثوانٍ',
+    'Test in 10 seconds',
+  ],
+  'alarmTestNotice': [
+    'Test programmé : vous pouvez verrouiller l’écran. Le son s’arrête après 30 secondes.',
+    'تمت جدولة الاختبار. يمكنك قفل الشاشة. يتوقف الصوت بعد 30 ثانية.',
+    'Test scheduled: you can lock the screen. Sound stops after 30 seconds.',
+  ],
+  'alarmAccess': [
+    'Autoriser les alarmes',
+    'أذونات المنبه',
+    'Alarm permissions',
+  ],
+  'alarmAccessNotice': [
+    'Autorisez ces trois accès, puis vérifiez. Le volume des alarmes doit être audible. Sur certains téléphones, autorisez aussi le démarrage automatique dans les réglages du fabricant.',
+    'اسمح بهذه الأذونات ثم تحقق. تأكد من مستوى صوت المنبه والسماح بالتشغيل التلقائي إن لزم.',
+    'Allow these accesses, then check. Keep alarm volume audible. Some phones also require manufacturer auto-start access.',
+  ],
+  'notificationAccess': ['Notifications', 'الإشعارات', 'Notifications'],
+  'backgroundAccess': [
+    'Batterie sans restriction',
+    'بطارية بلا قيود',
+    'Unrestricted battery',
+  ],
+  'checkAccess': ['Vérifier et continuer', 'تحقق وتابع', 'Check and continue'],
+  'gentleBell': [
+    'Signal doux · Kenney CC0',
+    'تنبيه لطيف · Kenney CC0',
+    'Gentle signal · Kenney CC0',
+  ],
+  'phoneAudio': [
+    'Choisir sur le téléphone',
+    'اختيار من الهاتف',
+    'Choose from phone',
+  ],
+  'detectLocation': [
+    'Détecter ma position',
+    'تحديد موقعي',
+    'Detect my location',
+  ],
+  'locationUnknown': [
+    'Adresse indisponible · coordonnées conservées',
+    'العنوان غير متاح · تم حفظ الإحداثيات',
+    'Address unavailable · coordinates retained',
+  ],
+  'prayerTimes': ['Heures de prières', 'أوقات الصلاة', 'Prayer times'],
+  'localTime': ['Heure locale', 'الوقت المحلي', 'Local time'],
+  'location': ['Localisation', 'الموقع', 'Location'],
+
   'reminders': ['Rappels', 'التذكيرات', 'Reminders'],
   'newReminder': ['Programmer un rappel', 'جدولة تذكير', 'Schedule reminder'],
   'activateReminder': ['Rappel actif', 'تذكير مفعّل', 'Reminder enabled'],
@@ -61,11 +113,7 @@ const devotionLabels = <String, List<String>>{
     'مواقيت الصلاة والأذان',
     'Prayer times & Adhan',
   ],
-  'tasbih': [
-    'Chapelet et Azkar',
-    'المسبحة والأذكار',
-    'Tasbih and Azkar',
-  ],
+  'tasbih': ['Chapelet et Azkar', 'المسبحة والأذكار', 'Tasbih and Azkar'],
   'reading': ['Lecture', 'الرواية', 'Reading'],
   'warsh': ['Warsh', 'ورش', 'Warsh'],
   'hafs': ['Hafs', 'حفص', 'Hafs'],
@@ -88,7 +136,11 @@ const devotionLabels = <String, List<String>>{
   ],
   'repeat': ['Répétitions', 'التكرار', 'Repetitions'],
   'counter': ['Compteur', 'العداد', 'Counter'],
-  'chains': ['Wird (chaîne de zikr)', 'ورد (سلسلة أذكار)', 'Wird (dhikr sequence)'],
+  'chains': [
+    'Wird (chaîne de zikr)',
+    'ورد (سلسلة أذكار)',
+    'Wird (dhikr sequence)',
+  ],
   'azkar': ['Azkar', 'الأذكار', 'Azkar'],
   'zikr': ['Zikr', 'ذكر', 'Dhikr'],
   'newZikr': ['Ajouter un zikr', 'إضافة ذكر', 'Add dhikr'],
@@ -110,11 +162,7 @@ const devotionLabels = <String, List<String>>{
     'حذف هذا الذكر ومراحله في السلاسل؟',
     'Delete this dhikr and its sequence steps?',
   ],
-  'deleteChain': [
-    'Supprimer ce wird ?',
-    'حذف هذا الورد؟',
-    'Delete this wird?',
-  ],
+  'deleteChain': ['Supprimer ce wird ?', 'حذف هذا الورد؟', 'Delete this wird?'],
   'invalidNumber': [
     'Saisissez un entier entre 1 et 100 000',
     'أدخل عدداً صحيحاً من 1 إلى 100000',
@@ -257,7 +305,7 @@ Future<dynamic> fetchJson(Uri uri) async {
     final request = await client
         .getUrl(uri)
         .timeout(const Duration(seconds: 20));
-    request.headers.set(HttpHeaders.userAgentHeader, 'Diraasa/2.0');
+    request.headers.set(HttpHeaders.userAgentHeader, 'Diraasa/2.1 (com.tdg.diraasa)');
     final response = await request.close().timeout(const Duration(seconds: 20));
     if (response.statusCode != 200)
       throw HttpException('HTTP ${response.statusCode}');
@@ -303,8 +351,9 @@ String westernDigits(String text) {
 }
 
 ({int chapter, int? verse, bool list})? parseReference(String text) {
-  final match = RegExp(r'^(\d{1,3})(?:(:)(\d{0,3}))?$')
-      .firstMatch(westernDigits(text.trim()));
+  final match = RegExp(
+    r'^(\d{1,3})(?:(:)(\d{0,3}))?$',
+  ).firstMatch(westernDigits(text.trim()));
   if (match == null) return null;
   return (
     chapter: int.parse(match[1]!),

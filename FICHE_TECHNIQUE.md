@@ -1,6 +1,6 @@
 # Diraasa — Fiche technique et historique
-Version application : **2.0.1+26**  
-Date : **26 octobre 2026**  
+Version application : **2.1.0+27**  
+Date : **27 octobre 2026**  
 Application Android : **com.tdg.diraasa**  
 Éditeur : Taysir Digital Group — Aliou Mbengue
 
@@ -413,15 +413,44 @@ deux mesures d’introduction masquée à 233 px et un retour de page introuvabl
 - Contrôle des données réussi ; Dart/Flutter indisponibles dans cette session.
   Aucun nouveau résultat analyze/test revendiqué.
 
+### 2.1.0 — audio intégré, horloge, localisation et recherche
+- Profil auteur : champ et affichage Vivant retirés ; colonne historique conservée,
+  sans migration destructive. Nom/photo/biographie restent disponibles.
+- Huit adhans fournis, AAC mono 24 kHz 32 kbit/s, durée complète ; environ 6,7 Mo.
+  Sons Android assets/audio/, catalogue natif et choix d’un fichier personnel.
+- Signal Kenney Digital Audio CC0 intégré pour les rappels ; lecture en service
+  foreground, volume ALARM, répétition au maximum 30 s, action Arrêter.
+- Vérification notifications, alarmes exactes et exemption batterie avant activation.
+  Réglages Android accessibles ; test différé 10 s sans remplacer les rappels.
+- Cadran analogique animé, heure locale, date/fuseau, réglages regroupés,
+  choix audio et interrupteur de chaque prière. Asr hanafite reste un réglage de calcul.
+- Position ponctuelle via LocationManager, permissions uniquement à la demande.
+  Adresse via Geocoder et reverse Nominatim explicite, attribution OpenStreetMap.
+  Pas de suivi en arrière-plan, saisie manuelle possible, adresse selon couverture.
+- Compteur de résultats dans l’aide sous les recherches ; total dictionnaire natif
+  avant pagination et après affinement précis FTS, filtres identiques aux résultats.
+- Aperçus Coran : véritable extrait sans troncature de mise en page, indices de
+  surlignage calculés sur l’extrait effectivement affiché.
+- Hisn : réunification des retours de scraping dans ((…)), en conservant une
+  rupture après point ; références toujours séparées, source originale intacte.
+- Wird : étapes autonomes text/max ; choix d’un zikr pour préremplir les champs.
+  Anciennes étapes itemId encore lues ; aucune réinitialisation de progression.
+- Vérifications : scripts Python et audio/durées, syntaxe Dart ; Kotlin natif
+  compilé avec API 36, Kotlin 2.2.20 et interfaces Flutter simulées, test JVM du
+  calendrier. Ceci ne constitue ni flutter analyze/test ni une compilation APK.
+  Validation audio/permissions/écran verrouillé à effectuer sur le TECNO KL4.
+- Ajouts : AlarmSupport.kt, lib/devotion/alarm_controls.dart, prayer_clock.dart,
+  assets Android audio, source/audio, outils check_audio.py/prepare_audio.py.
+
 ## 4. Fichiers de cette mise à jour
-Archive cumulative depuis 1.0.1 : **Diraasa_MAJ_2.0.1.tar.gz**.
+Archive cumulative depuis 1.0.1 : **Diraasa_MAJ_2.1.0.tar.gz**.
 - lib/ complet, dont lib/devotion/ et les modifications de navigation/rendu.
 - Sources Kotlin de MainActivity, NotesDatabase, DevotionNative, AzanAlarms,
   AzanService et ZikrReminders ; manifestes main/debug/profile.
 - assets/devotion/ : données importées ; assets/fonts/ : polices fournies.
 - source/devotion/ : SQL originaux, rapports et documentation de provenance.
 - pubspec.yaml, test/ et outils de validation/import modifiés.
-- README.md, FICHE_TECHNIQUE.md et MANIFEST_MAJ_2.0.1.txt.
+- README.md, FICHE_TECHNIQUE.md et MANIFEST_MAJ_2.1.0.txt.
 Aucune base utilisateur n’est incluse. Les nouvelles données sont des assets distincts.
 
 ## 4 bis. Préférences : format et évolution

@@ -11,8 +11,9 @@ import android.os.PowerManager
 
 class AzanService:Service(){
     private var player:MediaPlayer?=null
+    private val handler=android.os.Handler(android.os.Looper.getMainLooper())
     companion object{
-        fun play(c:Context,path:String,name:String){val intent=Intent(c,AzanService::class.java).putExtra("audio",path).putExtra("name",name);if(Build.VERSION.SDK_INT>=26)c.startForegroundService(intent)else c.startService(intent)}
+        fun play(c:Context,path:String,name:String,reminder:Boolean=false){val intent=Intent(c,AzanService::class.java).putExtra("audio",path).putExtra("name",name).putExtra("reminder",reminder);if(Build.VERSION.SDK_INT>=26)c.startForegroundService(intent)else c.startService(intent)}
     }
     override fun onBind(intent:Intent?):IBinder?=null
     @Suppress("DEPRECATION")
@@ -26,17 +27,20 @@ class AzanService:Service(){
         val notification=builder.setSmallIcon(android.R.drawable.ic_lock_idle_alarm).setContentTitle(intent?.getStringExtra("name")?:"Diraasa · أذان")
             .setContentText("Diraasa · إيقاف / Arrêter / Stop").setContentIntent(open).setOngoing(true).addAction(android.R.drawable.ic_media_pause,"إيقاف · Stop",stop).build()
         if(Build.VERSION.SDK_INT>=29)startForeground(8520,notification,android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK)else startForeground(8520,notification)
+        handler.removeCallbacksAndMessages(null)
         player?.release()
         try{
             player=MediaPlayer().apply{
                 setAudioAttributes(AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_ALARM).setContentType(AudioAttributes.CONTENT_TYPE_MUSIC).build())
                 setWakeMode(this@AzanService,PowerManager.PARTIAL_WAKE_LOCK)
                 setDataSource(intent?.getStringExtra("audio")?:"")
+                isLooping=intent?.getBooleanExtra("reminder",false)==true
                 setOnPreparedListener{it.start()};setOnCompletionListener{stopSelf()};setOnErrorListener{_,_,_->stopSelf();true};prepareAsync()
             }
+            if(intent?.getBooleanExtra("reminder",false)==true)handler.postDelayed({stopSelf()},30000)
         }catch(_:Exception){stopSelf()}
         return START_NOT_STICKY
     }
     @Suppress("DEPRECATION")
-    override fun onDestroy(){player?.release();player=null;stopForeground(true);super.onDestroy()}
+    override fun onDestroy(){handler.removeCallbacksAndMessages(null);player?.release();player=null;stopForeground(true);super.onDestroy()}
 }

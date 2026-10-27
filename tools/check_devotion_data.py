@@ -36,6 +36,8 @@ for e in entries:
 assert 'البخاري' in entries[0]['references'][0]
 assert '٦٣١٤' in entries[0]['references'][0]
 assert '١١٥٤' in entries[1]['references'][0]
+assert '\n' not in next(e for e in entries if e['id']==53)['text']
+
 
 manifest=ET.parse(r/'android/app/src/main/AndroidManifest.xml');name='{http://schemas.android.com/apk/res/android}name'
 receivers={e.get(name) for e in manifest.findall('application/receiver')}

@@ -201,3 +201,6 @@ List<String> evidenceWords(AppRecord entry, String query) {
 Widget highlightStudyText(BuildContext context, String text, String query, Widget child) =>
   _MatchBackground(ranges: matchRanges(text, query),
     color: Theme.of(context).brightness == Brightness.dark ? const Color(0xff665024) : const Color(0xffffedac), child: child);
+
+String resultLabel(int count) => '${settings.language=='ar'?'النتائج':settings.language=='en'?'Result(s)':'Résultat(s)'} : $count';
+const resultStyle=TextStyle(fontSize:10,height:1.1);

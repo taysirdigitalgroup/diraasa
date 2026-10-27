@@ -214,7 +214,7 @@ class MainActivity : FlutterActivity() {
                         "delete" -> notes.delete("notes","id=?",arrayOf(a["id"].toString()))
                         "pin" -> {notes.execSQL("UPDATE notes SET pinned=1-pinned WHERE id=?",arrayOf(a["id"]));true}
                         "intro" -> query(dict,"SELECT * FROM pages WHERE id<=5")
-                        "search" -> {
+                        "search", "searchCount" -> {
                             val rawQuery = a["q"]?.toString()?.trim() ?: ""
                             val precise = Regex("""[\u0610-\u061a\u064b-\u065f\u0670\u06d6-\u06ed]""").containsMatchIn(rawQuery) || rawQuery != rawQuery.lowercase(java.util.Locale.ROOT)
                             val fulltext = a["mode"] == "fulltext" || a["mode"] == "Texte intégral"
@@ -253,13 +253,15 @@ class MainActivity : FlutterActivity() {
                                 // Refine FTS candidates before pagination, preserving harakat/case.
                                 val pattern = Regex("""[\p{L}\p{N}\p{M}]+""")
                                 val terms = pattern.findAll(rawQuery).map { it.value }.toList()
-                                query(dict,baseSql,args.toTypedArray()).filter { row ->
+                                val matches=query(dict,baseSql,args.toTypedArray()).filter { row ->
                                     val words = listOf("word","definition","root").flatMap { key ->
                                         pattern.findAll(row[key]?.toString() ?: "").map { it.value }.toList()
                                     }
                                     terms.isNotEmpty() && terms.all { term -> words.any { it.startsWith(term) } }
-                                }.drop(offset).take(60)
-                            } else query(dict,baseSql+" LIMIT 60 OFFSET ?",(args+offset.toString()).toTypedArray())
+                                }
+                                if(call.method=="searchCount")matches.size else matches.drop(offset).take(60)
+                            } else if(call.method=="searchCount")query(dict,"SELECT COUNT(*) AS total FROM entries e$where",args.toTypedArray()).first()["total"]
+                            else query(dict,baseSql+" LIMIT 60 OFFSET ?",(args+offset.toString()).toTypedArray())
                         }
                         else -> throw IllegalArgumentException("Méthode inconnue")
                     }

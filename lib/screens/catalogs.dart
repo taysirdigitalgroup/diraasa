@@ -51,7 +51,7 @@ class _AuthorsPageState extends State<AuthorsPage> {
         Row(children: [Expanded(child: SacredText(tr('authors'), style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold))),
           IconButton(key: const ValueKey('new-author'), tooltip: tr('newAuthor'), onPressed: () => open(), icon: const Icon(Icons.person_add_alt_1))]),
         TextField(controller: queryController,key: const ValueKey('author-search'), textDirection: direction(query, fallback: Directionality.of(context)),
-          decoration: InputDecoration(hintText: tr('searchReferences'), prefixIcon: const Icon(Icons.search)),
+          decoration: InputDecoration(helperText:resultLabel(visible.length),helperStyle:resultStyle,hintText: tr('searchReferences'), prefixIcon: const Icon(Icons.search)),
           onChanged: (value) => setState(() => query = value)),
         const SizedBox(height: 16),
         if (loading) const LinearProgressIndicator(),
@@ -63,7 +63,7 @@ class _AuthorsPageState extends State<AuthorsPage> {
             onLongPress: () => menuKey.currentState?.showButtonMenu(),
             leading: AuthorAvatar(photo: a['photo']?.toString() ?? ''),
             title: SacredText(a['name'].toString(), textDirection: direction(a['name'].toString()), textAlign: textAlignment(a['name'].toString())),
-            subtitle: SacredText(lifespan(a)), onTap: () => open(a),
+            onTap: () => open(a),
             trailing: PopupMenuButton<String>(key: menuKey, tooltip: tr('itemOptions'),
               onSelected: (value) => authorAction(value, a),
               itemBuilder: (_) => [PopupMenuItem(value: 'edit', child: SacredText(tr('edit'))),
@@ -81,9 +81,6 @@ Future<bool> deleteAuthorProfile(BuildContext context, AppRecord author) async {
     }
     return true;
   } catch (e) { if (context.mounted) errorMessage(context, e); return false; }
-}
-String lifespan(AppRecord author) {
-  return author['alive'] == 1 ? tr('alive') : tr('deceased');
 }
 class AuthorProfile extends StatefulWidget {
   const AuthorProfile({super.key, required this.author});
@@ -109,7 +106,6 @@ class _AuthorProfileState extends State<AuthorProfile> {
       const SizedBox(height: 20),
       SacredText(author['name'].toString(), textDirection: direction(author['name'].toString()), textAlign: TextAlign.center,
         style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold)),
-      const SizedBox(height: 8), SacredText(lifespan(author), textAlign: TextAlign.center),
       const SizedBox(height: 24), const ReadingSize(),
       StudyText(author['bio']?.toString() ?? '', format: author['bio_format']?.toString() ?? '',
         style: TextStyle(fontSize: settings.textSize, height: 1.9)),
@@ -125,7 +121,7 @@ class _AuthorEditorState extends State<AuthorEditor> {
   final form = GlobalKey<FormState>();
   late final TextEditingController name;
   late final StudyController bio;
-  late bool alive;
+
   late String photo;
   bool saving = false;
   @override
@@ -134,7 +130,7 @@ class _AuthorEditorState extends State<AuthorEditor> {
     final a = widget.author ?? {};
     name = SacredController(text: a['name']?.toString() ?? '');
     bio = StudyController(text: a['bio']?.toString() ?? '', format: a['bio_format']?.toString() ?? '');
-    alive = a['alive'] != 0; photo = a['photo']?.toString() ?? '';
+    photo = a['photo']?.toString() ?? '';
   }
   @override
   void dispose() { name.dispose(); bio.dispose(); super.dispose(); }
@@ -149,7 +145,7 @@ class _AuthorEditorState extends State<AuthorEditor> {
     setState(() => saving = true);
     try {
       final values = <String, dynamic>{'id': widget.author?['id'], 'name': name.text.trim(),
-        'birth': widget.author?['birth'] ?? '', 'death': widget.author?['death'] ?? '', 'alive': alive ? 1 : 0,
+        'birth': widget.author?['birth'] ?? '', 'death': widget.author?['death'] ?? '', 'alive': widget.author?['alive'] ?? 1,
         'bio': bio.text, 'bio_format': bio.format, 'photo': photo};
       values['id'] = await Store.call('saveAuthor', values);
       // Reload canonical spelling after case/spacing deduplication.
@@ -174,7 +170,6 @@ class _AuthorEditorState extends State<AuthorEditor> {
         onChanged: (_) => setState(() {}), decoration: InputDecoration(labelText: tr('fullName')),
         validator: (value) => value!.trim().isEmpty ? tr('requiredName') : null),
       const SizedBox(height: 16),
-      SwitchListTile(contentPadding: EdgeInsets.zero, title: SacredText(tr('alive')), value: alive, onChanged: (value) => setState(() => alive = value)),
       const SizedBox(height: 16), FormatToolbar(controller: bio),
       TextFormField(key: const ValueKey('author-bio'), controller: bio, minLines: 8, maxLines: null,
         contextMenuBuilder: (context, state) => richContextMenu(context, state, bio),
@@ -246,7 +241,7 @@ class _ThemesPageState extends State<ThemesPage> {
         Row(children: [Expanded(child: SacredText(tr('themes'), style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold))),
           IconButton(key: const ValueKey('new-theme'), tooltip: tr('newTheme'), onPressed: add, icon: const Icon(Icons.add))]),
         const SizedBox(height: 16),
-        TextField(controller: queryController,decoration: InputDecoration(hintText: tr('searchReferences'), prefixIcon: const Icon(Icons.search)),
+        TextField(controller: queryController,decoration: InputDecoration(helperText:resultLabel(visible.length),helperStyle:resultStyle,hintText: tr('searchReferences'), prefixIcon: const Icon(Icons.search)),
           textDirection: direction(query, fallback: Directionality.of(context)), onChanged: (value) => setState(() => query = value)),
         const SizedBox(height: 16),
         if (loading) const LinearProgressIndicator(),
@@ -324,7 +319,7 @@ class _ThemeNotesPageState extends State<ThemeNotesPage> {
         Padding(padding: const EdgeInsets.all(16), child: TextField(controller: queryController,
           key: const ValueKey('theme-notes-search'),
           textDirection: direction(query, fallback: Directionality.of(context)),
-          decoration: InputDecoration(hintText: tr('searchNotes'), prefixIcon: const Icon(Icons.search)),
+          decoration: InputDecoration(helperText:resultLabel(visible.length),helperStyle:resultStyle,hintText: tr('searchNotes'), prefixIcon: const Icon(Icons.search)),
           onChanged: (value) => setState(() => query = value))),
         if (loading) const LinearProgressIndicator(),
         if (error != null) ...[SacredText(error!), TextButton(onPressed: load, child: SacredText(tr('retry')))],

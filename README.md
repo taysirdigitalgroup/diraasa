@@ -1,9 +1,9 @@
-# Diraasa · دراسة — 2.0.1+26
+# Diraasa · دراسة — 2.1.0+27
 Carnet d’études arabes et dictionnaire مختار الصحاح, Android, hors ligne.
 Package : **com.tdg.diraasa**.
 
 ## Installer la mise à jour
-L’archive Diraasa_MAJ_2.0.1.tar.gz contient **lib/ complet** et les autres fichiers
+L’archive Diraasa_MAJ_2.1.0.tar.gz contient **lib/ complet** et les autres fichiers
 nécessaires, aux chemins de la racine du projet existant.
 Arrêter flutter run, extraire à côté de pubspec.yaml, puis :
 ```bash
@@ -316,3 +316,31 @@ Page « Chapelet et Azkar », section « Azkar », « Wird (chaîne de zikr) »
 et traductions arabe/anglais harmonisées. Zikr reste au singulier dans son formulaire.
 Aucune migration ni suppression de données utilisateur ; identifiants des chaînes
 et des rappels conservés. Tests Flutter non exécutés ici, blocage déjà documenté.
+
+## Évolution 2.1.0 — configuration et essai sur téléphone
+- Profil auteur : suppression de Vivant dans le formulaire et les affichages.
+- Prières : cadran analogique animé, réglages regroupés, adresse détectée,
+  calcul Asr hanafite et activation de l’adhan prière par prière.
+- Les 8 adhans fournis sont intégrés en AAC mono (32 kbit/s) : environ 6,7 Mo,
+  sans retirer de passage. Choix et écoute dans le catalogue ou import personnel.
+- Rappels Zikr/Wird : signal intégré CC0 ou fichier personnel, sonnerie jusqu’à
+  30 secondes avec Arrêter. Notifications, alarmes exactes et batterie sans
+  restriction vérifiées avant activation. Sur TECNO, autoriser aussi l’auto-démarrage
+  dans les réglages du fabricant si nécessaire ; ne pas forcer l’arrêt de l’app.
+- Bouton « Tester dans 10 secondes » : autoriser les accès, programmer puis
+  verrouiller l’écran pour vérifier le déclenchement et le volume des alarmes.
+- Compteurs de résultats sous les recherches ; total dictionnaire indépendant
+  des 60 premières cartes. Aperçus Coran et retours de ligne Hisn corrigés.
+- Wird : ajouter des étapes manuellement ou utiliser le sélecteur de zikr pour
+  préremplir une formulation et un objectif ensuite modifiables.
+
+La détection de lieu est ponctuelle. Elle peut transmettre les coordonnées à
+Nominatim/OpenStreetMap pour l’adresse puis AlAdhan pour les horaires. Aucun suivi
+permanent. L’adresse détaillée dépend de la couverture des services ; coordonnées
+manuelles et choix ville/pays restent utilisables. Les horaires sont téléchargés
+sur actualisation, pour le mois courant et suivant : renouveler avant la fin indiquée.
+
+La base de notes reste v4. Ne pas désinstaller, vider les données ou changer la signature.
+Les clés des anciens wirds et rappels sont conservées. Aucun package Flutter ajouté.
+Contrôles locaux : données/migrations, audio, syntaxe Dart et Kotlin avec interfaces
+Flutter simulées ; les tests Flutter et l’essai Android réel restent à exécuter.

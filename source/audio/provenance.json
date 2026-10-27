@@ -1,0 +1,11 @@
+{
+  "adhans": "adhans.tar.gz fourni par utilisateur",
+  "conversion": "AAC mono 24 kHz 32 kbit/s, durée complète",
+  "reminder": {
+    "url": "https://kenney.nl/media/pages/assets/digital-audio/216eac4753-1677590265/kenney_digital-audio.zip",
+    "file": "Audio/powerUp1.ogg",
+    "license": "CC0",
+    "author": "Kenney"
+  },
+  "source_sha256": "93ccf624d837f63fd3d645fe3fab0d8f625ed04df667a731ade298bda8f73271"
+}
