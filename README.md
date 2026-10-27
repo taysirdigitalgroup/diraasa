@@ -1,9 +1,9 @@
-# Diraasa · دراسة — 2.2.0+34
+# Diraasa · دراسة — 2.2.1+35
 Carnet d’études arabes et dictionnaire مختار الصحاح, Android, hors ligne.
 Package : **com.tdg.diraasa**.
 
 ## Installer la mise à jour
-L’archive Diraasa_MAJ_2.2.0.tar.gz contient **lib/ complet** et les autres fichiers
+L’archive Diraasa_MAJ_2.2.1.tar.gz contient **lib/ complet** et les autres fichiers
 nécessaires, aux chemins de la racine du projet existant.
 Arrêter flutter run, extraire à côté de pubspec.yaml, puis :
 ```bash
@@ -451,3 +451,41 @@ vise que le doublon du projet, jamais les données de l’application installée
 Les versions Gradle/Kotlin/Java/SDK et les dépendances Flutter restent inchangées.
 notes.db reste v4. Contrôles de données/import/audio et syntaxe Dart exécutés ;
 tests Flutter ajoutés, non exécutés ici. Effectuer une relance complète sur Android.
+
+## Évolution 2.2.1 — appliquer les réglages et renouveler les horaires
+- Icônes aux quatre coins du cadran pour les éloigner du cercle, sans réduire
+  la montre. Les commandes des modals s’appellent Appliquer ; Actualiser reste
+  sous le cadran.
+- Les champs des modals sont des brouillons : les heures de la liste et les
+  alarmes gardent les réglages appliqués. Fermer annule les changements non
+  appliqués et restaure les champs vides. Appliquer un ajustement fonctionne
+  sur le cache, sans connexion et sans changer la date de dernière synchronisation.
+- Aperçu HH:mm à côté de chaque ajustement de prière. Sous Activer l’azan,
+  Ajuster heures des azan ouvre les avances propres aux appels, avec signe -
+  fixe à gauche et aperçu de l’heure. Défauts : Fajr -45, Maghrib -0, autres -15 min.
+  Les ajustements des prières et les avances des appels restent indépendants.
+- Le choix d’activation de l’utilisateur est mémorisé séparément de l’état effectif.
+  Les appels reprennent automatiquement avec des horaires/autorisations utilisables ;
+  un choix désactivé reste désactivé. Un état en attente peut être annulé explicitement.
+- Dernière synchronisation affichée sous Heures de prière. Cache des horaires,
+  localisation et options appliquées conservés sur échec réseau. Si le jour demandé
+  n’est plus dans le cache, la date des horaires réutilisés est indiquée.
+- Renouvellement automatique en arrière-plan via AndroidX WorkManager 2.9.1
+  (version déjà prévue dans le DEV ENV), connexion requise. Vérification périodique
+  et tâche avant expiration ; erreurs réseau réessayées sans effacer le cache.
+  Le mois courant et le suivant sont rechargés avec les derniers réglages validés,
+  sans suivi GPS en arrière-plan. Le cache reste lu hors ligne.
+- Les écritures de réglages et la synchronisation native sont coordonnées pour
+  conserver les choix récents et éviter qu’un ancien écran écrase un cache plus neuf.
+- Notes/auteurs/thèmes/dictionnaire et rappels Zikr/Wird inchangés ; une suspension
+  de l’adhan ne coupe pas une sonnerie de Zikr/Wird ni un aperçu audio.
+
+Relancer complètement flutter run après extraction : cette version active la
+bibliothèque AndroidX WorkManager, sans modifier Gradle/AGP/Kotlin/Java/SDK ni
+ajouter de package Flutter. Les tâches suivent les contraintes réseau/batterie
+Android ; un téléphone éteint ou une application arrêtée de force ne peut pas
+exécuter de travail jusqu’à sa remise en service.
+
+Contrôles exécutés : données/migrations/audio, syntaxe Dart, calculs Dart et JVM,
+compilation Kotlin isolée avec API 36 et WorkManager 2.9.1 (interfaces Flutter
+simulées). Tests Flutter ajoutés mais non exécutés ; APK et essai réel restent à faire.

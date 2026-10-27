@@ -15,10 +15,10 @@ object AzanAlarms {
     fun exact(c:Context)=Build.VERSION.SDK_INT<31||(c.getSystemService(Context.ALARM_SERVICE) as AlarmManager).canScheduleExactAlarms()
     fun notifications(c:Context)=(Build.VERSION.SDK_INT<24||(c.getSystemService(Context.NOTIFICATION_SERVICE) as android.app.NotificationManager).areNotificationsEnabled())&&(Build.VERSION.SDK_INT<33||c.checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS)==PackageManager.PERMISSION_GRANTED)
     fun active(c:Context)=prefs(c).getBoolean("enabled",false)&&exact(c)&&notifications(c)
-    fun status(c:Context):Map<String,Any>{val p=prefs(c);return mapOf("background" to AlarmSupport.background(c),"exact" to exact(c),"notifications" to notifications(c),"enabled" to (p.getBoolean("enabled",false)&&exact(c)&&notifications(c)&&p.getLong("until",0)>System.currentTimeMillis()),"audio" to (p.getString("audio","")?:""),"until" to p.getLong("until",0))}
+    fun status(c:Context):Map<String,Any>{val p=prefs(c);return mapOf("requested" to p.getBoolean("enabled",false),"background" to AlarmSupport.background(c),"exact" to exact(c),"notifications" to notifications(c),"enabled" to (p.getBoolean("enabled",false)&&exact(c)&&notifications(c)&&p.getLong("until",0)>System.currentTimeMillis()),"audio" to (p.getString("audio","")?:""),"until" to p.getLong("until",0))}
     private fun pending(c:Context,index:Int,name:String="",at:Long=0)=PendingIntent.getBroadcast(c,86100+index,Intent(c,AzanReceiver::class.java).apply{action="com.tdg.diraasa.AZAN";putExtra("name",name);putExtra("at",at)},PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
     private fun cancel(c:Context){val manager=c.getSystemService(Context.ALARM_SERVICE) as AlarmManager;for(i in 0 until 320)manager.cancel(pending(c,i))}
-    fun disable(c:Context){cancel(c);prefs(c).edit().putBoolean("enabled",false).commit();c.stopService(Intent(c,AzanService::class.java))}
+    fun disable(c:Context){cancel(c);prefs(c).edit().putBoolean("enabled",false).commit();if(AzanService.activeKind=="adhan")c.stopService(Intent(c,AzanService::class.java))}
     @Synchronized fun configure(c:Context,a:Map<*,*>):Map<String,Any>{
         check(exact(c)&&notifications(c)){"Autorisez les notifications et alarmes exactes"}
         val audio=AlarmSupport.audio(c,a["audio"]?.toString()?:"asset:audio/adhan_1.m4a")
@@ -44,6 +44,6 @@ class AzanReceiver:BroadcastReceiver(){
         if(intent.action=="com.tdg.diraasa.AZAN"){
             if(kotlin.math.abs(System.currentTimeMillis()-intent.getLongExtra("at",0))>5*60*1000)return
             if(AzanAlarms.active(context))try{AzanService.play(context,AzanAlarms.audio(context),intent.getStringExtra("name")?:"أذان")}catch(_:Exception){}
-        }else{val pending=goAsync();Thread{try{AzanAlarms.sync(context);ZikrReminders.sync(context)}catch(_:Exception){}finally{pending.finish()}}.start()}
+        }else{val pending=goAsync();Thread{try{AzanAlarms.sync(context);ZikrReminders.sync(context);PrayerSyncWorker.restoreLatest(context);PrayerSyncWorker.ensure(context)}catch(_:Exception){}finally{pending.finish()}}.start()}
     }
 }

@@ -22,6 +22,8 @@ class MainActivity : FlutterActivity() {
         .replace(Regex("[أإآٱ]"), "ا").replace('ى','ي').lowercase(java.util.Locale.ROOT)
     override fun configureFlutterEngine(engine: FlutterEngine) {
         super.configureFlutterEngine(engine)
+        try{PrayerSyncWorker.ensure(this)}catch(_:Exception){}
+        Thread{try{PrayerSyncWorker.restoreLatest(this)}catch(_:Exception){}}.start()
         val channel = MethodChannel(engine.dartExecutor.binaryMessenger, "tdg.diraasa/data")
         dataChannel = channel
         channel.setMethodCallHandler { call, result ->

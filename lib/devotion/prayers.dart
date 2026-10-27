@@ -1,17 +1,20 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../core/app_core.dart';
 import '../widgets/sacred_text.dart';
 import 'core.dart';
 import 'prayer_clock.dart';
 import 'alarm_controls.dart';
+import 'prayer_settings.dart';
 
 const prayerNames = ['Fajr', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'];
 
 class PrayersPage extends StatefulWidget {
-  const PrayersPage({super.key});
+  const PrayersPage({super.key, this.fetch});
+  final Future<dynamic> Function(Uri)? fetch;
   @override
   State<PrayersPage> createState() => _PrayersPageState();
 }
@@ -35,16 +38,35 @@ class _PrayersPageState extends State<PrayersPage> with WidgetsBindingObserver {
   Set<String> activePrayers = prayerNames.toSet();
   List<AppRecord> days = [];
   DateTime date = DateTime.now();
-  int until = 0;
+  int until = 0, syncedAt = 0;
+  bool adhanWanted = false;
+  AppRecord appliedOptions = {};
+  Map<String, int> azanLeads = Map.of(defaultAzanLeads);
+  final azanDraft = {
+    for (final p in prayerNames)
+      p: SacredController(text: defaultAzanLeads[p].toString()),
+  };
+  bool cacheCheckBusy = false;
+  int lastAutoAttempt = 0;
+
   List<AppRecord> audioChoices = [];
   Timer? ticker;
   bool followToday = true;
   String deviceTimezone = '';
   Map<String, String> appliedSections = {};
-  String sectionValue(String section) =>
-      prayerSectionSignature(options, section);
-  bool sectionDirty(String section) =>
-      appliedSections[section] != sectionValue(section);
+  String sectionValue(String section) => section == 'azanAdjustments'
+      ? jsonEncode({
+          for (final p in prayerNames)
+            p: prayerMinuteValue(azanDraft[p]!.text, azanLeads[p]!),
+        })
+      : prayerSectionSignature(options, section);
+  bool sectionDirty(String section) => section == 'azanAdjustments'
+      ? prayerNames.any(
+          (p) =>
+              azanDraft[p]!.text.trim().isEmpty ||
+              prayerMinuteValue(azanDraft[p]!.text, -999) != azanLeads[p],
+        )
+      : appliedSections[section] != sectionValue(section);
   Map<String, String> get sectionSignatures => {
     for (final section in ['location', 'method', 'adjustments'])
       section: sectionValue(section),
@@ -60,7 +82,10 @@ class _PrayersPageState extends State<PrayersPage> with WidgetsBindingObserver {
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) updateTimezone();
+    if (state == AppLifecycleState.resumed) {
+      updateTimezone();
+      checkNewCache();
+    }
   }
 
   StateSetter? _refreshPanel;
@@ -79,6 +104,7 @@ class _PrayersPageState extends State<PrayersPage> with WidgetsBindingObserver {
 
   Future<void> openPanel(String section) async {
     if (busy || _refreshPanel != null) return;
+    if (section != 'location') restoreDraft(appliedOptions);
     try {
       await showModalBottomSheet<void>(
         context: context,
@@ -104,7 +130,9 @@ class _PrayersPageState extends State<PrayersPage> with WidgetsBindingObserver {
                           Expanded(
                             child: SacredText(
                               dt(
-                                section == 'audio'
+                                section == 'azanAdjustments'
+                                    ? 'adjustAzanTimes'
+                                    : section == 'audio'
                                     ? 'chooseAzan'
                                     : section == 'adjustments'
                                     ? 'offset'
@@ -158,6 +186,12 @@ class _PrayersPageState extends State<PrayersPage> with WidgetsBindingObserver {
     } finally {
       _refreshPanel = null;
       _panelContext = null;
+      if (mounted)
+        updateState(() {
+          restoreDraft(appliedOptions);
+          restoreAzanDraft();
+        });
+      checkNewCache();
     }
   }
 
@@ -241,9 +275,13 @@ class _PrayersPageState extends State<PrayersPage> with WidgetsBindingObserver {
         ];
       case 'adjustments':
         return [
-          for (final p in prayerNames)
-            field(adjustments[p]!, dt(p), number: true),
+          for (final p in prayerNames) adjustmentField(p, false),
           sectionRefresh('adjustments'),
+        ];
+      case 'azanAdjustments':
+        return [
+          for (final p in prayerNames) adjustmentField(p, true),
+          sectionRefresh('azanAdjustments'),
         ];
       case 'audio':
         return [
@@ -296,7 +334,10 @@ class _PrayersPageState extends State<PrayersPage> with WidgetsBindingObserver {
     updateTimezone();
     load();
     ticker = Timer.periodic(const Duration(seconds: 1), (_) {
-      if (DateTime.now().second == 0) updateTimezone();
+      if (DateTime.now().second == 0) {
+        updateTimezone();
+        checkNewCache();
+      }
       if (mounted)
         updateState(() {
           if (followToday) date = DateTime.now();
@@ -312,20 +353,23 @@ class _PrayersPageState extends State<PrayersPage> with WidgetsBindingObserver {
     country.dispose();
     latitude.dispose();
     longitude.dispose();
-    for (final c in adjustments.values) {
+    for (final c in [...adjustments.values, ...azanDraft.values]) {
       c.dispose();
     }
     super.dispose();
   }
 
   Future<void> load() async {
+    if (mounted) updateState(() => busy = true);
     try {
       final catalog = await Store.call('audioCatalog');
+      if (!mounted) return;
       if (catalog is String)
         audioChoices = (jsonDecode(catalog) as List)
             .map((r) => Map<String, dynamic>.from(r as Map))
             .toList();
       final bundle = await DevStore.read('prayerBundle');
+      if (!mounted) return;
       final saved = bundle is Map ? bundle['options'] : null;
       stale = bundle is Map && bundle['stale'] == true;
       if (saved is Map) {
@@ -348,28 +392,43 @@ class _PrayersPageState extends State<PrayersPage> with WidgetsBindingObserver {
               (saved['adjustments'] as Map?)?[p]?.toString() ?? '0';
         }
       }
+      appliedOptions = {
+        ...options,
+        'adjustments': {
+          for (final p in prayerNames)
+            p: prayerMinuteValue(adjustments[p]!.text, 0).toString(),
+        },
+      };
+      if (bundle is Map) {
+        syncedAt = (bundle['syncedAt'] as num?)?.toInt() ?? 0;
+        azanLeads = prayerAzanLeads(bundle['azanLeads'] as Map?);
+      }
+      restoreDraft(appliedOptions);
+      restoreAzanDraft();
       final chosenAudio = await DevStore.read('prayerAudio');
+      if (!mounted) return;
       if (chosenAudio is String && chosenAudio.isNotEmpty) audio = chosenAudio;
       if (audio.isEmpty) audio = "asset:audio/adhan_1.m4a";
       audio = normalizeBundledAudio(audio);
       final cache = bundle is Map ? bundle['days'] : null;
       if (cache is List)
         days = cache.map((r) => Map<String, dynamic>.from(r as Map)).toList();
-      if (bundle is Map && bundle['appliedSections'] is Map) {
-        appliedSections = Map<String, String>.from(
-          bundle['appliedSections'] as Map,
-        );
-      } else if (!stale || days.isEmpty) {
-        appliedSections = sectionSignatures;
-      }
-      stale =
-          days.isEmpty ||
-          ['location', 'method', 'adjustments'].any(sectionDirty);
+      appliedSections = {
+        for (final section in ['location', 'method', 'adjustments'])
+          section: prayerSectionSignature(appliedOptions, section),
+      };
+      stale = days.isEmpty;
       final status = await Store.call('azanStatus');
+      if (!mounted) return;
       if (status is Map) {
         enabled = status['enabled'] == true;
         until = (status['until'] as num?)?.toInt() ?? 0;
       }
+      adhanWanted = bundle is Map && bundle['adhanWanted'] is bool
+          ? bundle['adhanWanted'] as bool
+          : (status is Map ? status['requested'] == true || enabled : enabled);
+      await reconcile();
+      await persistBundle();
     } catch (e) {
       error = e.toString();
     } finally {
@@ -388,24 +447,254 @@ class _PrayersPageState extends State<PrayersPage> with WidgetsBindingObserver {
     'method': method,
     'hanafi': hanafi,
     'audio': audio,
-    'adjustments': {for (final p in prayerNames) p: adjustments[p]!.text},
+    'adjustments': {
+      for (final p in prayerNames)
+        p:
+            int.tryParse(westernDigits(adjustments[p]!.text))?.toString() ??
+            adjustments[p]!.text,
+    },
   };
-  void edited() {
-    if (enabled) {
-      enabled = false;
-      Store.call('azanDisable').catchError((Object e) {
-        if (mounted) _reportError(e);
-        return null;
-      });
-    }
-    updateState(
-      () => stale =
-          days.isEmpty ||
-          ['location', 'method', 'adjustments'].any(sectionDirty),
-    );
+  void restoreDraft(Map source) {
+    if (source.isEmpty) return;
+    city.text = source['city']?.toString() ?? 'Dakar';
+    country.text = source['country']?.toString() ?? 'Senegal';
+    coordinates = source['coordinates'] == true;
+    latitude.text = source['latitude']?.toString() ?? '14.7167';
+    longitude.text = source['longitude']?.toString() ?? '-17.4677';
+    address = source['address']?.toString() ?? '';
+    method = (source['method'] as num?)?.toInt() ?? 3;
+    hanafi = source['hanafi'] == true;
+    final offsets = prayerAppliedOffsets(source);
+    for (final p in prayerNames) adjustments[p]!.text = offsets[p].toString();
   }
 
+  void restoreAzanDraft() {
+    for (final p in prayerNames) azanDraft[p]!.text = azanLeads[p].toString();
+  }
+
+  void restoreEmptyMinutes() {
+    final offsets = prayerAppliedOffsets(appliedOptions);
+    for (final p in prayerNames) {
+      if (adjustments[p]!.text.trim().isEmpty)
+        adjustments[p]!.text = offsets[p].toString();
+      if (azanDraft[p]!.text.trim().isEmpty)
+        azanDraft[p]!.text = azanLeads[p].toString();
+    }
+  }
+
+  void edited() {
+    updateState(() => error = '');
+  }
+
+  Future<void> persistBundle() async {
+    await DevStore.write('prayerBundle', {
+      'options': {
+        ...appliedOptions,
+        'audio': audio,
+        'activePrayers': activePrayers.toList(),
+      },
+      'days': days,
+      'syncedAt': syncedAt,
+      'adhanWanted': adhanWanted,
+      'azanLeads': azanLeads,
+      'appliedSections': appliedSections,
+    });
+    final cached = await DevStore.read('prayerBundle');
+    if (cached is Map &&
+        ((cached['syncedAt'] as num?)?.toInt() ?? 0) > syncedAt) {
+      days = (cached['days'] as List)
+          .map((d) => Map<String, dynamic>.from(d as Map))
+          .toList();
+      syncedAt = (cached['syncedAt'] as num).toInt();
+    }
+  }
+
+  Future<void> checkNewCache() async {
+    if (!mounted || busy || cacheCheckBusy || _panelContext != null) return;
+    cacheCheckBusy = true;
+    try {
+      final raw = await DevStore.read('prayerBundle');
+      if (mounted &&
+          _panelContext == null &&
+          raw is Map &&
+          ((raw['syncedAt'] as num?)?.toInt() ?? 0) > syncedAt)
+        await load();
+      if (mounted &&
+          !busy &&
+          _panelContext == null &&
+          adhanWanted &&
+          !enabled) {
+        await reconcile();
+        if (mounted) updateState(() {});
+      }
+      if (mounted && !busy && _panelContext == null && days.isNotEmpty) {
+        final end = days
+            .map(
+              (d) =>
+                  DateTime.tryParse(
+                    (d['timings'] as Map?)?['Isha']?.toString() ?? '',
+                  )?.millisecondsSinceEpoch ??
+                  0,
+            )
+            .fold<int>(0, (a, b) => a > b ? a : b);
+        if (end > 0 &&
+            end <= DateTime.now().millisecondsSinceEpoch &&
+            DateTime.now().millisecondsSinceEpoch - lastAutoAttempt >=
+                15 * 60 * 1000) {
+          lastAutoAttempt = DateTime.now().millisecondsSinceEpoch;
+          await refresh();
+        }
+      }
+    } catch (_) {
+    } finally {
+      cacheCheckBusy = false;
+    }
+  }
+
+  Future<void> applyPanel(String section) async {
+    if (busy) return;
+    restoreEmptyMinutes();
+    if (form.currentState?.validate() == false) return;
+    if (section == 'location' || section == 'method') {
+      await refresh();
+      return;
+    }
+    if (section != 'adjustments' && section != 'azanAdjustments') return;
+    updateState(() {
+      busy = true;
+      error = '';
+    });
+    final old = appliedOptions, oldLeads = Map<String, int>.from(azanLeads);
+    bool committed = false;
+    try {
+      if (section == 'adjustments') {
+        for (final p in prayerNames) {
+          final v = int.tryParse(westernDigits(adjustments[p]!.text));
+          if (v == null || v.abs() > 120) throw StateError(dt('invalidOffset'));
+        }
+        appliedOptions = {
+          ...appliedOptions,
+          'adjustments': {
+            for (final p in prayerNames)
+              p:
+                  int.tryParse(
+                    westernDigits(adjustments[p]!.text),
+                  )?.toString() ??
+                  adjustments[p]!.text,
+          },
+        };
+      } else {
+        for (final p in prayerNames) {
+          final v = int.tryParse(westernDigits(azanDraft[p]!.text));
+          if (v == null || v < 0 || v > 180)
+            throw StateError(dt('invalidLead'));
+        }
+        azanLeads = {
+          for (final p in prayerNames)
+            p: int.parse(westernDigits(azanDraft[p]!.text)),
+        };
+      }
+      await persistBundle();
+      committed = true;
+      appliedSections = {
+        for (final section in ['location', 'method', 'adjustments'])
+          section: prayerSectionSignature(appliedOptions, section),
+      };
+      await reconcile();
+    } catch (e) {
+      if (!committed) {
+        appliedOptions = old;
+        azanLeads = oldLeads;
+      }
+      _reportError(e);
+    } finally {
+      if (mounted) updateState(() => busy = false);
+    }
+  }
+
+  AppRecord? get displayedDay {
+    final stamp =
+        '${date.day.toString().padLeft(2, '0')}-${date.month.toString().padLeft(2, '0')}-${date.year}';
+    return days
+            .where((d) => (d['date'] as Map?)?['gregorian']?['date'] == stamp)
+            .firstOrNull ??
+        days.lastOrNull;
+  }
+
+  String adjustedTime(String prayer, {bool lead = false, bool draft = false}) {
+    final day = displayedDay;
+    if (day == null) return '—';
+    var minutes = prayerAppliedOffsets(appliedOptions)[prayer] ?? 0;
+    if (draft && !lead) {
+      final value = prayerMinuteValue(adjustments[prayer]!.text, minutes);
+      if (value.abs() <= 120) minutes = value;
+    }
+    if (lead) {
+      var value = draft
+          ? prayerMinuteValue(azanDraft[prayer]!.text, azanLeads[prayer]!)
+          : azanLeads[prayer]!;
+      if (value < 0 || value > 180) value = azanLeads[prayer]!;
+      minutes -= value;
+    }
+    return wallTime((day['timings'] as Map)[prayer]?.toString() ?? '', minutes);
+  }
+
+  Widget adjustmentField(String prayer, bool lead) => Padding(
+    padding: const EdgeInsets.only(bottom: 14),
+    child: Row(
+      children: [
+        Expanded(
+          child: Directionality(
+            textDirection: TextDirection.ltr,
+            child: TextFormField(
+              key: ValueKey('${lead ? 'azan' : 'prayer'}-offset-$prayer'),
+              controller: lead ? azanDraft[prayer] : adjustments[prayer],
+              enabled: !busy,
+              keyboardType: TextInputType.numberWithOptions(signed: !lead),
+              textDirection: TextDirection.ltr,
+              inputFormatters: lead
+                  ? [FilteringTextInputFormatter.allow(RegExp(r'[0-9٠-٩۰-۹]'))]
+                  : null,
+              decoration: InputDecoration(
+                labelText: dt(prayer),
+                prefixIcon: lead
+                    ? const Center(
+                        widthFactor: 1,
+                        child: Text('-', style: TextStyle(fontSize: 22)),
+                      )
+                    : null,
+                prefixIconConstraints: lead
+                    ? const BoxConstraints(minWidth: 32, maxWidth: 32)
+                    : null,
+              ),
+              onChanged: (_) => edited(),
+              validator: (value) {
+                if (value == null || value.trim().isEmpty) return null;
+                final v = int.tryParse(westernDigits(value));
+                return v == null || (lead ? (v < 0 || v > 180) : v.abs() > 120)
+                    ? dt(lead ? 'invalidLead' : 'invalidOffset')
+                    : null;
+              },
+            ),
+          ),
+        ),
+        const SizedBox(width: 16),
+        SizedBox(
+          width: 76,
+          child: SacredText(
+            adjustedTime(prayer, lead: lead, draft: true),
+            key: ValueKey('${lead ? 'azan' : 'prayer'}-preview-$prayer'),
+            textDirection: TextDirection.ltr,
+            textAlign: TextAlign.end,
+            style: const TextStyle(fontSize: 23, fontWeight: FontWeight.w600),
+          ),
+        ),
+      ],
+    ),
+  );
   Future<void> refresh() async {
+    if (busy) return;
+    restoreEmptyMinutes();
     if (form.currentState?.validate() == false) return;
     if (!coordinates &&
         (city.text.trim().isEmpty || country.text.trim().isEmpty)) {
@@ -428,6 +717,9 @@ class _PrayersPageState extends State<PrayersPage> with WidgetsBindingObserver {
       }
     }
     final requestOptions = jsonEncode(options);
+    final requested = Map<String, dynamic>.from(
+      jsonDecode(requestOptions) as Map,
+    );
     final requestSections = sectionSignatures;
     updateState(() {
       busy = true;
@@ -440,37 +732,55 @@ class _PrayersPageState extends State<PrayersPage> with WidgetsBindingObserver {
       for (final month in [DateTime(now.year, now.month), next]) {
         final uri = Uri.https(
           'api.aladhan.com',
-          '/v1/${coordinates ? 'calendar' : 'calendarByCity'}/${month.year}/${month.month}',
+          '/v1/${requested['coordinates'] == true ? 'calendar' : 'calendarByCity'}/${month.year}/${month.month}',
           {
-            if (coordinates)
-              'latitude': latitude.text.trim().replaceAll(',', '.'),
-            if (coordinates)
-              'longitude': longitude.text.trim().replaceAll(',', '.'),
-            if (!coordinates) 'city': city.text.trim(),
-            if (!coordinates) 'country': country.text.trim(),
-            'method': '$method',
-            'school': hanafi ? '1' : '0',
+            if (requested['coordinates'] == true)
+              'latitude': requested['latitude'].toString().trim().replaceAll(
+                ',',
+                '.',
+              ),
+            if (requested['coordinates'] == true)
+              'longitude': requested['longitude'].toString().trim().replaceAll(
+                ',',
+                '.',
+              ),
+            if (requested['coordinates'] != true)
+              'city': requested['city'].toString().trim(),
+            if (requested['coordinates'] != true)
+              'country': requested['country'].toString().trim(),
+            'method': requested['method'].toString(),
+            'school': requested['hanafi'] == true ? '1' : '0',
             'iso8601': 'true',
           },
         );
-        final raw = await fetchJson(uri) as Map;
+        final raw = await (widget.fetch ?? fetchJson)(uri) as Map;
         if (raw['code'] != 200) throw StateError(raw['status'].toString());
         rows.addAll(
           (raw['data'] as List).map((r) => Map<String, dynamic>.from(r as Map)),
         );
       }
       if (rows.isEmpty) throw StateError('No timings');
+      if (!mounted) return;
       if (requestOptions != jsonEncode(options))
         throw StateError(dt('refreshTimes'));
-      await DevStore.write('prayerBundle', {
-        'options': options,
-        'days': rows,
-        'appliedSections': requestSections,
-      });
-      appliedSections = requestSections;
+      if (!mounted) return;
+      final previousOptions = appliedOptions,
+          previousDays = days,
+          previousSynced = syncedAt;
+      appliedOptions = Map<String, dynamic>.from(options);
       days = rows;
+      syncedAt = DateTime.now().millisecondsSinceEpoch;
+      try {
+        await persistBundle();
+      } catch (e) {
+        appliedOptions = previousOptions;
+        days = previousDays;
+        syncedAt = previousSynced;
+        rethrow;
+      }
+      appliedSections = requestSections;
       stale = false;
-      if (enabled) await schedule();
+      await reconcile();
     } catch (e) {
       error = '${dt('networkError')}\n$e';
     } finally {
@@ -478,34 +788,53 @@ class _PrayersPageState extends State<PrayersPage> with WidgetsBindingObserver {
     }
   }
 
-  List<AppRecord> get events => buildPrayerEvents(days, {
-    for (final p in prayerNames)
-      p: int.tryParse(westernDigits(adjustments[p]!.text)) ?? 0,
-  }, enabledPrayers: activePrayers);
-  Future<void> schedule() async {
-    if (!await ensureAlarmReady(context)) return;
+  List<AppRecord> get events => buildPrayerEvents(
+    days,
+    combinedPrayerOffsets(appliedOptions, azanLeads),
+    enabledPrayers: activePrayers,
+  );
+  Future<void> reconcile() async {
     final rows = events;
-    if (audio.isEmpty || rows.isEmpty || stale)
-      throw StateError(dt('chooseAudioFirst'));
+    if (!adhanWanted || rows.isEmpty) {
+      await Store.call('azanDisable');
+      enabled = false;
+      until = 0;
+      return;
+    }
+    final status = await Store.call('azanStatus') as Map;
+    if (status['notifications'] != true ||
+        status['exact'] != true ||
+        status['background'] != true) {
+      await Store.call('azanDisable');
+      enabled = false;
+      return;
+    }
     final configured =
-        await Store.call('azanSchedule', {'audio': audio, 'events': rows})
+        await Store.call('azanSchedule', {
+              'audio': audio,
+              'events': rows,
+              'fromPrayerCache': true,
+            })
             as Map;
     enabled = configured['enabled'] == true;
     until = (configured['until'] as num?)?.toInt() ?? 0;
   }
 
-  Future<void> toggle() async {
+  Future<void> toggle([bool? value]) async {
     if (busy) return;
     updateState(() => busy = true);
+    final oldWanted = adhanWanted;
+    bool committed = false;
     try {
-      if (enabled) {
-        await Store.call('azanDisable');
-        enabled = false;
-      } else {
-        await schedule();
-      }
+      final want = value ?? !adhanWanted;
+      if (want && !await ensureAlarmReady(context)) return;
+      adhanWanted = want;
+      await persistBundle();
+      committed = true;
+      await reconcile();
     } catch (e) {
-      if (mounted) _reportError(e);
+      if (!committed) adhanWanted = oldWanted;
+      _reportError(e);
     } finally {
       if (mounted) updateState(() => busy = false);
     }
@@ -517,7 +846,8 @@ class _PrayersPageState extends State<PrayersPage> with WidgetsBindingObserver {
       if (result is! String) return;
       audio = result;
       await DevStore.write('prayerAudio', audio);
-      if (enabled) await schedule();
+      await persistBundle();
+      await reconcile();
       if (mounted) updateState(() {});
     } catch (e) {
       if (mounted) _reportError(e);
@@ -616,18 +946,18 @@ class _PrayersPageState extends State<PrayersPage> with WidgetsBindingObserver {
     alignment: AlignmentDirectional.centerEnd,
     child: FilledButton.tonalIcon(
       key: ValueKey('refresh-$section'),
-      onPressed: busy || !sectionDirty(section) ? null : refresh,
+      onPressed: busy || !sectionDirty(section)
+          ? null
+          : () => applyPanel(section),
       icon: const Icon(Icons.refresh, size: 18),
-      label: SacredText(dt('refresh')),
+      label: SacredText(dt('apply')),
     ),
   );
   @override
   Widget build(BuildContext context) {
     final stamp =
         '${date.day.toString().padLeft(2, '0')}-${date.month.toString().padLeft(2, '0')}-${date.year}';
-    final current = days
-        .where((r) => (r['date'] as Map)['gregorian']['date'] == stamp)
-        .firstOrNull;
+    final current = displayedDay;
     timezone =
         current?['meta']?['timezone']?.toString() ??
         DateTime.now().timeZoneName;
@@ -661,53 +991,37 @@ class _PrayersPageState extends State<PrayersPage> with WidgetsBindingObserver {
                           Positioned(
                             top: 0,
                             left: 0,
-                            right: 0,
-                            child: Align(
-                              alignment: Alignment.topCenter,
-                              child: panelIcon(
-                                'location',
-                                Icons.location_on_outlined,
-                                'location',
-                              ),
-                            ),
-                          ),
-                          Positioned(
-                            left: 0,
-                            top: 0,
-                            bottom: 0,
-                            child: Align(
-                              alignment: Alignment.centerLeft,
-                              child: panelIcon(
-                                'method',
-                                Icons.calculate_outlined,
-                                'method',
-                              ),
-                            ),
-                          ),
-                          Positioned(
-                            right: 0,
-                            top: 0,
-                            bottom: 0,
-                            child: Align(
-                              alignment: Alignment.centerRight,
-                              child: panelIcon(
-                                'adjustments',
-                                Icons.tune,
-                                'offset',
-                              ),
+                            child: panelIcon(
+                              'location',
+                              Icons.location_on_outlined,
+                              'location',
                             ),
                           ),
                           Positioned(
                             bottom: 0,
                             left: 0,
+                            child: panelIcon(
+                              'method',
+                              Icons.calculate_outlined,
+                              'method',
+                            ),
+                          ),
+                          Positioned(
+                            top: 0,
                             right: 0,
-                            child: Align(
-                              alignment: Alignment.bottomCenter,
-                              child: panelIcon(
-                                'audio',
-                                Icons.volume_up_outlined,
-                                'chooseAzan',
-                              ),
+                            child: panelIcon(
+                              'adjustments',
+                              Icons.tune,
+                              'offset',
+                            ),
+                          ),
+                          Positioned(
+                            bottom: 0,
+                            right: 0,
+                            child: panelIcon(
+                              'audio',
+                              Icons.volume_up_outlined,
+                              'chooseAzan',
                             ),
                           ),
                         ],
@@ -751,6 +1065,7 @@ class _PrayersPageState extends State<PrayersPage> with WidgetsBindingObserver {
                       ),
                       Flexible(
                         child: TextButton.icon(
+                          key: const ValueKey('prayer-global-refresh'),
                           onPressed: busy ? null : refresh,
                           icon: const Icon(Icons.refresh, size: 18),
                           label: SacredText(
@@ -766,15 +1081,15 @@ class _PrayersPageState extends State<PrayersPage> with WidgetsBindingObserver {
               ),
             ),
           ),
-          if (address.isNotEmpty)
+          if ((appliedOptions['address']?.toString() ?? '').isNotEmpty)
             Padding(
               padding: const EdgeInsets.all(12),
               child: SacredText(
-                address,
+                appliedOptions['address'].toString(),
                 style: const TextStyle(fontSize: 13, height: 1.5),
               ),
             ),
-          if (coordinates)
+          if (appliedOptions['coordinates'] == true)
             const Padding(
               padding: EdgeInsets.only(bottom: 8),
               child: SacredText(
@@ -791,6 +1106,17 @@ class _PrayersPageState extends State<PrayersPage> with WidgetsBindingObserver {
               style: Theme.of(context).textTheme.titleLarge,
             ),
           ),
+          SacredText(
+            '${dt('lastSync')}: ${syncedAt == 0 ? '—' : syncLabel(syncedAt)}',
+            key: const ValueKey('prayer-last-sync'),
+            style: const TextStyle(fontSize: 11),
+          ),
+          if (current != null &&
+              (current['date'] as Map)['gregorian']['date'] != stamp)
+            SacredText(
+              '${dt('cachedTimesDate')} ${(current['date'] as Map)['gregorian']['date']}',
+              style: const TextStyle(fontSize: 11),
+            ),
           if (timezone != localZone && days.isNotEmpty)
             SacredText(
               '${dt('prayerTimes')} · $timezone',
@@ -812,36 +1138,25 @@ class _PrayersPageState extends State<PrayersPage> with WidgetsBindingObserver {
                         ? colors.primary
                         : colors.outline,
                   ),
-                  onPressed: () async {
-                    updateState(() {
-                      if (!activePrayers.remove(p)) activePrayers.add(p);
-                    });
-                    await DevStore.write('prayerBundle', {
-                      'options': options,
-                      'days': days,
-                      'stale': stale,
-                      'appliedSections': appliedSections,
-                    });
-                    if (enabled) {
-                      if (events.isEmpty) {
-                        await Store.call('azanDisable');
-                        enabled = false;
-                      } else {
-                        await schedule();
-                      }
-                    }
-                    if (mounted) updateState(() {});
-                  },
+                  onPressed: busy
+                      ? null
+                      : () async {
+                          updateState(() {
+                            if (!activePrayers.remove(p)) activePrayers.add(p);
+                          });
+                          try {
+                            await persistBundle();
+                            await reconcile();
+                          } catch (e) {
+                            _reportError(e);
+                          }
+                          if (mounted) updateState(() {});
+                        },
                 ),
                 title: SacredText(dt(p)),
                 trailing: SacredText(
-                  current == null || stale
-                      ? '—'
-                      : wallTime(
-                          (current['timings'] as Map)[p].toString(),
-                          int.tryParse(westernDigits(adjustments[p]!.text)) ??
-                              0,
-                        ),
+                  adjustedTime(p),
+                  key: ValueKey('prayer-time-$p'),
                   style: const TextStyle(
                     fontSize: 26,
                     fontWeight: FontWeight.w600,
@@ -862,13 +1177,28 @@ class _PrayersPageState extends State<PrayersPage> with WidgetsBindingObserver {
                   SwitchListTile(
                     title: SacredText(dt('activateAzan')),
                     value: enabled,
-                    onChanged: busy ? null : (_) => toggle(),
+                    onChanged: busy ? null : (v) => toggle(v),
                     secondary: Icon(
                       enabled
                           ? Icons.notifications_active
                           : Icons.notifications_off_outlined,
                     ),
                   ),
+                  TextButton(
+                    key: const ValueKey('adjust-azan-times'),
+                    onPressed: busy ? null : () => openPanel('azanAdjustments'),
+                    child: SacredText(dt('adjustAzanTimes')),
+                  ),
+                  if (adhanWanted && !enabled) ...[
+                    SacredText(
+                      dt('azanWaiting'),
+                      style: const TextStyle(fontSize: 12),
+                    ),
+                    TextButton(
+                      onPressed: busy ? null : () => toggle(false),
+                      child: SacredText(dt('cancelAutoResume')),
+                    ),
+                  ],
                   if (enabled && until > 0)
                     SacredText(
                       '${dt('scheduleUntil')} ${DateTime.fromMillisecondsSinceEpoch(until).toLocal()}',
@@ -960,4 +1290,9 @@ String prayerSectionSignature(AppRecord options, String section) {
     default:
       throw ArgumentError.value(section);
   }
+}
+
+String syncLabel(int milliseconds) {
+  final t = DateTime.fromMillisecondsSinceEpoch(milliseconds).toLocal();
+  return '${t.day.toString().padLeft(2, '0')}-${t.month.toString().padLeft(2, '0')}-${t.year} ${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}:${t.second.toString().padLeft(2, '0')}';
 }

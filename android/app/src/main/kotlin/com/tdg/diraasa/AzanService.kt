@@ -13,12 +13,15 @@ class AzanService:Service(){
     private var player:MediaPlayer?=null
     private val handler=android.os.Handler(android.os.Looper.getMainLooper())
     companion object{
-        fun play(c:Context,path:String,name:String,reminder:Boolean=false){val intent=Intent(c,AzanService::class.java).putExtra("audio",path).putExtra("name",name).putExtra("reminder",reminder);if(Build.VERSION.SDK_INT>=26)c.startForegroundService(intent)else c.startService(intent)}
+        @Volatile var activeKind=""
+            private set
+        fun play(c:Context,path:String,name:String,reminder:Boolean=false,preview:Boolean=false){val intent=Intent(c,AzanService::class.java).putExtra("audio",path).putExtra("name",name).putExtra("reminder",reminder).putExtra("kind",if(preview)"preview" else if(reminder)"reminder" else "adhan");if(Build.VERSION.SDK_INT>=26)c.startForegroundService(intent)else c.startService(intent)}
     }
     override fun onBind(intent:Intent?):IBinder?=null
     @Suppress("DEPRECATION")
     override fun onStartCommand(intent:Intent?,flags:Int,startId:Int):Int{
         if(intent?.action=="STOP"){stopSelf();return START_NOT_STICKY}
+        activeKind=intent?.getStringExtra("kind")?:"adhan"
         val channel="diraasa_azan"
         if(Build.VERSION.SDK_INT>=26)(getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager).createNotificationChannel(NotificationChannel(channel,"Diraasa · Azan",NotificationManager.IMPORTANCE_LOW).apply{setSound(null,null)})
         val stop=PendingIntent.getService(this,8521,Intent(this,AzanService::class.java).setAction("STOP"),PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
@@ -42,5 +45,5 @@ class AzanService:Service(){
         return START_NOT_STICKY
     }
     @Suppress("DEPRECATION")
-    override fun onDestroy(){handler.removeCallbacksAndMessages(null);player?.release();player=null;stopForeground(true);super.onDestroy()}
+    override fun onDestroy(){activeKind="";handler.removeCallbacksAndMessages(null);player?.release();player=null;stopForeground(true);super.onDestroy()}
 }

@@ -78,18 +78,22 @@ class DevotionNative(private val activity: Activity) {
                 "azanPreview" -> {
                     val path=AlarmSupport.audio(activity,a["audio"]?.toString() ?: "")
                     check(File(path).isFile) { "Audio manquant" }
-                    AzanService.play(activity,path,"Diraasa · أذان");result.success(true)
+                    AzanService.play(activity,path,"Diraasa · أذان",preview=true);result.success(true)
                 }
                 else -> worker.execute {
                     try {
                         val value:Any? = when(call.method) {
                             "devotionRead" -> activity.getSharedPreferences("diraasa_devotion_v1",Context.MODE_PRIVATE).getString(a["key"].toString(),null)
                             "devotionWrite" -> {
-                                check(activity.getSharedPreferences("diraasa_devotion_v1",Context.MODE_PRIVATE).edit().putString(a["key"].toString(),a["value"].toString()).commit())
+                                if(a["key"]=="prayerBundle")PrayerSyncWorker.writeBundle(activity,a["value"].toString())
+                                else check(activity.getSharedPreferences("diraasa_devotion_v1",Context.MODE_PRIVATE).edit().putString(a["key"].toString(),a["value"].toString()).commit())
                                 true
                             }
                             "remindersConfigure" -> ZikrReminders.configure(activity,a["reminders"] as? List<*>?:emptyList<Any>())
-                            "azanSchedule" -> AzanAlarms.configure(activity,a)
+                            "azanSchedule" -> if(a["fromPrayerCache"]==true)synchronized(PrayerSyncWorker.lock){
+                                val bundle=org.json.JSONObject(activity.getSharedPreferences("diraasa_devotion_v1",Context.MODE_PRIVATE).getString("prayerBundle","{}")?:"{}")
+                                AzanAlarms.configure(activity,mapOf("audio" to (bundle.optJSONObject("options")?.optString("audio")?:a["audio"]),"events" to PrayerSyncData.events(bundle)))
+                            }else AzanAlarms.configure(activity,a)
                             else -> throw IllegalArgumentException("Méthode inconnue")
                         }
                         main.post { result.success(value) }

@@ -1,5 +1,5 @@
 # Diraasa — Fiche technique et historique
-Version application : **2.2.0+34**  
+Version application : **2.2.1+35**  
 Date : **27 octobre 2026**  
 Application Android : **com.tdg.diraasa**  
 Éditeur : Taysir Digital Group — Aliou Mbengue
@@ -481,7 +481,7 @@ deux mesures d’introduction masquée à 233 px et un retour de page introuvabl
   pas de permission CALL_PHONE ni de nouvelle dépendance.
 - Localisation fr/ar/en des nouveaux libellés. Taille de lecture dans les sources.
 - Nouveaux fichiers sources.dart, audio_sources.json, sources_test.dart.
-- Version 2.2.0+34 ; notes.db reste v4, aucun effacement ni migration destructive.
+- Version 2.2.1+35 ; notes.db reste v4, aucun effacement ni migration destructive.
 - Contrôles d’intégrité, données et syntaxe ; tests Flutter non exécutés ici.
 
 ### 2.1.3 — Espace spirituel dans Cultes
@@ -532,15 +532,42 @@ deux mesures d’introduction masquée à 233 px et un retour de page introuvabl
 - Schéma notes v4 inchangé ; seule une préférence hadithBook est ajoutée.
 - Vérifications Python et syntaxe Dart ; tests Flutter et compilation APK non exécutés ici.
 
+### 2.2.1 — brouillons de réglages, avances et synchronisation automatique
+- appliedOptions indépendant des contrôleurs de saisie ; fermeture du modal =>
+  restauration, champs vides restaurés, validation avant Appliquer. Aucun calcul
+  d’heure principale ni événement natif à partir d’un brouillon non confirmé.
+- Ajustement des prières sur cache et aperçus ; avances d’azan séparées, défauts
+  Fajr 45 / Dhuhr 15 / Asr 15 / Maghrib 0 / Isha 15 minutes avant l’heure ajustée.
+- prayerBundle ajoute syncedAt, adhanWanted, azanLeads sans clear ni migration SQL.
+  Choix activé/désactivé conservé indépendamment de l’état effectif et repris avec
+  les horaires disponibles ; dernier cache/localisation toujours utilisables.
+- Dernière synchronisation et date de cache de secours affichées ; une modification
+  locale d’ajustement ne falsifie pas l’horodatage d’une synchronisation réseau.
+- PrayerSyncWorker (WorkManager 2.9.1 du DEV ENV), tâche avant expiration et
+  contrôle périodique 12 h, réseau connecté et réessais exponentiels. Téléchargement
+  des mois courant/suivant avec réglages appliqués, validation puis commit atomique.
+- Classe du Worker conservée par R8 pour les tâches persistantes entre mises à jour.
+- Protection contre cache plus récent et choix modifiés pendant un téléchargement ;
+  azanSchedule peut dériver ses événements du cache natif validé. Calendrier ISO,
+  ajustements et chiffres arabes cohérents entre Dart et Kotlin.
+- Replanification depuis le cache au lancement/redémarrage et après mise à jour des
+  données. Séparation de lecture adhan / rappel / aperçu pour les arrêts de service.
+- Ajout permission normale ACCESS_NETWORK_STATE ; pas de GPS en arrière-plan.
+- Schéma notes.db v4 inchangé. Versions Gradle/AGP/Kotlin/Java/SDK inchangées.
+- Nouveaux fichiers prayer_settings.dart, PrayerSyncWorker.kt, tests des brouillons,
+  de l’activation/cache, PrayerSyncDataCheck.kt et prayer_settings_check.dart.
+- Contrôles locaux, calculs et compilation Kotlin isolée exécutés ; Flutter/tests/APK
+  non exécutés ici, essais Android nécessaires pour réseau coupé/reprise et alarmes.
+
 ## 4. Fichiers de cette mise à jour
-Archive cumulative depuis 1.0.1 : **Diraasa_MAJ_2.2.0.tar.gz**.
+Archive cumulative depuis 1.0.1 : **Diraasa_MAJ_2.2.1.tar.gz**.
 - lib/ complet, dont lib/devotion/ et les modifications de navigation/rendu.
 - Sources Kotlin de MainActivity, NotesDatabase, DevotionNative, AzanAlarms,
   AzanService et ZikrReminders ; manifestes main/debug/profile.
 - assets/devotion/ : données importées ; assets/fonts/ : polices fournies.
 - source/devotion/ : SQL originaux, rapports et documentation de provenance.
 - pubspec.yaml, test/ et outils de validation/import modifiés.
-- README.md, FICHE_TECHNIQUE.md et MANIFEST_MAJ_2.2.0.txt.
+- README.md, FICHE_TECHNIQUE.md et MANIFEST_MAJ_2.2.1.txt.
 Aucune base utilisateur n’est incluse. Les nouvelles données sont des assets distincts.
 
 ## 4 bis. Préférences : format et évolution

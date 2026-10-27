@@ -26,6 +26,43 @@ String normalizeBundledAudio(String value) =>
     value == 'asset:audio/adhan_2.m4a' ? serigneAdhanAsset : value;
 
 const devotionLabels = <String, List<String>>{
+  'apply': ['Appliquer', 'تطبيق', 'Apply'],
+  'adjustAzanTimes': [
+    'Ajuster heures des azan',
+    'تعديل أوقات الأذان',
+    'Adjust Adhan times',
+  ],
+  'lastSync': [
+    'Dernière synchronisation',
+    'آخر مزامنة',
+    'Last synchronization',
+  ],
+  'cachedTimesDate': [
+    'Horaires mémorisés du',
+    'المواقيت المحفوظة بتاريخ',
+    'Cached times for',
+  ],
+  'azanWaiting': [
+    'Reprise automatique dès que les horaires et autorisations sont disponibles.',
+    'استئناف تلقائي عند توفر المواقيت والأذونات.',
+    'Resumes automatically when times and permissions are available.',
+  ],
+  'cancelAutoResume': [
+    'Annuler la reprise automatique',
+    'إلغاء الاستئناف التلقائي',
+    'Cancel automatic resumption',
+  ],
+  'invalidOffset': [
+    'Entrez un nombre entier entre -120 et 120.',
+    'أدخل عدداً صحيحاً بين -120 و120.',
+    'Enter an integer from -120 to 120.',
+  ],
+  'invalidLead': [
+    'Entrez un nombre entier entre 0 et 180.',
+    'أدخل عدداً صحيحاً بين 0 و180.',
+    'Enter an integer from 0 to 180.',
+  ],
+
   'hadith': [
     'Paroles du Prophète (psl)',
     'أحاديث النبي ﷺ',
@@ -90,9 +127,9 @@ const devotionLabels = <String, List<String>>{
     'Hafs and Warsh texts and their KFGQPC fonts are the files supplied for Diraasa. Each reading uses its corresponding font and preserves its source numbering.',
   ],
   'prayerReferenceText': [
-    'Les horaires sont calculés par AlAdhan selon le lieu, la méthode, le calcul de Asr et les ajustements choisis. Le fuseau des horaires est celui du lieu. Vérifiez les horaires avec votre mosquée et actualisez avant la fin de la période mémorisée.',
-    'تحسب المواقيت عبر AlAdhan وفق المكان وطريقة الحساب وحساب العصر والتعديلات المختارة. المنطقة الزمنية للمواقيت تخص المكان. راجع المواقيت مع مسجدك وحدّثها قبل انتهاء الفترة المحفوظة.',
-    'Times are calculated by AlAdhan using the selected location, method, Asr calculation and adjustments. Timings use the location’s timezone. Check with your mosque and refresh before the cached period ends.',
+    'Les horaires sont calculés par AlAdhan selon le lieu, la méthode, le calcul de Asr et les ajustements choisis. Le fuseau des horaires est celui du lieu. Vérifiez les horaires avec votre mosquée et les horaires se renouvellent automatiquement avec une connexion.',
+    'تحسب المواقيت عبر AlAdhan وفق المكان وطريقة الحساب وحساب العصر والتعديلات المختارة. المنطقة الزمنية للمواقيت تخص المكان. راجع المواقيت مع مسجدك وتتجدد المواقيت تلقائياً عند توفر اتصال.',
+    'Times are calculated by AlAdhan using the selected location, method, Asr calculation and adjustments. Timings use the location’s timezone. Check with your mosque and times renew automatically when connected.',
   ],
   'audioReferenceText': [
     'Les adhans ont été fournis pour cette application. Les signaux de rappel sont issus de créations publiées sous CC0 ; leurs auteurs et sources figurent ci-dessous.',
@@ -345,9 +382,9 @@ const devotionLabels = <String, List<String>>{
     'Scheduled through',
   ],
   'prayerNotice': [
-    'Horaires calculés à vérifier avec votre mosquée. Actualisez avant la fin de la période programmée. L’audio dépend du volume des alarmes et des restrictions Android.',
-    'مواقيت محسوبة تُراجع مع المسجد. حدّثها قبل نهاية الفترة المجدولة. الصوت مرتبط بمستوى صوت المنبه وقيود أندرويد.',
-    'Calculated times: verify with your mosque. Refresh before the scheduled period ends. Audio depends on alarm volume and Android restrictions.',
+    'Horaires calculés à vérifier avec votre mosquée. Les horaires se renouvellent automatiquement avec une connexion. L’audio dépend du volume des alarmes et des restrictions Android.',
+    'مواقيت محسوبة تُراجع مع المسجد. تتجدد المواقيت تلقائياً عند توفر اتصال. الصوت مرتبط بمستوى صوت المنبه وقيود أندرويد.',
+    'Calculated times: verify with your mosque. Times renew automatically when a connection is available. Audio depends on alarm volume and Android restrictions.',
   ],
   'savedOffline': [
     'Données mémorisées sur cet appareil',

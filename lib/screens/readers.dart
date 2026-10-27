@@ -278,7 +278,7 @@ class About extends StatelessWidget {
           const DonationsSection(),
           const SizedBox(height: 24),
           const SacredText(
-            '2.2.0 · © 2026 Taysir Digital Group',
+            '2.2.1 · © 2026 Taysir Digital Group',
             textAlign: TextAlign.center,
           ),
         ],
