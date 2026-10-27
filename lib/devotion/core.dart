@@ -19,7 +19,35 @@ String dt(String key) {
             : 0];
 }
 
+const serigneAdhanName =
+    'Serigne Mbacké Fall - 🇸🇳 Senegal المسجد طوبي، السنغال';
+const serigneAdhanAsset = 'asset:audio/$serigneAdhanName.m4a';
+String normalizeBundledAudio(String value) =>
+    value == 'asset:audio/adhan_2.m4a' ? serigneAdhanAsset : value;
+
 const devotionLabels = <String, List<String>>{
+  'hadith': [
+    'Paroles du Prophète (psl)',
+    'أحاديث النبي ﷺ',
+    'Sayings of the Prophet (PBUH)',
+  ],
+  'hadithSearch': [
+    'Texte, référence ou numéro du hadith…',
+    'نص أو مرجع أو رقم الحديث…',
+    'Text, reference or hadith number…',
+  ],
+  'hadithNumber': ['Hadith', 'الحديث', 'Hadith'],
+  'hadithReferences': [
+    'Références des hadiths',
+    'مصادر الأحاديث',
+    'Hadith references',
+  ],
+  'hadithReferenceText': [
+    'Recueils issus des fichiers fournis : صحيح البخاري (7 105 entrées) et صحيح مسلم (5 527 entrées). Les variantes et références sont conservées. Les numéros sont ceux de la source ; une entrée de Muslim est sans numéro et reste signalée ainsi.',
+    'المجموعتان من الملفات المرفقة: صحيح البخاري (7105 مدخلات) وصحيح مسلم (5527 مدخلاً). حُفظت الروايات والمراجع وأرقام المصدر. يوجد مدخل واحد في مسلم بلا رقم ولم يُضف له رقم.',
+    'Collections imported from the supplied files: Sahih al-Bukhari (7,105 entries) and Sahih Muslim (5,527 entries). Variants and original references are preserved. One Muslim entry has no source number; no number was invented.',
+  ],
+
   'chooseAlarmSound': [
     'Choisir un son d’alarme',
     'اختيار صوت المنبه',

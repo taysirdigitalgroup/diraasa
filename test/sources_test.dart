@@ -56,7 +56,7 @@ void main() {
     expect(find.text('فوائد الذكر'), findsOneWidget);
     expect(find.text('مرجع الفضائل'), findsOneWidget);
   });
-  testWidgets('Sources : cinq accès de référence', (tester) async {
+  testWidgets('Sources : six accès de référence', (tester) async {
     await tester.pumpWidget(
       const MaterialApp(
         home: Scaffold(body: SingleChildScrollView(child: SourcesSection())),
@@ -66,6 +66,7 @@ void main() {
       'dictionaryReferences',
       'hisnReferences',
       'quranReferences',
+      'hadithReferences',
       'prayerReferences',
       'audioReferences',
     ])

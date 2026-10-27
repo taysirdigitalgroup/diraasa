@@ -1,5 +1,5 @@
 # Diraasa — Fiche technique et historique
-Version application : **2.1.6+33**  
+Version application : **2.2.0+34**  
 Date : **27 octobre 2026**  
 Application Android : **com.tdg.diraasa**  
 Éditeur : Taysir Digital Group — Aliou Mbengue
@@ -481,7 +481,7 @@ deux mesures d’introduction masquée à 233 px et un retour de page introuvabl
   pas de permission CALL_PHONE ni de nouvelle dépendance.
 - Localisation fr/ar/en des nouveaux libellés. Taille de lecture dans les sources.
 - Nouveaux fichiers sources.dart, audio_sources.json, sources_test.dart.
-- Version 2.1.6+33 ; notes.db reste v4, aucun effacement ni migration destructive.
+- Version 2.2.0+34 ; notes.db reste v4, aucun effacement ni migration destructive.
 - Contrôles d’intégrité, données et syntaxe ; tests Flutter non exécutés ici.
 
 ### 2.1.3 — Espace spirituel dans Cultes
@@ -513,15 +513,34 @@ deux mesures d’introduction masquée à 233 px et un retour de page introuvabl
 - Limite de sonnerie des rappels à 30 s maintenue, horaires de prière inchangés.
 - Syntaxe Dart vérifiée ; tests Flutter non exécutés ici. Aucun changement de base.
 
+### 2.2.0 — hadiths, icônes de configuration et nom d’azan
+- Import SQL Bukhari (7105) / Muslim (5527) en assets JSON, ids de lignes stables,
+  numéros source et variantes conservés ; un numéro Muslim absent non inventé.
+- Page HadithPage : choix de livre persistant, compute pour le décodage/index,
+  pagination 40, recherche adaptative et numérique, lecture/copier/références grises.
+- Carte sous Coran dans Espace spirituel ; référence ajoutée aux infos de l’app.
+- Réglages de prières dans quatre modals déclenchés par icônes autour du cadran.
+  Suppression des dépliants, Form uniquement dans le modal, synchronisation des
+  changements et opérations asynchrones entre page et modal ; validation conservée.
+- Test différé et activation d’azan maintenus sous les horaires.
+- Fichier/label Serigne Mbacké Fall renommés ; alias natif et affichage acceptent
+  l’ancien id asset:audio/adhan_2.m4a. Nettoyage optionnel du doublon de projet
+  uniquement après comparaison SHA-256 ; aucun fichier utilisateur touché.
+- Assets audio non réencodés ; identifiants des notes, rappels et compteurs conservés.
+- Nouveaux fichiers hadith.dart, test/hadith_test.dart, tools/import_hadith.py,
+  check_hadith.py, cleanup_legacy_adhan.py, source/hadith/ et deux assets JSON.
+- Schéma notes v4 inchangé ; seule une préférence hadithBook est ajoutée.
+- Vérifications Python et syntaxe Dart ; tests Flutter et compilation APK non exécutés ici.
+
 ## 4. Fichiers de cette mise à jour
-Archive cumulative depuis 1.0.1 : **Diraasa_MAJ_2.1.6.tar.gz**.
+Archive cumulative depuis 1.0.1 : **Diraasa_MAJ_2.2.0.tar.gz**.
 - lib/ complet, dont lib/devotion/ et les modifications de navigation/rendu.
 - Sources Kotlin de MainActivity, NotesDatabase, DevotionNative, AzanAlarms,
   AzanService et ZikrReminders ; manifestes main/debug/profile.
 - assets/devotion/ : données importées ; assets/fonts/ : polices fournies.
 - source/devotion/ : SQL originaux, rapports et documentation de provenance.
 - pubspec.yaml, test/ et outils de validation/import modifiés.
-- README.md, FICHE_TECHNIQUE.md et MANIFEST_MAJ_2.1.6.txt.
+- README.md, FICHE_TECHNIQUE.md et MANIFEST_MAJ_2.2.0.txt.
 Aucune base utilisateur n’est incluse. Les nouvelles données sont des assets distincts.
 
 ## 4 bis. Préférences : format et évolution

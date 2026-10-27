@@ -5,6 +5,9 @@ from pathlib import Path
 import json, subprocess,sys,tarfile,tempfile
 r=Path(__file__).resolve().parents[1];folder=r/'android/app/src/main/assets/audio'
 catalog=json.loads((folder/'catalog.json').read_text());assert len(catalog)==8
+serigne='Serigne Mbacké Fall - 🇸🇳 Senegal المسجد طوبي، السنغال'
+assert catalog[1]['label']==serigne and Path(catalog[1]['id']).name==serigne+'.m4a'
+
 
 def probe(path):
  return json.loads(subprocess.check_output(['ffprobe','-v','quiet','-show_streams','-show_format','-of','json',str(path)]))

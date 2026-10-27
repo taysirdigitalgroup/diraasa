@@ -52,7 +52,7 @@ class _PrayersPageState extends State<PrayersPage> with WidgetsBindingObserver {
   Future<void> updateTimezone() async {
     try {
       final zone = await Store.call('localTimezone');
-      if (mounted && zone is String) setState(() => deviceTimezone = zone);
+      if (mounted && zone is String) updateState(() => deviceTimezone = zone);
     } catch (_) {
       /* DateTime supplies a local fallback. */
     }
@@ -63,6 +63,232 @@ class _PrayersPageState extends State<PrayersPage> with WidgetsBindingObserver {
     if (state == AppLifecycleState.resumed) updateTimezone();
   }
 
+  StateSetter? _refreshPanel;
+  BuildContext? _panelContext;
+  void updateState(VoidCallback change) {
+    if (!mounted) return;
+    setState(change);
+    if (_panelContext?.mounted == true) _refreshPanel?.call(() {});
+  }
+
+  void _reportError(Object value) {
+    if (!mounted) return;
+    updateState(() => error = value.toString());
+    if (_panelContext?.mounted != true) errorMessage(context, value);
+  }
+
+  Future<void> openPanel(String section) async {
+    if (busy || _refreshPanel != null) return;
+    try {
+      await showModalBottomSheet<void>(
+        context: context,
+        isScrollControlled: true,
+        useSafeArea: true,
+        showDragHandle: true,
+        builder: (sheet) => StatefulBuilder(
+          builder: (panel, setPanelState) {
+            _refreshPanel = setPanelState;
+            _panelContext = panel;
+            return FractionallySizedBox(
+              heightFactor: .9,
+              child: Padding(
+                padding: EdgeInsets.only(
+                  bottom: MediaQuery.viewInsetsOf(panel).bottom,
+                ),
+                child: Column(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 0, 8, 12),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: SacredText(
+                              dt(
+                                section == 'audio'
+                                    ? 'chooseAzan'
+                                    : section == 'adjustments'
+                                    ? 'offset'
+                                    : section,
+                              ),
+                              style: Theme.of(panel).textTheme.titleLarge,
+                            ),
+                          ),
+                          IconButton(
+                            tooltip: tr('close'),
+                            onPressed: () => Navigator.pop(panel),
+                            icon: const Icon(Icons.close),
+                          ),
+                        ],
+                      ),
+                    ),
+                    if (busy) const LinearProgressIndicator(),
+                    if (error.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 8,
+                        ),
+                        child: SacredText(
+                          error,
+                          style: TextStyle(
+                            color: Theme.of(panel).colorScheme.error,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ),
+                    Expanded(
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.all(20),
+                        child: Form(
+                          key: form,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: panelFields(section, panel),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        ),
+      );
+    } finally {
+      _refreshPanel = null;
+      _panelContext = null;
+    }
+  }
+
+  List<Widget> panelFields(String section, BuildContext panel) {
+    switch (section) {
+      case 'location':
+        return [
+          FilledButton.tonalIcon(
+            onPressed: busy ? null : detect,
+            icon: const Icon(Icons.gps_fixed),
+            label: SacredText(dt('detectLocation')),
+          ),
+          if (address.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              child: SacredText(address),
+            ),
+          SwitchListTile(
+            title: SacredText(dt('coordinatesMode')),
+            value: coordinates,
+            onChanged: busy
+                ? null
+                : (v) {
+                    coordinates = v;
+                    edited();
+                  },
+          ),
+          if (coordinates) ...[
+            field(latitude, dt('latitude'), number: true),
+            field(longitude, dt('longitude'), number: true),
+          ] else ...[
+            field(city, dt('city')),
+            field(country, dt('country')),
+          ],
+          sectionRefresh('location'),
+        ];
+      case 'method':
+        return [
+          DropdownButtonFormField<int>(
+            key: ValueKey('prayer-method-$method'),
+            initialValue: method,
+            isExpanded: true,
+            decoration: InputDecoration(labelText: dt('method')),
+            items:
+                const <int, String>{
+                      1: 'Karachi',
+                      2: 'ISNA',
+                      3: 'Muslim World League',
+                      4: 'Umm al-Qura',
+                      5: 'Egypt',
+                      12: 'UOIF',
+                      21: 'Morocco',
+                    }.entries
+                    .map(
+                      (e) => DropdownMenuItem(
+                        value: e.key,
+                        child: SacredText(e.value),
+                      ),
+                    )
+                    .toList(),
+            onChanged: busy
+                ? null
+                : (v) {
+                    if (v != null) {
+                      method = v;
+                      edited();
+                    }
+                  },
+          ),
+          SwitchListTile(
+            title: SacredText(dt('school')),
+            value: hanafi,
+            onChanged: busy
+                ? null
+                : (v) {
+                    hanafi = v;
+                    edited();
+                  },
+          ),
+          sectionRefresh('method'),
+        ];
+      case 'adjustments':
+        return [
+          for (final p in prayerNames)
+            field(adjustments[p]!, dt(p), number: true),
+          sectionRefresh('adjustments'),
+        ];
+      case 'audio':
+        return [
+          FilledButton.tonalIcon(
+            onPressed: busy ? null : chooseAudio,
+            icon: const Icon(Icons.library_music),
+            label: SacredText(dt('chooseAzan')),
+          ),
+          const SizedBox(height: 12),
+          SacredText(
+            audioChoices
+                    .where((r) => r['id'] == audio)
+                    .firstOrNull?['label']
+                    ?.toString() ??
+                dt('phoneAudio'),
+          ),
+          Row(
+            children: [
+              Expanded(
+                child: TextButton(
+                  onPressed: preview,
+                  child: SacredText(dt('testAudio')),
+                ),
+              ),
+              Expanded(
+                child: TextButton(
+                  onPressed: () => Store.call('azanStop'),
+                  child: SacredText(dt('stopAudio')),
+                ),
+              ),
+            ],
+          ),
+        ];
+      default:
+        return [];
+    }
+  }
+
+  Widget panelIcon(String section, IconData icon, String title) =>
+      IconButton.filledTonal(
+        key: ValueKey('prayer-panel-$section'),
+        tooltip: dt(title),
+        onPressed: busy ? null : () => openPanel(section),
+        icon: Icon(icon),
+      );
   @override
   void initState() {
     super.initState();
@@ -72,7 +298,7 @@ class _PrayersPageState extends State<PrayersPage> with WidgetsBindingObserver {
     ticker = Timer.periodic(const Duration(seconds: 1), (_) {
       if (DateTime.now().second == 0) updateTimezone();
       if (mounted)
-        setState(() {
+        updateState(() {
           if (followToday) date = DateTime.now();
         });
     });
@@ -125,6 +351,7 @@ class _PrayersPageState extends State<PrayersPage> with WidgetsBindingObserver {
       final chosenAudio = await DevStore.read('prayerAudio');
       if (chosenAudio is String && chosenAudio.isNotEmpty) audio = chosenAudio;
       if (audio.isEmpty) audio = "asset:audio/adhan_1.m4a";
+      audio = normalizeBundledAudio(audio);
       final cache = bundle is Map ? bundle['days'] : null;
       if (cache is List)
         days = cache.map((r) => Map<String, dynamic>.from(r as Map)).toList();
@@ -146,7 +373,7 @@ class _PrayersPageState extends State<PrayersPage> with WidgetsBindingObserver {
     } catch (e) {
       error = e.toString();
     } finally {
-      if (mounted) setState(() => busy = false);
+      if (mounted) updateState(() => busy = false);
     }
   }
 
@@ -167,11 +394,11 @@ class _PrayersPageState extends State<PrayersPage> with WidgetsBindingObserver {
     if (enabled) {
       enabled = false;
       Store.call('azanDisable').catchError((Object e) {
-        if (mounted) errorMessage(context, e);
+        if (mounted) _reportError(e);
         return null;
       });
     }
-    setState(
+    updateState(
       () => stale =
           days.isEmpty ||
           ['location', 'method', 'adjustments'].any(sectionDirty),
@@ -179,25 +406,30 @@ class _PrayersPageState extends State<PrayersPage> with WidgetsBindingObserver {
   }
 
   Future<void> refresh() async {
-    if (!form.currentState!.validate()) return;
+    if (form.currentState?.validate() == false) return;
+    if (!coordinates &&
+        (city.text.trim().isEmpty || country.text.trim().isEmpty)) {
+      _reportError(dt('required'));
+      return;
+    }
     if (coordinates) {
       final lat = double.tryParse(latitude.text.replaceAll(',', '.')),
           lon = double.tryParse(longitude.text.replaceAll(',', '.'));
       if (lat == null || lon == null || lat.abs() > 90 || lon.abs() > 180) {
-        errorMessage(context, dt('required'));
+        _reportError(dt('required'));
         return;
       }
     }
     for (final c in adjustments.values) {
       final n = int.tryParse(westernDigits(c.text));
       if (n == null || n.abs() > 120) {
-        errorMessage(context, dt('invalidNumber'));
+        _reportError(dt('invalidNumber'));
         return;
       }
     }
     final requestOptions = jsonEncode(options);
     final requestSections = sectionSignatures;
-    setState(() {
+    updateState(() {
       busy = true;
       error = '';
     });
@@ -242,7 +474,7 @@ class _PrayersPageState extends State<PrayersPage> with WidgetsBindingObserver {
     } catch (e) {
       error = '${dt('networkError')}\n$e';
     } finally {
-      if (mounted) setState(() => busy = false);
+      if (mounted) updateState(() => busy = false);
     }
   }
 
@@ -264,7 +496,7 @@ class _PrayersPageState extends State<PrayersPage> with WidgetsBindingObserver {
 
   Future<void> toggle() async {
     if (busy) return;
-    setState(() => busy = true);
+    updateState(() => busy = true);
     try {
       if (enabled) {
         await Store.call('azanDisable');
@@ -273,9 +505,9 @@ class _PrayersPageState extends State<PrayersPage> with WidgetsBindingObserver {
         await schedule();
       }
     } catch (e) {
-      if (mounted) errorMessage(context, e);
+      if (mounted) _reportError(e);
     } finally {
-      if (mounted) setState(() => busy = false);
+      if (mounted) updateState(() => busy = false);
     }
   }
 
@@ -286,9 +518,9 @@ class _PrayersPageState extends State<PrayersPage> with WidgetsBindingObserver {
       audio = result;
       await DevStore.write('prayerAudio', audio);
       if (enabled) await schedule();
-      if (mounted) setState(() {});
+      if (mounted) updateState(() {});
     } catch (e) {
-      if (mounted) errorMessage(context, e);
+      if (mounted) _reportError(e);
     }
   }
 
@@ -303,13 +535,13 @@ class _PrayersPageState extends State<PrayersPage> with WidgetsBindingObserver {
       }
       await Store.call('azanPreview', {'audio': audio});
     } catch (e) {
-      if (mounted) errorMessage(context, e);
+      if (mounted) _reportError(e);
     }
   }
 
   Future<void> detect() async {
     if (busy) return;
-    setState(() => busy = true);
+    updateState(() => busy = true);
     try {
       final pos = await Store.call('detectLocation') as Map;
       if (!mounted) return;
@@ -351,9 +583,9 @@ class _PrayersPageState extends State<PrayersPage> with WidgetsBindingObserver {
       coordinates = true;
       edited();
     } catch (e) {
-      if (mounted) errorMessage(context, e);
+      if (mounted) _reportError(e);
     } finally {
-      if (mounted) setState(() => busy = false);
+      if (mounted) updateState(() => busy = false);
     }
   }
 
@@ -362,6 +594,7 @@ class _PrayersPageState extends State<PrayersPage> with WidgetsBindingObserver {
         padding: const EdgeInsets.only(bottom: 12),
         child: TextFormField(
           controller: c,
+          enabled: !busy,
           textDirection: number ? TextDirection.ltr : direction(c.text),
           keyboardType: number
               ? const TextInputType.numberWithOptions(
@@ -404,319 +637,257 @@ class _PrayersPageState extends State<PrayersPage> with WidgetsBindingObserver {
         : deviceTimezone;
     return Scaffold(
       appBar: AppBar(title: SacredText(dt('prayers'))),
-      body: Form(
-        key: form,
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            Card(
-              color: colors.primaryContainer,
-              child: Padding(
-                padding: const EdgeInsets.all(18),
-                child: Column(
-                  children: [
-                    ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 280),
-                      child: const PrayerClock(),
-                    ),
-                    SacredText(
-                      '${DateTime.now().hour.toString().padLeft(2, '0')}:${DateTime.now().minute.toString().padLeft(2, '0')} · ${dt('localTime')}',
-                      style: Theme.of(context).textTheme.labelSmall,
-                    ),
-                    TextButton.icon(
-                      icon: const Icon(Icons.calendar_month),
-                      label: SacredText('$stamp · $localZone'),
-                      onPressed: () async {
-                        final picked = await showDatePicker(
-                          context: context,
-                          initialDate: date,
-                          firstDate: DateTime(2020),
-                          lastDate: DateTime(2100),
-                        );
-                        if (picked != null && mounted)
-                          setState(() {
-                            date = picked;
-                            followToday = false;
-                          });
-                      },
-                    ),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Flexible(
-                          child: TextButton.icon(
-                            onPressed: busy ? null : detect,
-                            icon: const Icon(Icons.my_location, size: 18),
-                            label: SacredText(
-                              dt('location'),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
+      body: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          Card(
+            color: colors.primaryContainer,
+            child: Padding(
+              padding: const EdgeInsets.all(18),
+              child: Column(
+                children: [
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 350),
+                    child: AspectRatio(
+                      aspectRatio: 1,
+                      child: Stack(
+                        children: [
+                          const Positioned.fill(
+                            child: Padding(
+                              padding: EdgeInsets.all(30),
+                              child: PrayerClock(),
                             ),
                           ),
-                        ),
-                        Flexible(
-                          child: TextButton.icon(
-                            onPressed: busy ? null : refresh,
-                            icon: const Icon(Icons.refresh, size: 18),
-                            label: SacredText(
-                              dt('refresh'),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
+                          Positioned(
+                            top: 0,
+                            left: 0,
+                            right: 0,
+                            child: Align(
+                              alignment: Alignment.topCenter,
+                              child: panelIcon(
+                                'location',
+                                Icons.location_on_outlined,
+                                'location',
+                              ),
                             ),
                           ),
-                        ),
-                      ],
+                          Positioned(
+                            left: 0,
+                            top: 0,
+                            bottom: 0,
+                            child: Align(
+                              alignment: Alignment.centerLeft,
+                              child: panelIcon(
+                                'method',
+                                Icons.calculate_outlined,
+                                'method',
+                              ),
+                            ),
+                          ),
+                          Positioned(
+                            right: 0,
+                            top: 0,
+                            bottom: 0,
+                            child: Align(
+                              alignment: Alignment.centerRight,
+                              child: panelIcon(
+                                'adjustments',
+                                Icons.tune,
+                                'offset',
+                              ),
+                            ),
+                          ),
+                          Positioned(
+                            bottom: 0,
+                            left: 0,
+                            right: 0,
+                            child: Align(
+                              alignment: Alignment.bottomCenter,
+                              child: panelIcon(
+                                'audio',
+                                Icons.volume_up_outlined,
+                                'chooseAzan',
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ],
-                ),
+                  ),
+                  SacredText(
+                    '${DateTime.now().hour.toString().padLeft(2, '0')}:${DateTime.now().minute.toString().padLeft(2, '0')} · ${dt('localTime')}',
+                    style: Theme.of(context).textTheme.labelSmall,
+                  ),
+                  TextButton.icon(
+                    icon: const Icon(Icons.calendar_month),
+                    label: SacredText('$stamp · $localZone'),
+                    onPressed: () async {
+                      final picked = await showDatePicker(
+                        context: context,
+                        initialDate: date,
+                        firstDate: DateTime(2020),
+                        lastDate: DateTime(2100),
+                      );
+                      if (picked != null && mounted)
+                        updateState(() {
+                          date = picked;
+                          followToday = false;
+                        });
+                    },
+                  ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Flexible(
+                        child: TextButton.icon(
+                          onPressed: busy ? null : detect,
+                          icon: const Icon(Icons.my_location, size: 18),
+                          label: SacredText(
+                            dt('location'),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ),
+                      Flexible(
+                        child: TextButton.icon(
+                          onPressed: busy ? null : refresh,
+                          icon: const Icon(Icons.refresh, size: 18),
+                          label: SacredText(
+                            dt('refresh'),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
-            if (address.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.all(12),
-                child: SacredText(
-                  address,
-                  style: const TextStyle(fontSize: 13, height: 1.5),
-                ),
-              ),
-            if (coordinates)
-              const Padding(
-                padding: EdgeInsets.only(bottom: 8),
-                child: SacredText(
-                  '© OpenStreetMap contributors',
-                  style: TextStyle(fontSize: 10),
-                ),
-              ),
-            if (busy) const LinearProgressIndicator(),
-            if (error.isNotEmpty) SacredText(error),
+          ),
+          if (address.isNotEmpty)
             Padding(
-              padding: const EdgeInsets.symmetric(vertical: 12),
+              padding: const EdgeInsets.all(12),
               child: SacredText(
-                dt('prayerTimes'),
-                style: Theme.of(context).textTheme.titleLarge,
+                address,
+                style: const TextStyle(fontSize: 13, height: 1.5),
               ),
             ),
-            if (timezone != localZone && days.isNotEmpty)
-              SacredText(
-                '${dt('prayerTimes')} · $timezone',
-                style: const TextStyle(fontSize: 11),
+          if (coordinates)
+            const Padding(
+              padding: EdgeInsets.only(bottom: 8),
+              child: SacredText(
+                '© OpenStreetMap contributors',
+                style: TextStyle(fontSize: 10),
               ),
-            if (stale) SacredText(dt('refreshTimes')),
-            for (final p in prayerNames)
-              Card(
-                child: ListTile(
-                  leading: IconButton(
-                    tooltip: dt(
-                      activePrayers.contains(p) ? 'deactivate' : 'activate',
-                    ),
-                    icon: Icon(
-                      activePrayers.contains(p)
+            ),
+          if (busy) const LinearProgressIndicator(),
+          if (error.isNotEmpty) SacredText(error),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            child: SacredText(
+              dt('prayerTimes'),
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+          ),
+          if (timezone != localZone && days.isNotEmpty)
+            SacredText(
+              '${dt('prayerTimes')} · $timezone',
+              style: const TextStyle(fontSize: 11),
+            ),
+          if (stale) SacredText(dt('refreshTimes')),
+          for (final p in prayerNames)
+            Card(
+              child: ListTile(
+                leading: IconButton(
+                  tooltip: dt(
+                    activePrayers.contains(p) ? 'deactivate' : 'activate',
+                  ),
+                  icon: Icon(
+                    activePrayers.contains(p)
+                        ? Icons.notifications_active
+                        : Icons.notifications_off_outlined,
+                    color: activePrayers.contains(p)
+                        ? colors.primary
+                        : colors.outline,
+                  ),
+                  onPressed: () async {
+                    updateState(() {
+                      if (!activePrayers.remove(p)) activePrayers.add(p);
+                    });
+                    await DevStore.write('prayerBundle', {
+                      'options': options,
+                      'days': days,
+                      'stale': stale,
+                      'appliedSections': appliedSections,
+                    });
+                    if (enabled) {
+                      if (events.isEmpty) {
+                        await Store.call('azanDisable');
+                        enabled = false;
+                      } else {
+                        await schedule();
+                      }
+                    }
+                    if (mounted) updateState(() {});
+                  },
+                ),
+                title: SacredText(dt(p)),
+                trailing: SacredText(
+                  current == null || stale
+                      ? '—'
+                      : wallTime(
+                          (current['timings'] as Map)[p].toString(),
+                          int.tryParse(westernDigits(adjustments[p]!.text)) ??
+                              0,
+                        ),
+                  style: const TextStyle(
+                    fontSize: 26,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ),
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                children: [
+                  TextButton.icon(
+                    onPressed: busy ? null : () => testAlarm(context, audio),
+                    icon: const Icon(Icons.alarm),
+                    label: SacredText(dt('alarmTest')),
+                  ),
+                  SwitchListTile(
+                    title: SacredText(dt('activateAzan')),
+                    value: enabled,
+                    onChanged: busy ? null : (_) => toggle(),
+                    secondary: Icon(
+                      enabled
                           ? Icons.notifications_active
                           : Icons.notifications_off_outlined,
-                      color: activePrayers.contains(p)
-                          ? colors.primary
-                          : colors.outline,
-                    ),
-                    onPressed: () async {
-                      setState(() {
-                        if (!activePrayers.remove(p)) activePrayers.add(p);
-                      });
-                      await DevStore.write('prayerBundle', {
-                        'options': options,
-                        'days': days,
-                        'stale': stale,
-                        'appliedSections': appliedSections,
-                      });
-                      if (enabled) {
-                        if (events.isEmpty) {
-                          await Store.call('azanDisable');
-                          enabled = false;
-                        } else {
-                          await schedule();
-                        }
-                      }
-                      if (mounted) setState(() {});
-                    },
-                  ),
-                  title: SacredText(dt(p)),
-                  trailing: SacredText(
-                    current == null || stale
-                        ? '—'
-                        : wallTime(
-                            (current['timings'] as Map)[p].toString(),
-                            int.tryParse(westernDigits(adjustments[p]!.text)) ??
-                                0,
-                          ),
-                    style: const TextStyle(
-                      fontSize: 26,
-                      fontWeight: FontWeight.w600,
                     ),
                   ),
-                ),
-              ),
-            Card(
-              child: ExpansionTile(
-                maintainState: true,
-                leading: const Icon(Icons.map_outlined),
-                title: SacredText(dt('location')),
-                childrenPadding: const EdgeInsets.all(16),
-                children: [
-                  FilledButton.tonalIcon(
-                    onPressed: busy ? null : detect,
-                    icon: const Icon(Icons.gps_fixed),
-                    label: SacredText(dt('detectLocation')),
-                  ),
-                  SwitchListTile(
-                    title: SacredText(dt('coordinatesMode')),
-                    value: coordinates,
-                    onChanged: (v) {
-                      coordinates = v;
-                      edited();
-                    },
-                  ),
-                  if (coordinates) ...[
-                    field(latitude, dt('latitude'), number: true),
-                    field(longitude, dt('longitude'), number: true),
-                  ] else ...[
-                    field(city, dt('city')),
-                    field(country, dt('country')),
-                  ],
-                  sectionRefresh('location'),
-                ],
-              ),
-            ),
-            Card(
-              child: ExpansionTile(
-                maintainState: true,
-                leading: const Icon(Icons.calculate_outlined),
-                title: SacredText(dt('method')),
-                childrenPadding: const EdgeInsets.all(16),
-                children: [
-                  DropdownButtonFormField<int>(
-                    key: ValueKey('prayer-method-$method'),
-                    initialValue: method,
-                    isExpanded: true,
-                    items:
-                        const <int, String>{
-                              1: 'Karachi',
-                              2: 'ISNA',
-                              3: 'Muslim World League',
-                              4: 'Umm al-Qura',
-                              5: 'Egypt',
-                              12: 'UOIF',
-                              21: 'Morocco',
-                            }.entries
-                            .map(
-                              (e) => DropdownMenuItem(
-                                value: e.key,
-                                child: SacredText(e.value),
-                              ),
-                            )
-                            .toList(),
-                    onChanged: (v) {
-                      if (v != null) {
-                        method = v;
-                        edited();
-                      }
-                    },
-                  ),
-                  SwitchListTile(
-                    title: SacredText(dt('school')),
-                    value: hanafi,
-                    onChanged: (v) {
-                      hanafi = v;
-                      edited();
-                    },
-                  ),
-                  sectionRefresh('method'),
-                ],
-              ),
-            ),
-            Card(
-              child: ExpansionTile(
-                maintainState: true,
-                leading: const Icon(Icons.tune),
-                title: SacredText(dt('offset')),
-                childrenPadding: const EdgeInsets.all(16),
-                children: [
-                  for (final p in prayerNames)
-                    field(adjustments[p]!, dt(p), number: true),
-                  sectionRefresh('adjustments'),
-                ],
-              ),
-            ),
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  children: [
-                    FilledButton.tonalIcon(
-                      onPressed: busy ? null : chooseAudio,
-                      icon: const Icon(Icons.library_music),
-                      label: SacredText(dt('chooseAzan')),
-                    ),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: TextButton(
-                            onPressed: preview,
-                            child: SacredText(dt('testAudio')),
-                          ),
-                        ),
-                        Expanded(
-                          child: TextButton(
-                            onPressed: () => Store.call('azanStop'),
-                            child: SacredText(dt('stopAudio')),
-                          ),
-                        ),
-                      ],
-                    ),
+                  if (enabled && until > 0)
                     SacredText(
-                      audioChoices
-                              .where((r) => r['id'] == audio)
-                              .firstOrNull?['label']
-                              ?.toString() ??
-                          dt('phoneAudio'),
+                      '${dt('scheduleUntil')} ${DateTime.fromMillisecondsSinceEpoch(until).toLocal()}',
                       style: const TextStyle(fontSize: 12),
                     ),
-                    TextButton(
-                      onPressed: () => testAlarm(context, audio),
-                      child: SacredText(dt('alarmTest')),
-                    ),
-                    SwitchListTile(
-                      title: SacredText(dt('activateAzan')),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                      tileColor: colors.surfaceContainerHigh,
-                      secondary: Icon(
-                        enabled
-                            ? Icons.notifications_active
-                            : Icons.notifications_off_outlined,
-                      ),
-                      value: enabled,
-                      onChanged: busy ? null : (_) => toggle(),
-                    ),
-                    if (enabled && until > 0)
-                      SacredText(
-                        '${dt('scheduleUntil')} ${DateTime.fromMillisecondsSinceEpoch(until).toLocal()}',
-                        style: const TextStyle(fontSize: 12),
-                      ),
-                  ],
-                ),
+                ],
               ),
             ),
-            SacredText(
-              dt('prayerNotice'),
-              style: const TextStyle(fontSize: 12, height: 1.6),
-            ),
-            const SizedBox(height: 12),
-            const SacredText(
-              'AlAdhan · https://aladhan.com/prayer-times-api',
-              style: TextStyle(fontSize: 11),
-            ),
-          ],
-        ),
+          ),
+          SacredText(
+            dt('prayerNotice'),
+            style: const TextStyle(fontSize: 12, height: 1.6),
+          ),
+          const SizedBox(height: 12),
+          const SacredText(
+            'AlAdhan · https://aladhan.com/prayer-times-api',
+            style: TextStyle(fontSize: 11),
+          ),
+        ],
       ),
     );
   }

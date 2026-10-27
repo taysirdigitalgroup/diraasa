@@ -1,12 +1,13 @@
-# Diraasa · دراسة — 2.1.6+33
+# Diraasa · دراسة — 2.2.0+34
 Carnet d’études arabes et dictionnaire مختار الصحاح, Android, hors ligne.
 Package : **com.tdg.diraasa**.
 
 ## Installer la mise à jour
-L’archive Diraasa_MAJ_2.1.6.tar.gz contient **lib/ complet** et les autres fichiers
+L’archive Diraasa_MAJ_2.2.0.tar.gz contient **lib/ complet** et les autres fichiers
 nécessaires, aux chemins de la racine du projet existant.
 Arrêter flutter run, extraire à côté de pubspec.yaml, puis :
 ```bash
+python3 tools/cleanup_legacy_adhan.py
 flutter pub get && flutter analyze && flutter test && flutter run
 ```
 flutter_localizations provient du SDK Flutter ; pub get résout ses dépendances.
@@ -422,3 +423,31 @@ les huit azans intégrés, avec écoute et choix personnel sur le téléphone.
 Le nom de l’azan sélectionné est affiché après réouverture. Les rappels gardent
 leur arrêt automatique à 30 secondes ; les appels à la prière gardent leur durée
 complète. Préférences et données inchangées. Syntaxe vérifiée, tests Flutter non exécutés.
+
+## Évolution 2.2.0 — hadiths et réglages de prière en modals
+- Espace spirituel : « Paroles du Prophète (psl) » placé immédiatement sous Coran.
+  Choix صحيح البخاري / صحيح مسلم, livre choisi mémorisé, lecture hors ligne.
+- Import intégral des fichiers fournis : 7 105 entrées Bukhari et 5 527 Muslim.
+  Tri par numéro de référence, variantes conservées ; une entrée Muslim sans
+  numéro reste affichée avec « — ». Aucun numéro ni texte n’est inventé.
+- Liste paginée par 40, recherche adaptative dans texte/titre/références et recherche
+  d’un numéro (chiffres occidentaux ou arabes). Lecture du hadith au clic, copie
+  avec références, taille de lecture réglable, références en petit gris discret.
+- Décodage et préparation de recherche dans un isolate ; seul le livre choisi
+  reste chargé dans la page. Le rapport d’import décrit les fichiers réellement
+  fournis, sans affirmer une concordance complète avec une édition externe.
+- Prières et Azan : quatre icônes autour du cadran (Localisation, Méthode,
+  Ajustements, Azan), chacune ouvre un modal avec titre explicite et fermeture.
+  Les boutons Actualiser par section gardent leurs états réactifs dans les modals.
+  Tester dans 10 secondes et Activer l’azan restent sous les heures de prières.
+- Azan renommé : Serigne Mbacké Fall - 🇸🇳 Senegal المسجد طوبي، السنغال, dans
+  le catalogue et dans le nom du fichier .m4a. Les anciennes sélections restent
+  acceptées grâce à un alias. Aucun audio personnel ni rappel n’est effacé.
+
+Après extraction, exécuter python3 tools/cleanup_legacy_adhan.py pour retirer
+l’ancien asset adhan_2.m4a s’il est identique au fichier renommé. Ce script ne
+vise que le doublon du projet, jamais les données de l’application installée.
+
+Les versions Gradle/Kotlin/Java/SDK et les dépendances Flutter restent inchangées.
+notes.db reste v4. Contrôles de données/import/audio et syntaxe Dart exécutés ;
+tests Flutter ajoutés, non exécutés ici. Effectuer une relance complète sur Android.

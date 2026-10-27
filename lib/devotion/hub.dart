@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../widgets/sacred_text.dart';
 import 'core.dart';
 import 'quran.dart';
+import 'hadith.dart';
 import 'hisn.dart';
 import 'tasbih.dart';
 import 'prayers.dart';
@@ -29,6 +30,7 @@ class DevotionHub extends StatelessWidget {
             icon: Icons.auto_stories_outlined,
             page: const QuranPage(),
           ),
+          (label: 'hadith', icon: Icons.format_quote, page: const HadithPage()),
           (label: 'hisn', icon: Icons.favorite_outline, page: const HisnPage()),
           (
             label: 'prayers',

@@ -11,9 +11,9 @@ import tempfile
 catalog=[]
 with tarfile.open(source) as t,tempfile.TemporaryDirectory() as tmp:
  for i,m in enumerate(x for x in t if x.isfile() and x.name.endswith('.mp3')):
-  path=Path(tmp)/f'{i}.mp3';path.write_bytes(t.extractfile(m).read());target=folder/f'adhan_{i+1}.m4a'
+  path=Path(tmp)/f'{i}.mp3';path.write_bytes(t.extractfile(m).read());label='Serigne Mbacké Fall - 🇸🇳 Senegal المسجد طوبي، السنغال' if 'Serigne Mbacké Fall' in m.name else Path(m.name).stem;target=folder/((label+'.m4a') if 'Serigne Mbacké Fall' in m.name else f'adhan_{i+1}.m4a')
   subprocess.run(['ffmpeg','-v','error','-y','-i',str(path),'-vn','-ac','1','-ar','24000','-c:a','aac','-b:a','32k',str(target)],check=True)
-  catalog.append({'id':'asset:audio/'+target.name,'label':Path(m.name).stem,'bytes':target.stat().st_size})
+  catalog.append({'id':'asset:audio/'+target.name,'label':label,'bytes':target.stat().st_size})
 url='https://kenney.nl/media/pages/assets/digital-audio/216eac4753-1677590265/kenney_digital-audio.zip'
 z=zipfile.ZipFile(io.BytesIO(urllib.request.urlopen(url).read()))
 n=next(n for n in z.namelist() if n.lower().endswith('.ogg') and 'powerup' in n.lower())

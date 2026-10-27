@@ -281,7 +281,10 @@ class _ReminderEditorState extends State<ReminderEditor> {
         ListTile(
           leading: const Icon(Icons.music_note),
           title: SacredText(dt('chooseAlarmSound')),
-          subtitle: SacredText(adhanNames[audio] ?? reminderAudioLabel(audio)),
+          subtitle: SacredText(
+            adhanNames[normalizeBundledAudio(audio)] ??
+                reminderAudioLabel(audio),
+          ),
           onTap: () async {
             final v = await chooseAlarmAudio(context, reminder: true);
             if (v != null && mounted) setState(() => audio = v);

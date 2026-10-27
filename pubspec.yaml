@@ -1,7 +1,7 @@
 name: diraasa
 description: Carnet d'études arabes et المختار الصحاح hors ligne.
 publish_to: none
-version: 2.1.6+33
+version: 2.2.0+34
 environment:
   sdk: '>=3.9.0 <4.0.0'
   flutter: '>=3.35.0'
@@ -21,6 +21,8 @@ flutter:
     - assets/devotion/quran_warsh.json
     - assets/devotion/hisn.json
     - assets/devotion/audio_sources.json
+    - assets/devotion/hadith_bukhari.json
+    - assets/devotion/hadith_muslim.json
   fonts:
     - family: UthmaniHafs
       fonts:

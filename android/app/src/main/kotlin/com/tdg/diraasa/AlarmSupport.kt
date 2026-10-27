@@ -23,7 +23,7 @@ object AlarmSupport {
     fun background(c:Context)=Build.VERSION.SDK_INT<23||(c.getSystemService(Context.POWER_SERVICE) as PowerManager).isIgnoringBatteryOptimizations(c.packageName)
     fun audio(c:Context,value:String):String {
         if(!value.startsWith("asset:")) { check(File(value).isFile){"Audio introuvable"};return value }
-        val name=value.removePrefix("asset:");require(name.startsWith("audio/")&&!name.contains(".."))
+        val name=if(value=="asset:audio/adhan_2.m4a")"audio/Serigne Mbacké Fall - 🇸🇳 Senegal المسجد طوبي، السنغال.m4a" else value.removePrefix("asset:");require(name.startsWith("audio/")&&!name.contains(".."))
         val dst=File(c.filesDir,"bundled_audio/"+name.substringAfterLast('/'));dst.parentFile?.mkdirs()
         if(!dst.isFile)c.assets.open(name).use{input->dst.outputStream().use{input.copyTo(it)}}
         return dst.path

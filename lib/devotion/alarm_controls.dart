@@ -198,6 +198,8 @@ Future<void> testAlarm(BuildContext context, String audio) async {
 }
 
 String reminderAudioLabel(String audio) {
+  if (normalizeBundledAudio(audio) == serigneAdhanAsset)
+    return serigneAdhanName;
   const keys = {
     'reminder.ogg': 'gentleBell',
     'reminder_birds.m4a': 'soundBirds',

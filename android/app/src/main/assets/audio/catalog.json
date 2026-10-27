@@ -5,9 +5,12 @@
     "bytes": 899165
   },
   {
-    "id": "asset:audio/adhan_2.m4a",
-    "label": "Serigne Mbacké Fall - Senegal NODOU TOUBA",
-    "bytes": 447530
+    "id": "asset:audio/Serigne Mbacké Fall - 🇸🇳 Senegal المسجد طوبي، السنغال.m4a",
+    "label": "Serigne Mbacké Fall - 🇸🇳 Senegal المسجد طوبي، السنغال",
+    "bytes": 447530,
+    "aliases": [
+      "asset:audio/adhan_2.m4a"
+    ]
   },
   {
     "id": "asset:audio/adhan_3.m4a",

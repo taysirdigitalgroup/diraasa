@@ -1,0 +1,22 @@
+{
+  "bukhari": {
+    "source": "sahih_bukhari.sql",
+    "sha256": "8d1f97632bf6b5c6004370e06d6eed82fd17a1d8c22fe72eadf701ecad55a904",
+    "entries": 7105,
+    "missing_numbers": 0,
+    "unique_numbers": 7082,
+    "minimum_number": 1,
+    "maximum_number": 7563,
+    "numbering": "Source references retained, including variants/repeated numbers; ids are source row positions."
+  },
+  "muslim": {
+    "source": "sahih_muslim.sql",
+    "sha256": "22d647281870b2c066ec9ef9c5b8b49c1c1fdb6d5f7a2d344b1cbe8faabf2c89",
+    "entries": 5527,
+    "missing_numbers": 1,
+    "unique_numbers": 2991,
+    "minimum_number": 1,
+    "maximum_number": 3033,
+    "numbering": "Source references retained, including variants/repeated numbers; ids are source row positions."
+  }
+}

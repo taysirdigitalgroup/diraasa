@@ -51,6 +51,15 @@ class SourcesSection extends StatelessWidget {
             ),
             source(
               context,
+              'hadithReferences',
+              Icons.format_quote,
+              () => ReferenceDocument(
+                title: dt('hadithReferences'),
+                text: dt('hadithReferenceText'),
+              ),
+            ),
+            source(
+              context,
               'quranReferences',
               Icons.book,
               () => ReferenceDocument(
