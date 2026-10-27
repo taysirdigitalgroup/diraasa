@@ -15,6 +15,13 @@ for item in catalog:
  assert float(info['format']['duration'])>30
  assert path.stat().st_size==item['bytes']
 assert float(probe(folder/'reminder.ogg')['format']['duration'])>0
+reminders=json.loads((folder/'reminders.json').read_text())
+assert len(reminders)==6 and len({r['id'] for r in reminders})==6
+for item in reminders:
+ path=folder/Path(item['id']).name;info=probe(path)
+ assert 0<float(info['format']['duration'])<=8.1
+ assert len(info['streams'])==1 and info['streams'][0]['codec_type']=='audio'
+ if 'bytes' in item:assert path.stat().st_size==item['bytes']
 if len(sys.argv)>1:
  with tarfile.open(sys.argv[1]) as t,tempfile.TemporaryDirectory() as tmp:
   original=[m for m in t if m.isfile() and m.name.endswith('.mp3')]
@@ -23,4 +30,4 @@ if len(sys.argv)>1:
    path=Path(tmp)/f'{i}.mp3';path.write_bytes(t.extractfile(m).read())
    before=float(probe(path)['format']['duration']);after=float(probe(folder/Path(catalog[i]['id']).name)['format']['duration'])
    assert abs(before-after)<1,(m.name,before,after)
-print('OK : 8 adhans AAC mono, catalogue vérifié ; son CC0 intégré ; durées vérifiées si archive source fournie.')
+print('OK : 8 adhans AAC mono et 6 sons de rappel, catalogues et fichiers vérifiés ; durées originales comparées si archive source fournie.')

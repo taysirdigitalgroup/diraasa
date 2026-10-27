@@ -1,0 +1,31 @@
+[
+  {
+    "id": "asset:audio/reminder.ogg",
+    "labelKey": "gentleBell"
+  },
+  {
+    "id": "asset:audio/reminder_birds.m4a",
+    "labelKey": "soundBirds",
+    "bytes": 34041
+  },
+  {
+    "id": "asset:audio/reminder_water.m4a",
+    "labelKey": "soundWater",
+    "bytes": 25550
+  },
+  {
+    "id": "asset:audio/reminder_waves.m4a",
+    "labelKey": "soundWaves",
+    "bytes": 7047
+  },
+  {
+    "id": "asset:audio/reminder_chime.m4a",
+    "labelKey": "soundChime",
+    "bytes": 9762
+  },
+  {
+    "id": "asset:audio/reminder_alarm.m4a",
+    "labelKey": "soundAlarm",
+    "bytes": 23907
+  }
+]

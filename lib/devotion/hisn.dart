@@ -323,33 +323,53 @@ class HisnSource extends StatelessWidget {
   const HisnSource({super.key, required this.book});
   final AppRecord book;
   @override
-  Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: SacredText('${dt('source')} · حصن المسلم')),
-    body: ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: (book['sourceBlocks'] as List).length,
-      itemBuilder: (_, i) {
-        final block = (book['sourceBlocks'] as List)[i];
-        return Card(
-          child: ExpansionTile(
-            title: SacredText(
-              block['title'].toString(),
-              textDirection: TextDirection.rtl,
-              textAlign: TextAlign.right,
-            ),
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: MatchText(
-                  block['text'].toString(),
-                  selectable: true,
-                  style: TextStyle(fontSize: settings.textSize, height: 1.9),
-                ),
+  Widget build(BuildContext context) => AnimatedBuilder(
+    animation: settings,
+    builder: (context, _) => Scaffold(
+      appBar: AppBar(title: SacredText('${dt('source')} · حصن المسلم')),
+      body: ListView.builder(
+        padding: const EdgeInsets.all(16),
+        itemCount: (book['frontMatter'] as List).length,
+        itemBuilder: (_, i) {
+          final block = (book['frontMatter'] as List)[i];
+          return Card(
+            child: ExpansionTile(
+              title: SacredText(
+                block['title'].toString(),
+                textDirection: TextDirection.rtl,
+                textAlign: TextAlign.right,
               ),
-            ],
-          ),
-        );
-      },
+              children: [
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 16),
+                  child: ReadingSize(),
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: MatchText(
+                    block['text'].toString(),
+                    selectable: true,
+                    style: TextStyle(fontSize: settings.textSize, height: 1.9),
+                  ),
+                ),
+                for (final reference in block['references'] as List? ?? [])
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                    child: MatchText(
+                      reference.toString(),
+                      selectable: true,
+                      style: TextStyle(
+                        fontSize: 13,
+                        height: 1.6,
+                        color: Theme.of(context).disabledColor,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          );
+        },
+      ),
     ),
   );
 }

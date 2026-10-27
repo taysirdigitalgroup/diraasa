@@ -258,9 +258,7 @@ class _ReminderEditorState extends State<ReminderEditor> {
         ListTile(
           leading: const Icon(Icons.music_note),
           title: SacredText(dt('audio')),
-          subtitle: SacredText(
-            audio.startsWith('asset:') ? dt('gentleBell') : dt('phoneAudio'),
-          ),
+          subtitle: SacredText(reminderAudioLabel(audio)),
           onTap: () async {
             final v = await chooseAlarmAudio(context, reminder: true);
             if (v != null && mounted) setState(() => audio = v);
@@ -274,7 +272,10 @@ class _ReminderEditorState extends State<ReminderEditor> {
           onPressed: () => Store.call('azanStop'),
           child: SacredText(dt('stopAudio')),
         ),
-        TextButton(onPressed:()=>testAlarm(context,audio),child:SacredText(dt('alarmTest'))),
+        TextButton(
+          onPressed: () => testAlarm(context, audio),
+          child: SacredText(dt('alarmTest')),
+        ),
         SwitchListTile(
           title: SacredText(dt('activateReminder')),
           value: enabled,

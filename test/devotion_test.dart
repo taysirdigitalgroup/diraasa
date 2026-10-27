@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -77,6 +78,87 @@ void main() {
       DateTime.utc(2026, 10, 27, 16).millisecondsSinceEpoch,
     );
   });
+  test('Actualisation : chaque section suit uniquement ses paramètres', () {
+    final base = <String, dynamic>{
+      'city': 'Dakar',
+      'country': 'Senegal',
+      'coordinates': false,
+      'latitude': '14.7',
+      'longitude': '-17.4',
+      'method': 3,
+      'hanafi': false,
+      'adjustments': {for (final p in prayerNames) p: '0'},
+    };
+    final changedLocation = {...base, 'city': 'Touba'};
+    expect(
+      prayerSectionSignature(changedLocation, 'location'),
+      isNot(prayerSectionSignature(base, 'location')),
+    );
+    expect(
+      prayerSectionSignature(changedLocation, 'method'),
+      prayerSectionSignature(base, 'method'),
+    );
+    expect(
+      prayerSectionSignature({...base, 'hanafi': true}, 'method'),
+      isNot(prayerSectionSignature(base, 'method')),
+    );
+    expect(
+      prayerSectionSignature({
+        ...base,
+        'adjustments': {'Fajr': '5'},
+      }, 'adjustments'),
+      isNot(prayerSectionSignature(base, 'adjustments')),
+    );
+    expect(
+      prayerSectionSignature({...base, 'audio': 'personal.audio'}, 'method'),
+      prayerSectionSignature(base, 'method'),
+    );
+    expect(
+      prayerSectionSignature({...base, 'city': '  DAKAR  '}, 'location'),
+      prayerSectionSignature(base, 'location'),
+    );
+    expect(
+      prayerSectionSignature({
+        ...base,
+        'coordinates': true,
+        'latitude': '14,70',
+      }, 'location'),
+      prayerSectionSignature({...base, 'coordinates': true}, 'location'),
+    );
+  });
+  testWidgets(
+    'Sourate : surlignage serré, sans étendre la sélection à la ligne',
+    (tester) async {
+      const original = 'يَكَادُ الْبَرْقُ يَخْطَفُ أَبْصَارَهُمْ';
+      await tester.pumpWidget(
+        MaterialApp(
+          home: SurahPage(
+            reading: 'hafs',
+            initialQuery: 'ال',
+            chapter: {
+              'number': 2,
+              'title': 'البقرة',
+              'basmala': '',
+              'verses': [
+                {'number': 1, 'text': original},
+              ],
+            },
+          ),
+        ),
+      );
+      await tester.pump();
+      final reader = tester
+          .widgetList<EditableText>(find.byType(EditableText))
+          .where((e) => e.readOnly)
+          .single;
+      expect(reader.controller.text, original);
+      expect(reader.selectionWidthStyle, ui.BoxWidthStyle.tight);
+      expect(reader.selectionHeightStyle, ui.BoxHeightStyle.tight);
+      for (final range in matchRanges(original, 'ال'))
+        expect(normalize(original.substring(range.start, range.end)), 'ال');
+      expect(tester.takeException(), isNull);
+    },
+  );
   testWidgets('Wird : formulation manuelle sans zikr enregistré', (
     tester,
   ) async {

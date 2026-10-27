@@ -1,5 +1,5 @@
 # Diraasa — Fiche technique et historique
-Version application : **2.1.0+27**  
+Version application : **2.1.2+29**  
 Date : **27 octobre 2026**  
 Application Android : **com.tdg.diraasa**  
 Éditeur : Taysir Digital Group — Aliou Mbengue
@@ -442,15 +442,57 @@ deux mesures d’introduction masquée à 233 px et un retour de page introuvabl
 - Ajouts : AlarmSupport.kt, lib/devotion/alarm_controls.dart, prayer_clock.dart,
   assets Android audio, source/audio, outils check_audio.py/prepare_audio.py.
 
+### 2.1.1 — sections actualisables et catalogue de rappels
+- Section Wird placée avant Azkar.
+- Surlignage dans les sourates : sélection de SacredSelectableText (plain/rich)
+  explicitement BoxWidthStyle.tight et BoxHeightStyle.tight. Le défaut natif
+  EditableText BoxWidthStyle.max prolongeait les boîtes au-delà du texte sélectionné.
+  Aucun changement de texte/ligatures. Test de régression ajouté pour le lecteur.
+
+- Signatures des paramètres de calcul par section location/method/adjustments.
+  Aucun déclenchement de bouton pour un simple choix audio ; reversion de valeur
+  reconnue. Les signatures appliquées sont enregistrées dans prayerBundle et
+  adoptées pour les anciens caches fiables ; cache incertain => actualisation requise.
+- Boutons Actualiser dans les trois sections, désactivés sans modification ou
+  pendant une opération ; état conservé si le téléchargement échoue.
+- Suppression des commandes répétées autour du cadran, ligne Localisation /
+  Actualiser ; carte audio/activation en bas, libellé Choisir un Azan.
+- TimeZone.getDefault().id via localTimezone ; relecture initiale, au retour de
+  l’app et toutes les minutes ; date/heure locales via DateTime.
+- Cinq clips CC0 (oiseaux, eau, vagues, carillon, alarme), total 100 307 octets,
+  maximum 8 s, catalogue reminders.json, labels fr/ar/en et aperçu.
+  Ancien signal et identifiants des fichiers personnels conservés.
+- Nouveau outil prepare_reminder_sounds.py facultatif ; téléchargement uniquement
+  pendant la préparation des assets, aucun téléchargement de sons dans l’application.
+- Test ajouté sur les signatures des trois sections. Contrôles audio/données et
+  syntaxe Dart ; pas d’exécution Flutter/analyze ni de compilation APK ici.
+- Schéma notes v4 inchangé. Préférences enrichies sans clear ni suppression.
+
+### 2.1.2 — infos des ouvrages et soutien
+- HisnSource affiche frontMatter : introduction et فضل الذكر uniquement, avec
+  leurs références. L’import récupère la continuation avant le chapitre 1.
+- Suppression de sourceBlocks dans l’asset JSON pour éviter une copie intégrale
+  inutile ; source SQL intégrale inchangée dans l’archive, 267 entrées conservées.
+- SourcesSection remplace l’ancien bouton d’introduction dans About ; cinq
+  références ouvrent des sous-pages adaptées, chargées à la demande.
+- DonationsSection sous les coordonnées développeur. PayPal exact du DEV ENV ;
+  Wave/OM : coordonnées non fournies, accès au contact TDG explicitement indiqué.
+- Canal openExternal : HTTPS ou tel uniquement, ACTION_VIEW / ACTION_DIAL ;
+  pas de permission CALL_PHONE ni de nouvelle dépendance.
+- Localisation fr/ar/en des nouveaux libellés. Taille de lecture dans les sources.
+- Nouveaux fichiers sources.dart, audio_sources.json, sources_test.dart.
+- Version 2.1.2+29 ; notes.db reste v4, aucun effacement ni migration destructive.
+- Contrôles d’intégrité, données et syntaxe ; tests Flutter non exécutés ici.
+
 ## 4. Fichiers de cette mise à jour
-Archive cumulative depuis 1.0.1 : **Diraasa_MAJ_2.1.0.tar.gz**.
+Archive cumulative depuis 1.0.1 : **Diraasa_MAJ_2.1.2.tar.gz**.
 - lib/ complet, dont lib/devotion/ et les modifications de navigation/rendu.
 - Sources Kotlin de MainActivity, NotesDatabase, DevotionNative, AzanAlarms,
   AzanService et ZikrReminders ; manifestes main/debug/profile.
 - assets/devotion/ : données importées ; assets/fonts/ : polices fournies.
 - source/devotion/ : SQL originaux, rapports et documentation de provenance.
 - pubspec.yaml, test/ et outils de validation/import modifiés.
-- README.md, FICHE_TECHNIQUE.md et MANIFEST_MAJ_2.1.0.txt.
+- README.md, FICHE_TECHNIQUE.md et MANIFEST_MAJ_2.1.2.txt.
 Aucune base utilisateur n’est incluse. Les nouvelles données sont des assets distincts.
 
 ## 4 bis. Préférences : format et évolution

@@ -252,27 +252,6 @@ class _TasbihPageState extends State<TasbihPage> {
             children: [
               Expanded(
                 child: SacredText(
-                  dt('azkar'),
-                  style: const TextStyle(
-                    fontSize: 23,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-              IconButton(
-                tooltip: dt('newZikr'),
-                onPressed: () => edit('items'),
-                icon: const Icon(Icons.add),
-              ),
-            ],
-          ),
-          ...items
-              .where((i) => matchesSearch(i['text'].toString(), query))
-              .map((r) => tile(r, false)),
-          Row(
-            children: [
-              Expanded(
-                child: SacredText(
                   dt('chains'),
                   style: const TextStyle(
                     fontSize: 23,
@@ -290,6 +269,28 @@ class _TasbihPageState extends State<TasbihPage> {
           ...chains
               .where((i) => matchesSearch(i['name'].toString(), query))
               .map((r) => tile(r, true)),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: SacredText(
+                  dt('azkar'),
+                  style: const TextStyle(
+                    fontSize: 23,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              IconButton(
+                tooltip: dt('newZikr'),
+                onPressed: () => edit('items'),
+                icon: const Icon(Icons.add),
+              ),
+            ],
+          ),
+          ...items
+              .where((i) => matchesSearch(i['text'].toString(), query))
+              .map((r) => tile(r, false)),
         ],
       ),
     );

@@ -20,7 +20,74 @@ String dt(String key) {
 }
 
 const devotionLabels = <String, List<String>>{
- 'androidSettings':['Réglages Android','إعدادات أندرويد','Android settings'],
+  'sourcesReferences': [
+    'Sources et Références',
+    'المصادر والمراجع',
+    'Sources and References',
+  ],
+  'dictionaryReferences': [
+    'Introduction et références du dictionnaire',
+    'مقدمة المعجم ومراجعه',
+    'Dictionary introduction and references',
+  ],
+  'hisnReferences': [
+    'Introduction et bienfaits du zikr · حصن المسلم',
+    'مقدمة حصن المسلم وفضل الذكر',
+    'Hisnul Muslim introduction and virtues of dhikr',
+  ],
+  'quranReferences': [
+    'Textes et polices du Coran',
+    'نصوص القرآن وخطوطه',
+    'Quran texts and fonts',
+  ],
+  'prayerReferences': [
+    'Références des horaires de prière',
+    'مصادر مواقيت الصلاة',
+    'Prayer times references',
+  ],
+  'audioReferences': ['Crédits des sons', 'مصادر الأصوات', 'Sound credits'],
+  'quranReferenceText': [
+    'Les textes Hafs et Warsh et leurs polices KFGQPC sont ceux fournis pour Diraasa. Chaque lecture est affichée avec sa police et conserve la numérotation de son fichier source.',
+    'نصوص حفص وورش وخطوط KFGQPC هي الملفات المرفقة بمشروع دراسة. تعرض كل رواية بخطها وترقيم ملفها الأصلي.',
+    'Hafs and Warsh texts and their KFGQPC fonts are the files supplied for Diraasa. Each reading uses its corresponding font and preserves its source numbering.',
+  ],
+  'prayerReferenceText': [
+    'Les horaires sont calculés par AlAdhan selon le lieu, la méthode, le calcul de Asr et les ajustements choisis. Le fuseau des horaires est celui du lieu. Vérifiez les horaires avec votre mosquée et actualisez avant la fin de la période mémorisée.',
+    'تحسب المواقيت عبر AlAdhan وفق المكان وطريقة الحساب وحساب العصر والتعديلات المختارة. المنطقة الزمنية للمواقيت تخص المكان. راجع المواقيت مع مسجدك وحدّثها قبل انتهاء الفترة المحفوظة.',
+    'Times are calculated by AlAdhan using the selected location, method, Asr calculation and adjustments. Timings use the location’s timezone. Check with your mosque and refresh before the cached period ends.',
+  ],
+  'audioReferenceText': [
+    'Les adhans ont été fournis pour cette application. Les signaux de rappel sont issus de créations publiées sous CC0 ; leurs auteurs et sources figurent ci-dessous.',
+    'ملفات الأذان مرفقة بهذا التطبيق. أصوات التذكير منشورة بترخيص CC0، ومؤلفوها ومصادرها مذكورون أدناه.',
+    'Adhan files were supplied for this app. Reminder sounds are published under CC0; their authors and sources are listed below.',
+  ],
+  'donateTitle': ['Faire un don', 'التبرع', 'Donate'],
+  'donateHint': [
+    'Soutenir le développement de Diraasa et les projets TDG.',
+    'دعم تطوير دراسة ومشاريع TDG.',
+    'Support Diraasa development and TDG projects.',
+  ],
+  'donationDetailsOnRequest': [
+    'Contactez TDG pour obtenir les coordonnées de don de ce service.',
+    'تواصل مع TDG للحصول على بيانات التبرع عبر هذه الخدمة.',
+    'Contact TDG for donation details for this service.',
+  ],
+  'contactTdg': ['Contacter TDG', 'التواصل مع TDG', 'Contact TDG'],
+
+  'refresh': ['Actualiser', 'تحديث', 'Refresh'],
+  'chooseAzan': ['Choisir un Azan', 'اختيار أذان', 'Choose an Adhan'],
+  'activateAzan': ['Activer l’azan', 'تفعيل الأذان', 'Enable Adhan'],
+  'soundBirds': ['Oiseaux du matin', 'عصافير الصباح', 'Morning birds'],
+  'soundWater': ['Eau qui coule', 'خرير الماء', 'Flowing water'],
+  'soundWaves': ['Vagues douces', 'أمواج هادئة', 'Gentle waves'],
+  'soundChime': ['Carillon', 'رنين الجرس', 'Chime'],
+  'soundAlarm': ['Signal d’alarme', 'إشارة منبه', 'Alarm signal'],
+
+  'androidSettings': [
+    'Réglages Android',
+    'إعدادات أندرويد',
+    'Android settings',
+  ],
   'alarmTest': [
     'Tester dans 10 secondes',
     'اختبار بعد 10 ثوانٍ',
@@ -305,7 +372,10 @@ Future<dynamic> fetchJson(Uri uri) async {
     final request = await client
         .getUrl(uri)
         .timeout(const Duration(seconds: 20));
-    request.headers.set(HttpHeaders.userAgentHeader, 'Diraasa/2.1 (com.tdg.diraasa)');
+    request.headers.set(
+      HttpHeaders.userAgentHeader,
+      'Diraasa/2.1 (com.tdg.diraasa)',
+    );
     final response = await request.close().timeout(const Duration(seconds: 20));
     if (response.statusCode != 200)
       throw HttpException('HTTP ${response.statusCode}');

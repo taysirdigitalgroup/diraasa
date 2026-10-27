@@ -16,7 +16,7 @@ class PrayersPage extends StatefulWidget {
   State<PrayersPage> createState() => _PrayersPageState();
 }
 
-class _PrayersPageState extends State<PrayersPage> {
+class _PrayersPageState extends State<PrayersPage> with WidgetsBindingObserver {
   final city = SacredController(text: 'Dakar'),
       country = SacredController(text: 'Senegal');
   bool coordinates = false;
@@ -39,11 +39,38 @@ class _PrayersPageState extends State<PrayersPage> {
   List<AppRecord> audioChoices = [];
   Timer? ticker;
   bool followToday = true;
+  String deviceTimezone = '';
+  Map<String, String> appliedSections = {};
+  String sectionValue(String section) =>
+      prayerSectionSignature(options, section);
+  bool sectionDirty(String section) =>
+      appliedSections[section] != sectionValue(section);
+  Map<String, String> get sectionSignatures => {
+    for (final section in ['location', 'method', 'adjustments'])
+      section: sectionValue(section),
+  };
+  Future<void> updateTimezone() async {
+    try {
+      final zone = await Store.call('localTimezone');
+      if (mounted && zone is String) setState(() => deviceTimezone = zone);
+    } catch (_) {
+      /* DateTime supplies a local fallback. */
+    }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) updateTimezone();
+  }
+
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    updateTimezone();
     load();
     ticker = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (DateTime.now().second == 0) updateTimezone();
       if (mounted)
         setState(() {
           if (followToday) date = DateTime.now();
@@ -53,6 +80,7 @@ class _PrayersPageState extends State<PrayersPage> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     ticker?.cancel();
     city.dispose();
     country.dispose();
@@ -100,6 +128,16 @@ class _PrayersPageState extends State<PrayersPage> {
       final cache = bundle is Map ? bundle['days'] : null;
       if (cache is List)
         days = cache.map((r) => Map<String, dynamic>.from(r as Map)).toList();
+      if (bundle is Map && bundle['appliedSections'] is Map) {
+        appliedSections = Map<String, String>.from(
+          bundle['appliedSections'] as Map,
+        );
+      } else if (!stale || days.isEmpty) {
+        appliedSections = sectionSignatures;
+      }
+      stale =
+          days.isEmpty ||
+          ['location', 'method', 'adjustments'].any(sectionDirty);
       final status = await Store.call('azanStatus');
       if (status is Map) {
         enabled = status['enabled'] == true;
@@ -133,7 +171,11 @@ class _PrayersPageState extends State<PrayersPage> {
         return null;
       });
     }
-    setState(() => stale = true);
+    setState(
+      () => stale =
+          days.isEmpty ||
+          ['location', 'method', 'adjustments'].any(sectionDirty),
+    );
   }
 
   Future<void> refresh() async {
@@ -153,7 +195,8 @@ class _PrayersPageState extends State<PrayersPage> {
         return;
       }
     }
-    final requestOptions=jsonEncode(options);
+    final requestOptions = jsonEncode(options);
+    final requestSections = sectionSignatures;
     setState(() {
       busy = true;
       error = '';
@@ -185,8 +228,14 @@ class _PrayersPageState extends State<PrayersPage> {
         );
       }
       if (rows.isEmpty) throw StateError('No timings');
-      if(requestOptions!=jsonEncode(options))throw StateError(dt('refreshTimes'));
-      await DevStore.write('prayerBundle', {'options': options, 'days': rows});
+      if (requestOptions != jsonEncode(options))
+        throw StateError(dt('refreshTimes'));
+      await DevStore.write('prayerBundle', {
+        'options': options,
+        'days': rows,
+        'appliedSections': requestSections,
+      });
+      appliedSections = requestSections;
       days = rows;
       stale = false;
       if (enabled) await schedule();
@@ -301,7 +350,6 @@ class _PrayersPageState extends State<PrayersPage> {
         country.text = pos['country'].toString();
       coordinates = true;
       edited();
-      await refresh();
     } catch (e) {
       if (mounted) errorMessage(context, e);
     } finally {
@@ -331,6 +379,15 @@ class _PrayersPageState extends State<PrayersPage> {
               v == null || v.trim().isEmpty ? dt('required') : null,
         ),
       );
+  Widget sectionRefresh(String section) => Align(
+    alignment: AlignmentDirectional.centerEnd,
+    child: FilledButton.tonalIcon(
+      key: ValueKey('refresh-$section'),
+      onPressed: busy || !sectionDirty(section) ? null : refresh,
+      icon: const Icon(Icons.refresh, size: 18),
+      label: SacredText(dt('refresh')),
+    ),
+  );
   @override
   Widget build(BuildContext context) {
     final stamp =
@@ -342,6 +399,9 @@ class _PrayersPageState extends State<PrayersPage> {
         current?['meta']?['timezone']?.toString() ??
         DateTime.now().timeZoneName;
     final colors = Theme.of(context).colorScheme;
+    final localZone = deviceTimezone.isEmpty
+        ? DateTime.now().timeZoneName
+        : deviceTimezone;
     return Scaffold(
       appBar: AppBar(title: SacredText(dt('prayers'))),
       body: Form(
@@ -355,30 +415,6 @@ class _PrayersPageState extends State<PrayersPage> {
                 padding: const EdgeInsets.all(18),
                 child: Column(
                   children: [
-                    Wrap(
-                      alignment: WrapAlignment.center,
-                      spacing: 8,
-                      children: [
-                        ActionChip(
-                          avatar: const Icon(Icons.my_location, size: 18),
-                          label: SacredText(dt('location')),
-                          onPressed: busy ? null : detect,
-                        ),
-                        ActionChip(
-                          avatar: Icon(
-                            enabled
-                                ? Icons.notifications_active
-                                : Icons.notifications_off,
-                            size: 18,
-                          ),
-                          label: SacredText(
-                            dt(enabled ? 'deactivate' : 'activate'),
-                          ),
-                          onPressed: busy ? null : toggle,
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
                     ConstrainedBox(
                       constraints: const BoxConstraints(maxWidth: 280),
                       child: const PrayerClock(),
@@ -389,7 +425,7 @@ class _PrayersPageState extends State<PrayersPage> {
                     ),
                     TextButton.icon(
                       icon: const Icon(Icons.calendar_month),
-                      label: SacredText('$stamp · $timezone'),
+                      label: SacredText('$stamp · $localZone'),
                       onPressed: () async {
                         final picked = await showDatePicker(
                           context: context,
@@ -404,19 +440,30 @@ class _PrayersPageState extends State<PrayersPage> {
                           });
                       },
                     ),
-                    Wrap(
-                      spacing: 8,
-                      alignment: WrapAlignment.center,
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        ActionChip(
-                          avatar: const Icon(Icons.music_note, size: 18),
-                          label: SacredText(dt('audio')),
-                          onPressed: chooseAudio,
+                        Flexible(
+                          child: TextButton.icon(
+                            onPressed: busy ? null : detect,
+                            icon: const Icon(Icons.my_location, size: 18),
+                            label: SacredText(
+                              dt('location'),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
                         ),
-                        ActionChip(
-                          avatar: const Icon(Icons.refresh, size: 18),
-                          label: SacredText(dt('refreshTimes')),
-                          onPressed: busy ? null : refresh,
+                        Flexible(
+                          child: TextButton.icon(
+                            onPressed: busy ? null : refresh,
+                            icon: const Icon(Icons.refresh, size: 18),
+                            label: SacredText(
+                              dt('refresh'),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
                         ),
                       ],
                     ),
@@ -449,6 +496,11 @@ class _PrayersPageState extends State<PrayersPage> {
                 style: Theme.of(context).textTheme.titleLarge,
               ),
             ),
+            if (timezone != localZone && days.isNotEmpty)
+              SacredText(
+                '${dt('prayerTimes')} · $timezone',
+                style: const TextStyle(fontSize: 11),
+              ),
             if (stale) SacredText(dt('refreshTimes')),
             for (final p in prayerNames)
               Card(
@@ -473,6 +525,7 @@ class _PrayersPageState extends State<PrayersPage> {
                         'options': options,
                         'days': days,
                         'stale': stale,
+                        'appliedSections': appliedSections,
                       });
                       if (enabled) {
                         if (events.isEmpty) {
@@ -528,6 +581,7 @@ class _PrayersPageState extends State<PrayersPage> {
                     field(city, dt('city')),
                     field(country, dt('country')),
                   ],
+                  sectionRefresh('location'),
                 ],
               ),
             ),
@@ -539,6 +593,7 @@ class _PrayersPageState extends State<PrayersPage> {
                 childrenPadding: const EdgeInsets.all(16),
                 children: [
                   DropdownButtonFormField<int>(
+                    key: ValueKey('prayer-method-$method'),
                     initialValue: method,
                     isExpanded: true,
                     items:
@@ -573,6 +628,7 @@ class _PrayersPageState extends State<PrayersPage> {
                       edited();
                     },
                   ),
+                  sectionRefresh('method'),
                 ],
               ),
             ),
@@ -585,6 +641,7 @@ class _PrayersPageState extends State<PrayersPage> {
                 children: [
                   for (final p in prayerNames)
                     field(adjustments[p]!, dt(p), number: true),
+                  sectionRefresh('adjustments'),
                 ],
               ),
             ),
@@ -593,10 +650,10 @@ class _PrayersPageState extends State<PrayersPage> {
                 padding: const EdgeInsets.all(16),
                 child: Column(
                   children: [
-                    OutlinedButton.icon(
-                      onPressed: chooseAudio,
+                    FilledButton.tonalIcon(
+                      onPressed: busy ? null : chooseAudio,
                       icon: const Icon(Icons.library_music),
-                      label: SacredText(dt('audio')),
+                      label: SacredText(dt('chooseAzan')),
                     ),
                     Row(
                       children: [
@@ -627,7 +684,16 @@ class _PrayersPageState extends State<PrayersPage> {
                       child: SacredText(dt('alarmTest')),
                     ),
                     SwitchListTile(
-                      title: SacredText(dt('activate')),
+                      title: SacredText(dt('activateAzan')),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      tileColor: colors.surfaceContainerHigh,
+                      secondary: Icon(
+                        enabled
+                            ? Icons.notifications_active
+                            : Icons.notifications_off_outlined,
+                      ),
                       value: enabled,
                       onChanged: busy ? null : (_) => toggle(),
                     ),
@@ -686,4 +752,41 @@ List<AppRecord> buildPrayerEvents(
   }
   events.sort((a, b) => (a['at'] as int).compareTo(b['at'] as int));
   return events;
+}
+
+/// Fingerprints use only calculation settings; choosing an audio never dirties times.
+String prayerSectionSignature(AppRecord options, String section) {
+  switch (section) {
+    case 'location':
+      return jsonEncode(
+        options['coordinates'] == true
+            ? [
+                true,
+                double.tryParse(
+                  options['latitude'].toString().trim().replaceAll(',', '.'),
+                ),
+                double.tryParse(
+                  options['longitude'].toString().trim().replaceAll(',', '.'),
+                ),
+              ]
+            : [
+                false,
+                options['city'].toString().trim().toLowerCase(),
+                options['country'].toString().trim().toLowerCase(),
+              ],
+      );
+    case 'method':
+      return jsonEncode([options['method'], options['hanafi'] == true]);
+    case 'adjustments':
+      return jsonEncode([
+        for (final prayer in prayerNames)
+          int.tryParse(
+            westernDigits(
+              (options['adjustments'] as Map?)?[prayer]?.toString() ?? '0',
+            ),
+          ),
+      ]);
+    default:
+      throw ArgumentError.value(section);
+  }
 }

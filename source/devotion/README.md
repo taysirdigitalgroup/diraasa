@@ -37,3 +37,8 @@ progressions et rappels sont persistants ; pas de modification du schéma notes.
 reconstruction des chapitres. Chaque entrée dispose d’une liste references distincte
 du texte ; le numéro d’invocation parenthésé en début de ligne est conservé.
 Les appels répétés ne se confondent pas entre les différents segments de notes.
+
+2.1.2 : la page Infos Hisn est limitée à l’introduction et aux bienfaits du zikr.
+L’asset contient frontMatter (deux parties avec leurs références), sans copie brute
+sourceBlocks des 90 blocs du livre. Le SQL d’origine complet est conservé ici et
+son empreinte reste contrôlée. Les 132 chapitres / 267 entrées de lecture sont conservés.

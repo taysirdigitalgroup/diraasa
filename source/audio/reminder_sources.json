@@ -1,0 +1,52 @@
+[
+  {
+    "file": "reminder_birds.m4a",
+    "author": "isaiah658",
+    "page": "https://opengameart.org/content/ambient-bird-sounds",
+    "download": "https://opengameart.org/sites/default/files/birds-isaiah658_0.ogg",
+    "license": "CC0-1.0",
+    "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "source_sha256": "359e4e3f9da9d75aac64cede511c7e3ef8b461f9d9f8c230f8f80e44c4b3e35f",
+    "conversion": "First up to 8 seconds, AAC mono 24 kHz 32 kbit/s, loudness -20 LUFS, short fade-in/out"
+  },
+  {
+    "file": "reminder_water.m4a",
+    "author": "TyberiusGames",
+    "page": "https://opengameart.org/content/waterflow-sound",
+    "download": "https://opengameart.org/sites/default/files/waterflow.mp3",
+    "license": "CC0-1.0",
+    "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "source_sha256": "5a053719d5b06a8e5005dbe81b66e020f10312635a823d66883702568c971e92",
+    "conversion": "First up to 8 seconds, AAC mono 24 kHz 32 kbit/s, loudness -20 LUFS, short fade-in/out"
+  },
+  {
+    "file": "reminder_waves.m4a",
+    "author": "transitking (via qubodup)",
+    "page": "https://opengameart.org/content/water-waves",
+    "download": "https://opengameart.org/sites/default/files/wave_01_cc0-11505__transitking__wavesound.flac",
+    "license": "CC0-1.0",
+    "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "source_sha256": "0bd84b2061a82c234470bd4e16efc6ab24851928d3f93e1757bfea048b2d7a33",
+    "conversion": "First up to 8 seconds, AAC mono 24 kHz 32 kbit/s, loudness -20 LUFS, short fade-in/out"
+  },
+  {
+    "file": "reminder_chime.m4a",
+    "author": "PWL",
+    "page": "https://opengameart.org/content/bell-dingschimes",
+    "download": "https://opengameart.org/sites/default/files/bell_ding1.wav",
+    "license": "CC0-1.0",
+    "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "source_sha256": "8ce40f49cd211125303df59db0da4fe911e8b2f34d3847011b15137c6b5850de",
+    "conversion": "First up to 8 seconds, AAC mono 24 kHz 32 kbit/s, loudness -20 LUFS, short fade-in/out"
+  },
+  {
+    "file": "reminder_alarm.m4a",
+    "author": "bonzille",
+    "page": "https://opengameart.org/content/alarm-sound-effect",
+    "download": "https://opengameart.org/sites/default/files/alarm_2.wav",
+    "license": "CC0-1.0",
+    "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "source_sha256": "aced8ba1067e2099e39455724d79aa90368a1a69efe615693237f5140337ad5d",
+    "conversion": "First up to 8 seconds, AAC mono 24 kHz 32 kbit/s, loudness -20 LUFS, short fade-in/out"
+  }
+]

@@ -20,7 +20,7 @@ class DevotionNative(private val activity: Activity) {
     private val worker = Executors.newSingleThreadExecutor()
     private val main = Handler(Looper.getMainLooper())
     private var audioResult: MethodChannel.Result? = null
-    fun accepts(method: String) = method in setOf("applicationSettings","alarmTest","audioCatalog","backgroundSettings","detectLocation","devotionRead","devotionWrite","pickAzan","azanStatus","azanPermissions","azanExactSettings","azanSchedule","azanDisable","azanPreview","azanStop","remindersConfigure","devotionLaunch")
+    fun accepts(method: String) = method in setOf("openExternal","localTimezone","reminderCatalog","applicationSettings","alarmTest","audioCatalog","backgroundSettings","detectLocation","devotionRead","devotionWrite","pickAzan","azanStatus","azanPermissions","azanExactSettings","azanSchedule","azanDisable","azanPreview","azanStop","remindersConfigure","devotionLaunch")
     fun handle(call: MethodCall, result: MethodChannel.Result) {
         val a = call.arguments as? Map<*,*> ?: emptyMap<Any,Any>()
         try {
@@ -34,6 +34,15 @@ class DevotionNative(private val activity: Activity) {
                     (activity.getSystemService(Context.ALARM_SERVICE) as AlarmManager).setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP,at,pending)
                     result.success(true)
                 }
+                "openExternal" -> {
+                    val uri=Uri.parse(a["url"]?.toString()?:"")
+                    require(uri.scheme in setOf("https","tel")){"Lien non autorisé"}
+                    if(uri.scheme=="https")require(!uri.host.isNullOrBlank())
+                    activity.startActivity(Intent(if(uri.scheme=="tel")Intent.ACTION_DIAL else Intent.ACTION_VIEW,uri))
+                    result.success(true)
+                }
+                "localTimezone" -> result.success(java.util.TimeZone.getDefault().id)
+                "reminderCatalog" -> result.success(activity.assets.open("audio/reminders.json").bufferedReader().use{it.readText()})
                 "audioCatalog" -> result.success(activity.assets.open("audio/catalog.json").bufferedReader().use{it.readText()})
                 "backgroundSettings" -> {AlarmSupport.requestBackground(activity);result.success(true)}
                 "detectLocation" -> AlarmSupport.locate(activity,result)

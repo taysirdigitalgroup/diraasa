@@ -1,9 +1,9 @@
-# Diraasa · دراسة — 2.1.0+27
+# Diraasa · دراسة — 2.1.2+29
 Carnet d’études arabes et dictionnaire مختار الصحاح, Android, hors ligne.
 Package : **com.tdg.diraasa**.
 
 ## Installer la mise à jour
-L’archive Diraasa_MAJ_2.1.0.tar.gz contient **lib/ complet** et les autres fichiers
+L’archive Diraasa_MAJ_2.1.2.tar.gz contient **lib/ complet** et les autres fichiers
 nécessaires, aux chemins de la racine du projet existant.
 Arrêter flutter run, extraire à côté de pubspec.yaml, puis :
 ```bash
@@ -344,3 +344,52 @@ La base de notes reste v4. Ne pas désinstaller, vider les données ou changer l
 Les clés des anciens wirds et rappels sont conservées. Aucun package Flutter ajouté.
 Contrôles locaux : données/migrations, audio, syntaxe Dart et Kotlin avec interfaces
 Flutter simulées ; les tests Flutter et l’essai Android réel restent à exécuter.
+
+## Évolution 2.1.1 — actualisation et sons naturels
+- Un bouton Actualiser dans Localisation, Méthode de calcul et Ajustement en
+  minutes. Chaque bouton est actif uniquement si les paramètres de sa section
+  diffèrent des derniers paramètres appliqués ; rétablir les valeurs le désactive.
+  Sans horaires au premier lancement, utiliser Actualiser sous le cadran.
+- Un rafraîchissement réussi applique tous les paramètres de calcul en attente.
+  En cas d’échec, les changements restent à appliquer et les boutons restent actifs.
+  Les paramètres appliqués sont mémorisés avec le cache sans toucher à notes.db.
+- Sous le cadran : Localisation et Actualiser sur une même ligne, espacés.
+  Le choix d’azan et son activation sont regroupés uniquement dans la carte du bas,
+  avec le libellé « Choisir un Azan » et les commandes d’écoute/arrêt.
+- La date affiche le fuseau actuel du téléphone, relu au retour dans l’app et
+  chaque minute. Les horaires calculés continuent à indiquer le fuseau du lieu
+  choisi lorsqu’il diffère de celui du téléphone.
+- Cinq sons supplémentaires pour les rappels : oiseaux du matin, eau qui coule,
+  vagues douces, carillon et signal d’alarme. Environ 100 Ko pour les cinq,
+  AAC mono, extraits de huit secondes maximum. Six sons intégrés au total,
+  avec le signal précédent et la sélection d’un fichier personnel conservés.
+  Sources CC0 et crédits dans source/audio/reminder_sources.json.
+
+Contrôles des données et audio exécutés. Les tests Flutter et l’essai sur appareil
+restent nécessaires ; aucune désinstallation ou réinitialisation demandée.
+
+Compléments 2.1.1 : Wird est présenté avant Azkar sur la page Chapelet et Azkar.
+Le surlignage sélectionnable (dont les sourates) utilise explicitement des boîtes
+serrées : le réglage natif Flutter BoxWidthStyle.max élargissait la couleur à la
+ligne. Aucun découpage ou remplacement du texte arabe n’est ajouté.
+
+## Évolution 2.1.2 — Sources et Références, soutien
+- Infos des invocations : deux parties complètes (introduction et bienfaits du
+  zikr), avec leurs références et réglage de lecture. La phrase continuant au
+  début du troisième bloc SQL est réintégrée avant le premier chapitre d’azkar.
+- Suppression de la copie des 90 blocs bruts dans l’asset de l’application ; les
+  132 chapitres / 267 entrées restent disponibles. Le SQL original intégral est
+  conservé dans source/devotion/, inchangé et contrôlé par empreinte.
+- Infos de l’app : section Sources et Références, avec accès au dictionnaire,
+  aux invocations, aux textes/polices du Coran, aux horaires et aux crédits audio.
+- Faire un don sous les contacts développeur : PayPal ouvre exactement
+  https://paypal.me/MBENGUE28, fourni dans FLUTTER_DEV_ENV_CONFIGS.md.
+  Le fichier ne renseigne ni lien marchand Wave ni numéro Orange Money distinct.
+  Ces deux cartes proposent de contacter TDG ou copier son numéro de contact
+  pour demander les coordonnées. Le numéro n’est pas présenté comme compte de don.
+- Ouverture de liens HTTPS et du composeur téléphonique par le code Android
+  existant, sans dépendance Flutter supplémentaire ni appel téléphonique automatique.
+- Données de notes, auteurs, thèmes, préférences et rappels conservées.
+
+Contrôles Python et syntaxe Dart exécutés ; tests Flutter ajoutés pour les sources
+et le lien PayPal. Flutter analyze/test et essai Android non exécutés ici.

@@ -1,0 +1,32 @@
+[
+  {
+    "labelKey": "gentleBell",
+    "author": "Kenney",
+    "page": "https://kenney.nl/assets/digital-audio"
+  },
+  {
+    "labelKey": "soundBirds",
+    "author": "isaiah658",
+    "page": "https://opengameart.org/content/ambient-bird-sounds"
+  },
+  {
+    "labelKey": "soundWater",
+    "author": "TyberiusGames",
+    "page": "https://opengameart.org/content/waterflow-sound"
+  },
+  {
+    "labelKey": "soundWaves",
+    "author": "transitking (via qubodup)",
+    "page": "https://opengameart.org/content/water-waves"
+  },
+  {
+    "labelKey": "soundChime",
+    "author": "PWL",
+    "page": "https://opengameart.org/content/bell-dingschimes"
+  },
+  {
+    "labelKey": "soundAlarm",
+    "author": "bonzille",
+    "page": "https://opengameart.org/content/alarm-sound-effect"
+  }
+]

@@ -86,7 +86,10 @@ class _AlarmReadinessState extends State<AlarmReadiness>
       ),
     ),
     actions: [
-      TextButton(onPressed:()=>request('applicationSettings'),child:SacredText(dt('androidSettings'))),
+      TextButton(
+        onPressed: () => request('applicationSettings'),
+        child: SacredText(dt('androidSettings')),
+      ),
       TextButton(
         onPressed: () => Navigator.pop(context, false),
         child: SacredText(tr('cancel')),
@@ -110,12 +113,8 @@ Future<String?> chooseAlarmAudio(
   BuildContext context, {
   bool reminder = false,
 }) async {
-  final raw = await Store.call('audioCatalog');
-  final rows = reminder
-      ? <dynamic>[
-          {'id': 'asset:audio/reminder.ogg', 'label': dt('gentleBell')},
-        ]
-      : jsonDecode(raw as String) as List;
+  final raw = await Store.call(reminder ? 'reminderCatalog' : 'audioCatalog');
+  final rows = jsonDecode(raw as String) as List;
   if (!context.mounted) return null;
   return showModalBottomSheet<String>(
     context: context,
@@ -137,7 +136,11 @@ Future<String?> chooseAlarmAudio(
             ),
             for (final row in rows)
               ListTile(
-                title: SacredText(row['label'].toString()),
+                title: SacredText(
+                  row['labelKey'] == null
+                      ? row['label'].toString()
+                      : dt(row['labelKey'].toString()),
+                ),
                 leading: IconButton(
                   icon: const Icon(Icons.play_circle_outline),
                   onPressed: () =>
@@ -170,4 +173,19 @@ Future<void> testAlarm(BuildContext context, String audio) async {
   } catch (e) {
     if (context.mounted) errorMessage(context, e);
   }
+}
+
+String reminderAudioLabel(String audio) {
+  const keys = {
+    'reminder.ogg': 'gentleBell',
+    'reminder_birds.m4a': 'soundBirds',
+    'reminder_water.m4a': 'soundWater',
+    'reminder_waves.m4a': 'soundWaves',
+    'reminder_chime.m4a': 'soundChime',
+    'reminder_alarm.m4a': 'soundAlarm',
+  };
+  final key = audio.startsWith('asset:audio/')
+      ? keys[audio.split('/').last]
+      : null;
+  return dt(key ?? 'phoneAudio');
 }
