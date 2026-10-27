@@ -53,8 +53,14 @@ for i,head in enumerate(heads):
   found.append({'id':int(m[1].translate(digits)),'text':clean(body[m.start():entry_end]),'references':references(body[m.start():entry_end]),'count':1,'customCount':True})
  chapters.append({'id':i+1,'title':clean(head[2]),'entries':found,'body':clean(body[head.end():end]),'preface':clean(body[head.end():selected[0].start() if selected else end])})
 assert sum(len(c['entries']) for c in chapters)==267
+# Keep only the two complete front-matter parts in the info view. The virtues
+# paragraph continues at the start of SQL block 3: include it until chapter 1.
+virtues_title=rows[1][1].strip().splitlines()[0]
+virtues_start=body.index(virtues_title)
+front=[('المقدمة',body[:virtues_start]),('فضل الذكر',body[virtues_start:heads[0].start()])]
 out={'source':'hisnul_muslim.sql fourni par utilisateur','book':'حصن المسلم','chapters':chapters,
- 'introduction':clean(body[:heads[0].start()]),'footnotes':notes,'sourceBlocks':[{'title':title,'text':raw} for title,raw in rows]}
+ 'introduction':clean(body[:heads[0].start()]),'footnotes':notes,
+ 'frontMatter':[{'title':title,'text':clean(text),'references':references(text)} for title,text in front]}
 (r/'assets/devotion/hisn.json').write_text(json.dumps(out,ensure_ascii=False,separators=(',',':')))
 (r/'source/devotion/hisn_provenance.json').write_text(json.dumps({'source':source.name,'source_sha256':hashlib.sha256(source.read_bytes()).hexdigest(),'blocks':90,'chapters':132,'entries':267,'footnote_blocks':len(notes),'counter_counts':'User-defined: default 1, reviewed in editor; never inferred from the book prose.'},indent=2))
 print('Hisn utilisateur : 90 blocs, 132 chapitres, 267 entrées ;',len(notes),'blocs de notes conservés.')

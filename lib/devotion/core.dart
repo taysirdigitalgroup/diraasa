@@ -20,6 +20,7 @@ String dt(String key) {
 }
 
 const devotionLabels = <String, List<String>>{
+  'cults': ['Cultes', 'العبادات', 'Worship'],
   'sourcesReferences': [
     'Sources et Références',
     'المصادر والمراجع',

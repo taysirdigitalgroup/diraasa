@@ -22,7 +22,14 @@ source=r/'source/devotion/hisnul_muslim.sql'
 db=sqlite3.connect(':memory:');db.execute('CREATE TABLE songs(title,content_raw,category_id,author_id,approval_score,status,last_editor_id,author)');db.executescript(source.read_text())
 rows=db.execute('SELECT title,content_raw FROM songs ORDER BY rowid').fetchall()
 hisn=json.loads((r/'assets/devotion/hisn.json').read_text());assert len(hisn['chapters'])==132
-assert [(c['title'],c['text']) for c in hisn['sourceBlocks']]==rows
+assert len(rows)==90 and 'sourceBlocks' not in hisn
+front=hisn['frontMatter'];assert [p['title'] for p in front]==['المقدمة','فضل الذكر']
+assert len(front)==2 and all(p['text'] and p['references'] for p in front)
+assert 'مَجْلِسٍ' in front[1]['text'] and 'حَسْرةً' in front[1]['text']
+assert 'أَذْكَارُ الاسْتِيقَاظِ' not in front[1]['text']
+provenance=json.loads((r/'source/devotion/hisn_provenance.json').read_text())
+assert provenance['source_sha256']==hashlib.sha256(source.read_bytes()).hexdigest()
+
 assert [e['id'] for c in hisn['chapters'] for e in c['entries']]==list(range(1,268))
 assert all(e['customCount'] and e['count']==1 for c in hisn['chapters'] for e in c['entries'])
 assert len(hisn['footnotes'])==138
@@ -43,4 +50,4 @@ manifest=ET.parse(r/'android/app/src/main/AndroidManifest.xml');name='{http://sc
 receivers={e.get(name) for e in manifest.findall('application/receiver')}
 assert {'.AzanReceiver','.ZikrReminderReceiver'}<=receivers
 assert manifest.find('application/service').get('{http://schemas.android.com/apk/res/android}foregroundServiceType')=='mediaPlayback'
-print('OK : Hafs 6236 / Warsh 6214, 114 sourates chacun, glyphes couverts ; Hisn 132 chapitres/267 entrées/138 notes et 90 blocs originaux intacts ; manifest azan/rappels.')
+print('OK : Hafs 6236 / Warsh 6214, 114 sourates chacun, glyphes couverts ; Hisn 132 chapitres/267 entrées/138 notes, 2 parties liminaires et SQL original intact ; manifest azan/rappels.')

@@ -8,13 +8,21 @@ import 'tasbih.dart';
 import 'prayers.dart';
 
 class DevotionHub extends StatelessWidget {
-  const DevotionHub({super.key});
+  const DevotionHub({super.key, this.embedded = false});
+  final bool embedded;
   @override
-  Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: SacredText(dt('hub'))),
-    body: ListView(
+  Widget build(BuildContext context) {
+    final body = ListView(
       padding: const EdgeInsets.all(20),
       children: [
+        if (embedded)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 16),
+            child: SacredText(
+              dt('cults'),
+              style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+            ),
+          ),
         for (final feature in <({String label, IconData icon, Widget page})>[
           (
             label: 'quran',
@@ -66,6 +74,12 @@ class DevotionHub extends StatelessWidget {
             ),
           ),
       ],
-    ),
-  );
+    );
+    return embedded
+        ? body
+        : Scaffold(
+            appBar: AppBar(title: SacredText(dt('cults'))),
+            body: body,
+          );
+  }
 }

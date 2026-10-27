@@ -556,7 +556,13 @@ void main() {
   widgetCase('Quatre onglets, profil auteur et thème vers notes', (tester) async {
     await screen(tester, height: 1100);
     expect(tester.widgetList<NavigationDestination>(find.byType(NavigationDestination)).map((d) => d.label),
-      ['Notes', 'Thèmes', 'Auteurs', 'Dictionnaire']);
+      ['Notes', 'Thèmes', 'Auteurs', 'Dictionnaire', 'Cultes']);
+    await tester.tap(find.byKey(const ValueKey('tab-cults')));
+    await tester.pumpAndSettle();
+    expect(tester.widget<NavigationBar>(find.byType(NavigationBar)).selectedIndex, 4);
+    expect(find.byType(AppBar), findsOneWidget);
+    expect(find.byKey(const ValueKey('devotion-hub')), findsNothing);
+    expect(find.text('Coran · Warsh / Hafs'), findsOneWidget);
     await tester.tap(find.widgetWithText(NavigationDestination, 'Auteurs'));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('author-1')));

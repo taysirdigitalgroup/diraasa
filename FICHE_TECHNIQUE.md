@@ -1,12 +1,12 @@
 # Diraasa — Fiche technique et historique
-Version application : **2.1.2+29**  
+Version application : **2.1.3+30**  
 Date : **27 octobre 2026**  
 Application Android : **com.tdg.diraasa**  
 Éditeur : Taysir Digital Group — Aliou Mbengue
 
 ## 1. Architecture
 Flutter Material 3, Dart >=3.9 / Flutter >=3.35.
-Quatre onglets : Notes / Thèmes / Auteurs / Dictionnaire. Canal natif tdg.diraasa/data.
+Cinq onglets : Notes / Thèmes / Auteurs / Dictionnaire / Cultes. Canal natif tdg.diraasa/data.
 SQLite Android pour la persistance ; requêtes sur un exécuteur dédié.
 Gradle 8.14.1, AGP 8.11.1, Kotlin 2.2.20, Java 17, SDK 36.
 Ces versions TDG ne sont pas modifiées par cette mise à jour.
@@ -481,18 +481,28 @@ deux mesures d’introduction masquée à 233 px et un retour de page introuvabl
   pas de permission CALL_PHONE ni de nouvelle dépendance.
 - Localisation fr/ar/en des nouveaux libellés. Taille de lecture dans les sources.
 - Nouveaux fichiers sources.dart, audio_sources.json, sources_test.dart.
-- Version 2.1.2+29 ; notes.db reste v4, aucun effacement ni migration destructive.
+- Version 2.1.3+30 ; notes.db reste v4, aucun effacement ni migration destructive.
 - Contrôles d’intégrité, données et syntaxe ; tests Flutter non exécutés ici.
 
+### 2.1.3 — Espace spirituel dans Cultes
+- Cinquième destination Cultes, après Dictionnaire ; retrait de l’icône du header.
+- Hub intégré au corps de Home, sans Scaffold/AppBar imbriqué ; les quatre
+  fonctionnalités continuent à ouvrir leurs sous-pages avec retour vers Cultes.
+- Ordre fixe en arabe ; labels fr/ar/en et taille adaptée aux petits écrans.
+- Test de navigation existant actualisé : ordre des cinq destinations, sélection
+  de Cultes, présence des cartes et absence de second header.
+- notes.db v4 et toutes les préférences inchangées ; aucun changement Android.
+- Vérifications : syntaxe Dart et contrôles locaux. Tests Flutter non exécutés ici.
+
 ## 4. Fichiers de cette mise à jour
-Archive cumulative depuis 1.0.1 : **Diraasa_MAJ_2.1.2.tar.gz**.
+Archive cumulative depuis 1.0.1 : **Diraasa_MAJ_2.1.3.tar.gz**.
 - lib/ complet, dont lib/devotion/ et les modifications de navigation/rendu.
 - Sources Kotlin de MainActivity, NotesDatabase, DevotionNative, AzanAlarms,
   AzanService et ZikrReminders ; manifestes main/debug/profile.
 - assets/devotion/ : données importées ; assets/fonts/ : polices fournies.
 - source/devotion/ : SQL originaux, rapports et documentation de provenance.
 - pubspec.yaml, test/ et outils de validation/import modifiés.
-- README.md, FICHE_TECHNIQUE.md et MANIFEST_MAJ_2.1.2.txt.
+- README.md, FICHE_TECHNIQUE.md et MANIFEST_MAJ_2.1.3.txt.
 Aucune base utilisateur n’est incluse. Les nouvelles données sont des assets distincts.
 
 ## 4 bis. Préférences : format et évolution
