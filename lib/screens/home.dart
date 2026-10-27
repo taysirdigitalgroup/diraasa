@@ -339,9 +339,9 @@ class _HomeState extends State<Home> {
                   ),
                 ),
                 child: NavigationBar(
-                  selectedIndex: [0, 3, 2, 1, 4].indexOf(tab),
+                  selectedIndex: [2, 3, 0, 1, 4].indexOf(tab),
                   onDestinationSelected: (index) {
-                    final value = [0, 3, 2, 1, 4][index];
+                    final value = [2, 3, 0, 1, 4][index];
                     if (tab == value) return;
                     focus.unfocus();
                     debounce?.cancel();
@@ -358,16 +358,16 @@ class _HomeState extends State<Home> {
                   },
                   destinations: [
                     NavigationDestination(
-                      icon: const Icon(Icons.edit_note_outlined),
-                      label: tr('notes'),
+                      icon: const Icon(Icons.people_outline),
+                      label: tr('authors'),
                     ),
                     NavigationDestination(
                       icon: const Icon(Icons.topic_outlined),
                       label: tr('themes'),
                     ),
                     NavigationDestination(
-                      icon: const Icon(Icons.people_outline),
-                      label: tr('authors'),
+                      icon: const Icon(Icons.edit_note_outlined),
+                      label: tr('notes'),
                     ),
                     NavigationDestination(
                       icon: const Icon(Icons.menu_book_outlined),

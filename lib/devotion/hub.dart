@@ -19,7 +19,7 @@ class DevotionHub extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.only(bottom: 16),
             child: SacredText(
-              dt('cults'),
+              dt('hub'),
               style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
             ),
           ),
@@ -78,7 +78,7 @@ class DevotionHub extends StatelessWidget {
     return embedded
         ? body
         : Scaffold(
-            appBar: AppBar(title: SacredText(dt('cults'))),
+            appBar: AppBar(title: SacredText(dt('hub'))),
             body: body,
           );
   }

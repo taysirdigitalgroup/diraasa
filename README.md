@@ -1,9 +1,9 @@
-# Diraasa · دراسة — 2.1.3+30
+# Diraasa · دراسة — 2.1.5+32
 Carnet d’études arabes et dictionnaire مختار الصحاح, Android, hors ligne.
 Package : **com.tdg.diraasa**.
 
 ## Installer la mise à jour
-L’archive Diraasa_MAJ_2.1.3.tar.gz contient **lib/ complet** et les autres fichiers
+L’archive Diraasa_MAJ_2.1.5.tar.gz contient **lib/ complet** et les autres fichiers
 nécessaires, aux chemins de la racine du projet existant.
 Arrêter flutter run, extraire à côté de pubspec.yaml, puis :
 ```bash
@@ -403,3 +403,14 @@ Les libellés sont localisés (Cultes / العبادات / Worship) ; la barre g
 ordre en arabe. Taille des labels adaptée aux écrans étroits. Aucun changement
 aux données ni aux configurations de rappel. Test existant de navigation actualisé.
 Syntaxe Dart et contrôles locaux vérifiés ; tests Flutter non exécutés ici.
+
+## Évolution 2.1.4 — titre de la page spirituelle
+Le cinquième onglet conserve le nom Cultes. Le titre dans sa page est
+Espace spirituel (et ses traductions), y compris en ouverture autonome.
+Aucune modification des données. Syntaxe Dart vérifiée ; tests Flutter non exécutés.
+
+## Évolution 2.1.5 — ordre des onglets
+Ordre : Auteurs | Thèmes | Notes | Dictionnaire | Cultes, également en arabe.
+Chaque destination garde sa page et ses actions. Notes reste sélectionné au
+lancement. Espace spirituel reste le titre de la page Cultes.
+Aucune modification des données. Syntaxe vérifiée ; tests Flutter non exécutés.
