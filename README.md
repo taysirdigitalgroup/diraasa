@@ -1,9 +1,9 @@
-# Diraasa · دراسة — 2.1.5+32
+# Diraasa · دراسة — 2.1.6+33
 Carnet d’études arabes et dictionnaire مختار الصحاح, Android, hors ligne.
 Package : **com.tdg.diraasa**.
 
 ## Installer la mise à jour
-L’archive Diraasa_MAJ_2.1.5.tar.gz contient **lib/ complet** et les autres fichiers
+L’archive Diraasa_MAJ_2.1.6.tar.gz contient **lib/ complet** et les autres fichiers
 nécessaires, aux chemins de la racine du projet existant.
 Arrêter flutter run, extraire à côté de pubspec.yaml, puis :
 ```bash
@@ -414,3 +414,11 @@ Ordre : Auteurs | Thèmes | Notes | Dictionnaire | Cultes, également en arabe.
 Chaque destination garde sa page et ses actions. Notes reste sélectionné au
 lancement. Espace spirituel reste le titre de la page Cultes.
 Aucune modification des données. Syntaxe vérifiée ; tests Flutter non exécutés.
+
+## Évolution 2.1.6 — son des rappels
+Dans la programmation d’un rappel Zikr/Wird, le champ est intitulé
+« Choisir un son d’alarme ». Le sélecteur regroupe les six sons de rappel et
+les huit azans intégrés, avec écoute et choix personnel sur le téléphone.
+Le nom de l’azan sélectionné est affiché après réouverture. Les rappels gardent
+leur arrêt automatique à 30 secondes ; les appels à la prière gardent leur durée
+complète. Préférences et données inchangées. Syntaxe vérifiée, tests Flutter non exécutés.

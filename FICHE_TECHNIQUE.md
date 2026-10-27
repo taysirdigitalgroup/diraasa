@@ -1,5 +1,5 @@
 # Diraasa — Fiche technique et historique
-Version application : **2.1.5+32**  
+Version application : **2.1.6+33**  
 Date : **27 octobre 2026**  
 Application Android : **com.tdg.diraasa**  
 Éditeur : Taysir Digital Group — Aliou Mbengue
@@ -481,7 +481,7 @@ deux mesures d’introduction masquée à 233 px et un retour de page introuvabl
   pas de permission CALL_PHONE ni de nouvelle dépendance.
 - Localisation fr/ar/en des nouveaux libellés. Taille de lecture dans les sources.
 - Nouveaux fichiers sources.dart, audio_sources.json, sources_test.dart.
-- Version 2.1.5+32 ; notes.db reste v4, aucun effacement ni migration destructive.
+- Version 2.1.6+33 ; notes.db reste v4, aucun effacement ni migration destructive.
 - Contrôles d’intégrité, données et syntaxe ; tests Flutter non exécutés ici.
 
 ### 2.1.3 — Espace spirituel dans Cultes
@@ -505,15 +505,23 @@ deux mesures d’introduction masquée à 233 px et un retour de page introuvabl
 - Attente du test de navigation actualisée. Syntaxe vérifiée, tests Flutter non exécutés.
 - Données et préférences inchangées.
 
+### 2.1.6 — azans dans le sélecteur des alarmes
+- Champ et modal : Choisir un son d’alarme, avec traductions fr/ar/en.
+- Catalogue fusionné en mode rappel : six sons + huit azans, deux sections,
+  écoute, choix et import personnel conservés. Pas de duplication des fichiers audio.
+- Nom de l’azan restauré depuis le catalogue ; identifiants audio persistants inchangés.
+- Limite de sonnerie des rappels à 30 s maintenue, horaires de prière inchangés.
+- Syntaxe Dart vérifiée ; tests Flutter non exécutés ici. Aucun changement de base.
+
 ## 4. Fichiers de cette mise à jour
-Archive cumulative depuis 1.0.1 : **Diraasa_MAJ_2.1.5.tar.gz**.
+Archive cumulative depuis 1.0.1 : **Diraasa_MAJ_2.1.6.tar.gz**.
 - lib/ complet, dont lib/devotion/ et les modifications de navigation/rendu.
 - Sources Kotlin de MainActivity, NotesDatabase, DevotionNative, AzanAlarms,
   AzanService et ZikrReminders ; manifestes main/debug/profile.
 - assets/devotion/ : données importées ; assets/fonts/ : polices fournies.
 - source/devotion/ : SQL originaux, rapports et documentation de provenance.
 - pubspec.yaml, test/ et outils de validation/import modifiés.
-- README.md, FICHE_TECHNIQUE.md et MANIFEST_MAJ_2.1.5.txt.
+- README.md, FICHE_TECHNIQUE.md et MANIFEST_MAJ_2.1.6.txt.
 Aucune base utilisateur n’est incluse. Les nouvelles données sont des assets distincts.
 
 ## 4 bis. Préférences : format et évolution

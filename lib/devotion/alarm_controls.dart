@@ -115,6 +115,11 @@ Future<String?> chooseAlarmAudio(
 }) async {
   final raw = await Store.call(reminder ? 'reminderCatalog' : 'audioCatalog');
   final rows = jsonDecode(raw as String) as List;
+  final soundCount = rows.length;
+  if (reminder) {
+    final azans = await Store.call('audioCatalog');
+    rows.addAll(jsonDecode(azans as String) as List);
+  }
   if (!context.mounted) return null;
   return showModalBottomSheet<String>(
     context: context,
@@ -125,6 +130,13 @@ Future<String?> chooseAlarmAudio(
         height: MediaQuery.sizeOf(sheet).height * .7,
         child: ListView(
           children: [
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: SacredText(
+                dt(reminder ? 'chooseAlarmSound' : 'chooseAzan'),
+                style: Theme.of(sheet).textTheme.titleLarge,
+              ),
+            ),
             ListTile(
               leading: const Icon(Icons.folder_open),
               title: SacredText(dt('phoneAudio')),
@@ -134,23 +146,33 @@ Future<String?> chooseAlarmAudio(
                   Navigator.pop(sheet, value);
               },
             ),
-            for (final row in rows)
+            for (final entry in rows.asMap().entries) ...[
+              if (reminder && (entry.key == 0 || entry.key == soundCount))
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+                  child: SacredText(
+                    dt(entry.key == 0 ? 'alarmSounds' : 'adhans'),
+                    style: Theme.of(sheet).textTheme.titleSmall,
+                  ),
+                ),
               ListTile(
                 title: SacredText(
-                  row['labelKey'] == null
-                      ? row['label'].toString()
-                      : dt(row['labelKey'].toString()),
+                  entry.value['labelKey'] == null
+                      ? entry.value['label'].toString()
+                      : dt(entry.value['labelKey'].toString()),
                 ),
                 leading: IconButton(
                   icon: const Icon(Icons.play_circle_outline),
                   onPressed: () =>
-                      Store.call('azanPreview', {'audio': row['id']}),
+                      Store.call('azanPreview', {'audio': entry.value['id']}),
                 ),
                 onTap: () async {
                   await Store.call('azanStop');
-                  if (sheet.mounted) Navigator.pop(sheet, row['id'].toString());
+                  if (sheet.mounted)
+                    Navigator.pop(sheet, entry.value['id'].toString());
                 },
               ),
+            ],
             TextButton(
               onPressed: () => Store.call('azanStop'),
               child: SacredText(dt('stopAudio')),
@@ -187,5 +209,7 @@ String reminderAudioLabel(String audio) {
   final key = audio.startsWith('asset:audio/')
       ? keys[audio.split('/').last]
       : null;
+  if (audio.startsWith('asset:audio/adhan_'))
+    return '${dt('integratedAdhan')} · ${audio.split('_').last.split('.').first}';
   return dt(key ?? 'phoneAudio');
 }

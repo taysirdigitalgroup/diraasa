@@ -20,6 +20,15 @@ String dt(String key) {
 }
 
 const devotionLabels = <String, List<String>>{
+  'chooseAlarmSound': [
+    'Choisir un son d’alarme',
+    'اختيار صوت المنبه',
+    'Choose an alarm sound',
+  ],
+  'alarmSounds': ['Sons d’alarme', 'أصوات المنبه', 'Alarm sounds'],
+  'adhans': ['Azans', 'الأذان', 'Adhans'],
+  'integratedAdhan': ['Azan intégré', 'أذان مدمج', 'Built-in Adhan'],
+
   'cults': ['Cultes', 'العبادات', 'Worship'],
   'sourcesReferences': [
     'Sources et Références',

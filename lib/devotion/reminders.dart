@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 
 import '../core/app_core.dart';
@@ -195,6 +196,28 @@ class _ReminderEditorState extends State<ReminderEditor> {
   late String audio =
       widget.reminder?['audio']?.toString() ?? 'asset:audio/reminder.ogg';
   late bool enabled = widget.reminder?['enabled'] != false;
+  Map<String, String> adhanNames = {};
+  @override
+  void initState() {
+    super.initState();
+    loadAudioNames();
+  }
+
+  Future<void> loadAudioNames() async {
+    try {
+      final raw = await Store.call('audioCatalog');
+      if (raw is String && mounted)
+        setState(
+          () => adhanNames = {
+            for (final row in jsonDecode(raw) as List)
+              row['id'].toString(): row['label'].toString(),
+          },
+        );
+    } catch (_) {
+      /* The selected audio still plays; the label has a local fallback. */
+    }
+  }
+
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(
@@ -257,8 +280,8 @@ class _ReminderEditorState extends State<ReminderEditor> {
         ),
         ListTile(
           leading: const Icon(Icons.music_note),
-          title: SacredText(dt('audio')),
-          subtitle: SacredText(reminderAudioLabel(audio)),
+          title: SacredText(dt('chooseAlarmSound')),
+          subtitle: SacredText(adhanNames[audio] ?? reminderAudioLabel(audio)),
           onTap: () async {
             final v = await chooseAlarmAudio(context, reminder: true);
             if (v != null && mounted) setState(() => audio = v);
