@@ -155,8 +155,14 @@ void main() {
       await tester.pumpAndSettle();
       expect(tester.widget<TextFormField>(field).controller!.text, '5');
       await tester.enterText(field, '20');
-      await tester.tap(find.byKey(const ValueKey('refresh-adjustments')));
+      // Editing marks the modal dirty. Rebuild before tapping the button,
+      // which was disabled while the draft still matched the applied values.
+      await tester.pump();
+      final apply = find.byKey(const ValueKey('refresh-adjustments'));
+      expect(tester.widget<FilledButton>(apply).onPressed, isNotNull);
+      await tester.tap(apply);
       await tester.pumpAndSettle();
+      expect((saved['options'] as Map)['adjustments']['Dhuhr'], '20');
       expect(displayed(tester), '12:20');
       expect(saved['syncedAt'], oldSync);
       expect(nativeEnabled, true);

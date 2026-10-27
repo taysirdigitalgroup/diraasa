@@ -492,3 +492,6 @@ simulées). Tests Flutter ajoutés mais non exécutés ; APK et essai réel rest
 
 ### Mise à jour 2.2.2
 Correction du rafraîchissement des aperçus horaires pendant la saisie des minutes. Extraire à la racine du projet existant, sans désinstaller l’application ni effacer ses données. Puis lancer `flutter pub get && flutter analyze && flutter test && flutter run`.
+
+### Mise à jour 2.2.3
+Le test d’application des ajustements attend désormais la reconstruction du bouton après saisie, vérifie son activation puis la valeur enregistrée. Les attentes horaires restent identiques.

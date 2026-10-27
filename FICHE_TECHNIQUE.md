@@ -609,3 +609,9 @@ Le test SQL ne remplace pas un essai de mise à jour sur appareil.
 - Aperçus des ajustements de prière et des avances d’azan directement abonnés au contrôleur de saisie via ValueListenableBuilder : leur actualisation ne dépend plus du rafraîchissement du modal.
 - Horaires principaux et programmation restent liés aux valeurs appliquées ; aucune modification de la base de données.
 - Flutter indisponible dans cet environnement : analyse, tests widgets et APK à exécuter sur le poste de développement.
+
+## 2.2.3+37 — 27 octobre 2026
+
+- Diagnostic corrigé : l’échec signalé à la ligne 160 concerne l’application du brouillon, pas son aperçu. Le test cliquait sur Appliquer avant la reconstruction activant le bouton après saisie.
+- Ajout d’un pump avant clic, assertion du callback actif et vérification de la valeur persistée (Dhuhr : 20 minutes). Aucune attente arbitraire, aucun assouplissement des résultats attendus.
+- Aucun changement de données ou de logique de programmation. Tests Flutter non exécutés ici.
