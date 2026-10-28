@@ -50,6 +50,14 @@ class QuranAudioService:Service() {
             }
         }
     }
+    // Android 13+ reads artwork from MediaSession; older versions use largeIcon.
+    private val artwork by lazy {
+        val icon=applicationInfo.loadIcon(packageManager)
+        android.graphics.Bitmap.createBitmap(512,512,android.graphics.Bitmap.Config.ARGB_8888).also{bitmap->
+            icon.setBounds(0,0,bitmap.width,bitmap.height)
+            icon.draw(android.graphics.Canvas(bitmap))
+        }
+    }
     private lateinit var audio:QuranAudio
     private lateinit var media:MediaSession
     private val handler=Handler(Looper.getMainLooper())
@@ -112,7 +120,7 @@ class QuranAudioService:Service() {
         val playing=value["state"]=="playing"||value["state"]=="loading"
         val reference=if(value["verse"]==0)"${value["chapter"]}: البسملة" else "${value["chapter"]?:""}:${value["verse"]?:""}"
         val builder=if(Build.VERSION.SDK_INT>=26)Notification.Builder(this,CHANNEL)else Notification.Builder(this)
-        return builder.setSmallIcon(android.R.drawable.ic_media_play).setContentTitle("Diraasa · القرآن · Hafs")
+        return builder.setSmallIcon(R.drawable.ic_launcher_monochrome).setLargeIcon(artwork).setContentTitle("Diraasa · القرآن · Hafs")
             .setContentText("$reference · ${value["language"]?.toString()?.uppercase()?:"…"}")
             .setContentIntent(open()).setVisibility(Notification.VISIBILITY_PUBLIC).setCategory(Notification.CATEGORY_TRANSPORT)
             .setOnlyAlertOnce(true).setOngoing(playing).setShowWhen(false)
@@ -133,7 +141,11 @@ class QuranAudioService:Service() {
         val position=(value["position"] as? Number)?.toLong()?:0L
         val duration=(value["duration"] as? Number)?.toLong()?:0L
         val playback=when(state){"playing"->PlaybackState.STATE_PLAYING;"paused"->PlaybackState.STATE_PAUSED;"loading"->PlaybackState.STATE_BUFFERING;"completed"->PlaybackState.STATE_STOPPED;"error"->PlaybackState.STATE_ERROR;else->PlaybackState.STATE_STOPPED}
-        media.setMetadata(MediaMetadata.Builder().putString(MediaMetadata.METADATA_KEY_TITLE,"Hafs · ${value["chapter"]}:${value["verse"]} · ${value["language"]}")
+        media.setMetadata(MediaMetadata.Builder()
+            .putBitmap(MediaMetadata.METADATA_KEY_ART,artwork)
+            .putBitmap(MediaMetadata.METADATA_KEY_ALBUM_ART,artwork)
+            .putBitmap(MediaMetadata.METADATA_KEY_DISPLAY_ICON,artwork)
+            .putString(MediaMetadata.METADATA_KEY_TITLE,"Hafs · ${value["chapter"]}:${value["verse"]} · ${value["language"]}")
             .putString(MediaMetadata.METADATA_KEY_ARTIST,"Diraasa · القرآن الكريم").putLong(MediaMetadata.METADATA_KEY_DURATION,duration).build())
         media.setPlaybackState(PlaybackState.Builder().setActions(PlaybackState.ACTION_PLAY or PlaybackState.ACTION_PAUSE or PlaybackState.ACTION_PLAY_PAUSE or PlaybackState.ACTION_STOP or PlaybackState.ACTION_SEEK_TO)
             .setState(playback,position,if(state=="playing")1f else 0f,SystemClock.elapsedRealtime()).build())

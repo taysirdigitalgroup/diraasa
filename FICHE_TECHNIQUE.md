@@ -1,5 +1,5 @@
 # Diraasa — Fiche technique et historique
-Version application : **2.4.4+47**  
+Version application : **2.4.5+48**  
 Date : **28 octobre 2026**  
 Application Android : **com.tdg.diraasa**  
 Éditeur : Taysir Digital Group — Aliou Mbengue
@@ -710,3 +710,9 @@ Le test SQL ne remplace pas un essai de mise à jour sur appareil.
 - Déclaration du service non exporté dans AndroidManifest, permissions mediaPlayback et WakeLock déjà présentes. Demande de notification Android 13+ au premier lancement du lecteur dans l’activité.
 - Confidentialité mise à jour : lecteur en arrière-plan et référence du verset/langue potentiellement visible sur l’écran verrouillé selon les réglages système.
 - Schéma SQLite et notes inchangés ; aucune migration destructive.
+
+## 2.4.5+48 — 28 octobre 2026
+- Artwork du lecteur Coran : icône launcher Diraasa existante rendue une seule fois en bitmap 512 × 512 ; prend en charge l’icône adaptive Android.
+- Illustration fournie à Notification.largeIcon et aux métadonnées MediaSession ART, ALBUM_ART, DISPLAY_ICON, pour les différents lecteurs système Android.
+- Petite icône de notification : ressource Diraasa monochrome existante (teinte contrôlée par Android).
+- Aucun changement du séquençage, du cache ou de la base de données.

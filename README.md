@@ -1,9 +1,9 @@
-# Diraasa · دراسة — 2.4.4+47
+# Diraasa · دراسة — 2.4.5+48
 Carnet d’études arabes et dictionnaire مختار الصحاح, Android, hors ligne.
 Package : **com.tdg.diraasa**.
 
 ## Installer la mise à jour
-L’archive Diraasa_MAJ_2.4.4.tar.gz contient **lib/ complet** et les autres fichiers
+L’archive Diraasa_MAJ_2.4.5.tar.gz contient **lib/ complet** et les autres fichiers
 nécessaires, aux chemins de la racine du projet existant.
 Arrêter flutter run, extraire à côté de pubspec.yaml, puis :
 ```bash
@@ -541,3 +541,6 @@ Hafs apparaît en premier et est choisi par défaut en l'absence de préférence
 La lecture Hafs (AR/FR/EN et modes mixtes) continue lorsque vous quittez la page, changez d’application ou éteignez l’écran. Le service Android mediaPlayback publie une notification avec lecture/pause et arrêt ; les commandes système exposent aussi le déplacement dans le fichier courant. Toucher la notification rouvre la sourate au verset lu, sans recommencer le son. Retirer Diraasa des applications récentes ne coupe pas le service. Débrancher les écouteurs, un appel utilisant le focus audio ou un azan/rappel met la lecture en pause. Arrêter explicitement la lecture la termine et retire le lecteur. Un arrêt forcé Android, la destruction du processus ou un redémarrage ne relancent pas automatiquement le son.
 
 Mise à jour native : arrêter complètement `flutter run`, extraire à la racine du projet puis relancer. Accepter les notifications si Android le demande. Aucun changement de base de données ni des versions de l’environnement TDG.
+
+### 2.4.5 — illustration du lecteur
+Le lecteur multimédia du Coran utilise l’icône Diraasa comme illustration (notification et métadonnées de session pour le lecteur système/écran verrouillé). La petite icône système utilise la version monochrome Diraasa. Aucun changement de données ni de dépendances.
