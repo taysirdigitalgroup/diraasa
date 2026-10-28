@@ -1,9 +1,9 @@
-# Diraasa · دراسة — 2.3.0+40
+# Diraasa · دراسة — 2.3.1+41
 Carnet d’études arabes et dictionnaire مختار الصحاح, Android, hors ligne.
 Package : **com.tdg.diraasa**.
 
 ## Installer la mise à jour
-L’archive Diraasa_MAJ_2.3.0.tar.gz contient **lib/ complet** et les autres fichiers
+L’archive Diraasa_MAJ_2.3.1.tar.gz contient **lib/ complet** et les autres fichiers
 nécessaires, aux chemins de la racine du projet existant.
 Arrêter flutter run, extraire à côté de pubspec.yaml, puis :
 ```bash
@@ -511,3 +511,6 @@ Correction de la réouverture des modals Prières après leur animation de ferme
 
 ### Mise à jour 2.2.5
 Azan du Fajr séparé (Ali Ibn Ahmed Mala), choix persistants et sélection automatique du bon audio par prière. Lecture/pause intégrée aux listes et sous-titres Thèmes/Auteurs. Après extraction, effectuer une relance complète de l’application (code Android modifié), sans désinstallation ni suppression de données.
+
+### Correctif 2.3.1
+La progression indéterminée est suspendue durant les confirmations de restauration et de suppression du compte, tout en gardant les opérations verrouillées. Elle reste affichée pendant les transferts et traitements. Tests renforcés sur les annulations, le réimport et l’état des actions. Aucun changement de base ou de configuration Google.

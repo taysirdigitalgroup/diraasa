@@ -642,3 +642,10 @@ Le test SQL ne remplace pas un essai de mise à jour sur appareil.
 - Téléphone en ACTION_DIAL, e-mail en ACTION_SENDTO mailto ; aucune permission d’appel direct. Wave : lien marchand fourni sous libellé ; Orange Money retiré. Version Infos actualisée.
 - Tests : compilation Kotlin isolée contre Android API36 et bibliothèques réelles (interfaces Flutter substituées), contrôles JVM ZIP/schéma/chemins médias et prière/rappels réussis ; scripts Python de données, migrations, recherche et audio réussis ; syntaxe Dart vérifiée. Tests widgets ajoutés pour confirmations/import, sauvegarde locale, confidentialité et don Wave. Flutter analyze/test et build APK non exécutés ici ; connexion/consentement/Drive réels à valider avec configuration propre sur téléphone.
 - Guide détaillé SIGNATURE_FIREBASE_DRIVE.md inclus : clés existantes, SHA-1/SHA-256, debug/release/Play, Firebase, OAuth, Drive API, installation et validation.
+
+## 2.3.1+41 — 28 octobre 2026
+
+- Correction du timeout pumpAndSettle : le drapeau busy restait actif durant les boîtes de décision, laissant une LinearProgressIndicator indéterminée animer la page en arrière-plan.
+- État awaitingDecision distinct du verrou busy : masquer la progression pendant les décisions de restauration et de suppression du compte ; conserver le verrou pour empêcher une opération concurrente. Retour de l’indicateur pendant les traitements réels, puis libération du verrou dans finally.
+- Tests : absence de progression pendant les deux confirmations, actions toujours verrouillées, progression réelle contrôlée avec Completer, annulation du résumé sans import, puis nouvelle sélection possible. Aucun allongement des timeouts ni assouplissement des attentes de restauration.
+- Données, configuration Firebase, clés et moteur natif inchangés. Tests Flutter non exécutés ici.

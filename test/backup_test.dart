@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:diraasa/core/app_core.dart';
@@ -7,8 +8,10 @@ import 'package:diraasa/screens/privacy.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   late List<String> calls;
+  Completer<dynamic>? exportGate;
   setUp(() {
     calls = [];
+    exportGate = null;
     settings = AppSettings(initialLanguage: 'fr');
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(Store.channel, (call) async {
@@ -18,6 +21,8 @@ void main() {
               return {'configured': false, 'connected': false, 'email': ''};
             case 'backupRecoveryList':
               return [];
+            case 'backupExportLocal':
+              return exportGate == null ? true : exportGate!.future;
             case 'backupPrepareLocal':
               return {
                 'createdAt': 1793145600000,
@@ -62,6 +67,11 @@ void main() {
     await open(tester);
     await tester.tap(find.byKey(const ValueKey('import')));
     await tester.pumpAndSettle();
+    expect(find.byType(LinearProgressIndicator), findsNothing);
+    expect(
+      tester.widget<ListTile>(find.byKey(const ValueKey('import'))).onTap,
+      isNull,
+    );
     await tester.tap(find.text('Annuler'));
     await tester.pumpAndSettle();
     expect(calls, contains('backupCancel'));
@@ -73,9 +83,11 @@ void main() {
       await open(tester);
       await tester.tap(find.byKey(const ValueKey('import')));
       await tester.pumpAndSettle();
+      expect(find.byType(LinearProgressIndicator), findsNothing);
       await tester.tap(find.text('Continuer'));
       await tester.pumpAndSettle();
       expect(find.text('Notes : 3'), findsOneWidget);
+      expect(find.byType(LinearProgressIndicator), findsNothing);
       expect(calls, isNot(contains('backupApply')));
       await tester.tap(find.byKey(const ValueKey('confirm-restore')));
       await tester.pumpAndSettle();
@@ -85,6 +97,46 @@ void main() {
       expect(calls, contains('backupCancel'));
     },
   );
+  testWidgets('Progression pendant le transfert, actions verrouillées', (
+    tester,
+  ) async {
+    exportGate = Completer<dynamic>();
+    await open(tester);
+    await tester.tap(find.byKey(const ValueKey('export')));
+    await tester.pump();
+    expect(find.byType(LinearProgressIndicator), findsOneWidget);
+    expect(
+      tester.widget<ListTile>(find.byKey(const ValueKey('import'))).onTap,
+      isNull,
+    );
+    exportGate!.complete(true);
+    await tester.pumpAndSettle();
+    expect(find.byType(LinearProgressIndicator), findsNothing);
+    expect(
+      tester.widget<ListTile>(find.byKey(const ValueKey('import'))).onTap,
+      isNotNull,
+    );
+  });
+  testWidgets('Annuler le résumé libère le verrou et permet un nouvel import', (
+    tester,
+  ) async {
+    await open(tester);
+    await tester.tap(find.byKey(const ValueKey('import')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Continuer'));
+    await tester.pumpAndSettle();
+    expect(find.byType(LinearProgressIndicator), findsNothing);
+    await tester.tap(find.text('Annuler'));
+    await tester.pumpAndSettle();
+    expect(calls, isNot(contains('backupApply')));
+    expect(calls, contains('backupCancel'));
+    await tester.tap(find.byKey(const ValueKey('import')));
+    await tester.pumpAndSettle();
+    expect(calls.where((c) => c == 'backupPrepareLocal').length, 2);
+    await tester.tap(find.text('Annuler'));
+    await tester.pumpAndSettle();
+    expect(calls, isNot(contains('backupApply')));
+  });
   testWidgets('Lien de confidentialité ouvre la politique intégrée', (
     tester,
   ) async {

@@ -111,7 +111,7 @@ class BackupPage extends StatefulWidget {
 }
 
 class _BackupPageState extends State<BackupPage> {
-  bool busy = false;
+  bool busy = false, awaitingDecision = false;
   Map<String, dynamic> status = {};
   List<AppRecord>? driveFiles, recoveryFiles;
   String? message, error;
@@ -152,13 +152,26 @@ class _BackupPageState extends State<BackupPage> {
     }
   }
 
+  // Keep the operation locked while the user decides, but do not run an
+  // indeterminate progress animation behind an interactive confirmation.
+  Future<T> withDecision<T>(Future<T> Function() show) async {
+    if (mounted) setState(() => awaitingDecision = true);
+    try {
+      return await show();
+    } finally {
+      if (mounted) setState(() => awaitingDecision = false);
+    }
+  }
+
+  Future<bool?> ask(WidgetBuilder builder) =>
+      withDecision(() => showDialog<bool>(context: context, builder: builder));
+
   Future<void> restore(String method, [AppRecord? args]) async {
     final summary = await Store.call(method, args);
     if (summary is! Map || !mounted) return;
     try {
-      final proceed = await showDialog<bool>(
-        context: context,
-        builder: (ctx) => AlertDialog(
+      final proceed = await ask(
+        (ctx) => AlertDialog(
           title: SacredText(tr('alert')),
           content: SacredText(bt('restoreWarning')),
           actions: [
@@ -174,9 +187,8 @@ class _BackupPageState extends State<BackupPage> {
         ),
       );
       if (proceed != true || !mounted) return;
-      final confirm = await showDialog<bool>(
-        context: context,
-        builder: (ctx) => AlertDialog(
+      final confirm = await ask(
+        (ctx) => AlertDialog(
           title: SacredText(bt('summary')),
           content: SingleChildScrollView(
             child: Column(
@@ -252,7 +264,7 @@ class _BackupPageState extends State<BackupPage> {
         children: [
           SacredText(bt('backupIntro')),
           const SizedBox(height: 12),
-          if (busy) const LinearProgressIndicator(),
+          if (busy && !awaitingDecision) const LinearProgressIndicator(),
           if (error != null)
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 12),
@@ -364,10 +376,12 @@ class _BackupPageState extends State<BackupPage> {
               onPressed: busy
                   ? null
                   : () => run(() async {
-                      if (!await confirmDeletion(
-                        context,
-                        question: bt('deleteAccount'),
-                        warning: bt('deleteAccountWarning'),
+                      if (!await withDecision(
+                        () => confirmDeletion(
+                          context,
+                          question: bt('deleteAccount'),
+                          warning: bt('deleteAccountWarning'),
+                        ),
                       ))
                         return;
                       await Store.call('driveDeleteAccount');
