@@ -5,6 +5,7 @@ import '../core/app_core.dart';
 import '../core/search.dart';
 import '../devotion/core.dart';
 import '../devotion/hisn.dart';
+import '../devotion/quran_audio.dart';
 import '../widgets/controls.dart';
 import '../widgets/sacred_text.dart';
 
@@ -64,7 +65,10 @@ class SourcesSection extends StatelessWidget {
               Icons.book,
               () => ReferenceDocument(
                 title: dt('quranReferences'),
-                text: dt('quranReferenceText'),
+                text:
+                    '${dt('quranReferenceText')}\n\n${qa('streaming')}\nhttps://github.com/taysirdigitalgroup/diraasa-quran-sounds',
+                url:
+                    'https://github.com/taysirdigitalgroup/diraasa-quran-sounds',
               ),
             ),
             source(

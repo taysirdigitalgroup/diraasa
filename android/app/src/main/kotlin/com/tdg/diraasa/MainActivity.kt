@@ -12,6 +12,7 @@ import java.util.concurrent.Executors
 class MainActivity : FlutterActivity() {
     private var dataChannel: MethodChannel? = null
     private val devotion by lazy { DevotionNative(this) }
+    private var quranAudio: QuranAudio? = null
     private var photoResult: MethodChannel.Result? = null
     private val worker = Executors.newSingleThreadExecutor()
     private val backup by lazy { BackupNative(this, worker) }
@@ -30,6 +31,23 @@ class MainActivity : FlutterActivity() {
         val channel = MethodChannel(engine.dartExecutor.binaryMessenger, "tdg.diraasa/data")
         dataChannel = channel
         channel.setMethodCallHandler { call, result ->
+            if (call.method.startsWith("quranAudio")) {
+                try {
+                    val audio=quranAudio?:QuranAudio(this).also{quranAudio=it}
+                    val args=call.arguments as? Map<*,*>?:emptyMap<Any,Any>()
+                    val value=when(call.method){
+                        "quranAudioStart"->audio.start(args)
+                        "quranAudioStatus"->audio.status()
+                        "quranAudioPause"->audio.pause()
+                        "quranAudioResume"->audio.resume()
+                        "quranAudioSeek"->audio.seek((args["position"] as? Number)?.toInt()?:0)
+                        "quranAudioStop"->audio.stop()
+                        else->throw IllegalArgumentException("Commande audio inconnue")
+                    }
+                    result.success(value)
+                }catch(e:Exception){result.error("QURAN_AUDIO",e.message,null)}
+                return@setMethodCallHandler
+            }
             if (BackupStore.recoveryPending) { try{BackupStore.recover(this)}catch(e:Exception){recoveryError=e.message} }
             if (recoveryError != null) { result.error("RECOVERY",recoveryError,null); return@setMethodCallHandler }
             if (backup.accepts(call.method)) { backup.handle(call,result); return@setMethodCallHandler }
@@ -283,6 +301,11 @@ class MainActivity : FlutterActivity() {
         setIntent(intent)
         if(intent.hasExtra("devotionTarget"))dataChannel?.invokeMethod("devotionPending",null)
     }
+    override fun onStop() {
+        quranAudio?.stop()
+        super.onStop()
+    }
+
     @Deprecated("Android activity result bridge")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: android.content.Intent?) {
         super.onActivityResult(requestCode,resultCode,data)

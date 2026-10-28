@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../core/app_core.dart';
@@ -5,6 +6,7 @@ import '../core/search.dart';
 import '../widgets/sacred_text.dart';
 import '../widgets/controls.dart';
 import 'core.dart';
+import 'quran_audio.dart';
 
 class QuranPage extends StatefulWidget {
   const QuranPage({super.key});
@@ -264,11 +266,71 @@ class SurahPage extends StatefulWidget {
   State<SurahPage> createState() => _SurahPageState();
 }
 
-class _SurahPageState extends State<SurahPage> {
+class _SurahPageState extends State<SurahPage> with WidgetsBindingObserver {
   final search = SacredController();
   String query = '';
+  late final QuranAudioController audio;
+  int anchorVerse = 1;
+  String audioMark = '';
+  List<int> get verseNumbers => (widget.chapter['verses'] as List)
+      .map((v) => (v['number'] as num).toInt())
+      .toList();
+  @override
+  void initState() {
+    super.initState();
+    anchorVerse = widget.initialVerse;
+    audio = QuranAudioController()..addListener(audioChanged);
+    if (widget.reading == 'hafs') audio.loadLanguage();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  void audioChanged() {
+    final mark = '${audio.state}:${audio.verse}:${audio.error}';
+    if (!mounted || mark == audioMark) return;
+    setState(() {
+      audioMark = mark;
+      if (audio.active && audio.verse >= 0 && query.trim().isEmpty) {
+        anchorVerse = audio.verse == 0 ? 1 : audio.verse;
+      }
+    });
+  }
+
+  Future<void> playVerse(int number) async {
+    if (audio.active && audio.verse == number) {
+      await audio.toggle();
+    } else {
+      await audio.play(widget.chapter['number'] as int, verseNumbers, number);
+    }
+  }
+
+  Future<void> playContinuous() async {
+    if (audio.continuous && audio.active) {
+      await audio.toggle();
+    } else {
+      await audio.play(
+        widget.chapter['number'] as int,
+        verseNumbers,
+        audio.verse > 0 && audio.state != 'completed'
+            ? audio.verse
+            : widget.initialVerse,
+        all: true,
+      );
+    }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.detached) {
+      unawaited(audio.stop());
+    }
+  }
+
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    audio.removeListener(audioChanged);
+    audio.dispose();
     search.dispose();
     super.dispose();
   }
@@ -280,6 +342,7 @@ class _SurahPageState extends State<SurahPage> {
       final verses = (widget.chapter['verses'] as List)
           .map((v) => Map<String, dynamic>.from(v as Map))
           .toList();
+      final keyboard = MediaQuery.viewInsetsOf(context).bottom > 0;
       final reference = parseReference(query);
       final visible = query.trim().isEmpty
           ? verses
@@ -292,15 +355,14 @@ class _SurahPageState extends State<SurahPage> {
                                 v['number'] == reference.verse),
                 )
                 .toList();
-      final anchorIndex = verses.indexWhere(
-        (v) => v['number'] == widget.initialVerse,
-      );
+      final anchorIndex = verses.indexWhere((v) => v['number'] == anchorVerse);
       final start = anchorIndex < 0 ? 0 : anchorIndex;
       const anchor = ValueKey('surah-anchor');
       Widget verseCard(AppRecord verse) => Card(
         key: ValueKey('ayah-${verse['number']}'),
-        color:
-            verse['number'] == widget.initialVerse && widget.initialVerse != 1
+        color: audio.active && verse['number'] == audio.verse
+            ? Theme.of(context).colorScheme.secondaryContainer
+            : verse['number'] == widget.initialVerse && widget.initialVerse != 1
             ? Theme.of(context).colorScheme.primaryContainer
             : null,
         child: Padding(
@@ -308,13 +370,37 @@ class _SurahPageState extends State<SurahPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              SacredText(
-                '${widget.chapter['number']}:${verse['number']}',
-                textAlign: TextAlign.right,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
+              Row(
+                children: [
+                  Expanded(
+                    child: SacredText(
+                      '${widget.chapter['number']}:${verse['number']}',
+                      textAlign: TextAlign.right,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
+                  if (widget.reading == 'hafs')
+                    IconButton(
+                      key: ValueKey('play-ayah-${verse['number']}'),
+                      tooltip:
+                          audio.active &&
+                              audio.verse == verse['number'] &&
+                              audio.state == 'playing'
+                          ? qa('pause')
+                          : qa('play'),
+                      icon: Icon(
+                        audio.active &&
+                                audio.verse == verse['number'] &&
+                                audio.state == 'playing'
+                            ? Icons.pause_circle_outline
+                            : Icons.play_circle_outline,
+                      ),
+                      onPressed: () => playVerse(verse['number'] as int),
+                    ),
+                ],
               ),
               MatchText(
                 verse['text'].toString(),
@@ -359,27 +445,73 @@ class _SurahPageState extends State<SurahPage> {
                     hintText: dt('inSurah'),
                     prefixIcon: const Icon(Icons.search),
                   ),
-                  onChanged: (value) => setState(() => query = value),
+                  onChanged: (value) => setState(() {
+                    query = value;
+                    if (query.trim().isEmpty &&
+                        audio.active &&
+                        audio.verse >= 0) {
+                      anchorVerse = audio.verse == 0 ? 1 : audio.verse;
+                    }
+                  }),
                 ),
               ),
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 20),
-                child: ReadingSize(),
-              ),
-              if ((widget.chapter['basmala']?.toString() ?? '').isNotEmpty)
+              if (!keyboard)
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 20),
+                  child: ReadingSize(),
+                ),
+              if (!keyboard && widget.reading == 'hafs')
+                QuranAudioControls(
+                  audio: audio,
+                  onContinuous: () => playContinuous(),
+                ),
+              if (!keyboard && widget.reading != 'hafs')
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 18),
+                  padding: const EdgeInsets.all(8),
                   child: SacredText(
-                    widget.chapter['basmala'].toString(),
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontFamily: widget.reading == 'warsh'
-                          ? 'UthmaniWarsh'
-                          : 'UthmaniHafs',
-                      fontSize: 22,
-                    ),
+                    qa('hafsOnly'),
+                    style: Theme.of(context).textTheme.bodySmall,
                   ),
                 ),
+              if (!keyboard &&
+                  (widget.chapter['basmala']?.toString() ?? '').isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 18),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: SacredText(
+                          widget.chapter['basmala'].toString(),
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontFamily: widget.reading == 'warsh'
+                                ? 'UthmaniWarsh'
+                                : 'UthmaniHafs',
+                            backgroundColor: audio.active && audio.verse == 0
+                                ? Theme.of(
+                                    context,
+                                  ).colorScheme.secondaryContainer
+                                : null,
+                            fontSize: 22,
+                          ),
+                        ),
+                      ),
+                      if (widget.reading == 'hafs')
+                        IconButton(
+                          tooltip: qa('basmala'),
+                          icon: Icon(
+                            audio.active &&
+                                    audio.verse == 0 &&
+                                    audio.state == 'playing'
+                                ? Icons.pause_circle_outline
+                                : Icons.play_circle_outline,
+                          ),
+                          onPressed: () => playVerse(0),
+                        ),
+                    ],
+                  ),
+                ),
+
               Expanded(
                 child: query.trim().isNotEmpty
                     ? visible.isEmpty

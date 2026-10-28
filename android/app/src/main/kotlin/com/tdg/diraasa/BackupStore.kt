@@ -59,7 +59,7 @@ object BackupStore {
         } catch (_:Exception) { /* Device-specific permissions must be re-granted if absent. */ }
         try { PrayerSyncWorker.restoreLatest(c);PrayerSyncWorker.ensure(c) } catch (_:Exception) {}
     }
-    fun snapshot(c:Context,target:File) = synchronized(lock) {
+    fun snapshot(c:Context,target:File,allowMissingMedia:Boolean=false) = synchronized(lock) {
         val data=JSONObject().put("applicationId",c.packageName).put("version",1).put("createdAt",System.currentTimeMillis())
         val tableData=JSONObject()
         NotesDatabase(c).use { helper ->val db=helper.writableDatabase
@@ -71,16 +71,15 @@ object BackupStore {
         data.put("tables",tableData).put("preferences",preferences(c))
         val media=linkedMapOf<String,File>();val paths=JSONObject();val bundledAliases=linkedMapOf<String,String>()
         fun visit(value:Any?) {when(value){is JSONObject->for(key in value.keys())visit(value.opt(key));is JSONArray->for(i in 0 until value.length())visit(value.opt(i));is String->{
-            if(value.startsWith(c.filesDir.path+"/")){
-                val file=File(value).canonicalFile
-                val root=c.filesDir.canonicalPath+"/"
-                require(file.path.startsWith(root)){"Pièce jointe invalide"}
-                if(file.path.startsWith(File(c.filesDir,"bundled_audio").path+"/")){
+            val source=BackupMedia.resolve(c.filesDir,value)
+            if(source!=null){
+                val file=source.file
+                if(source.kind=="bundled_audio"){
                     val name=if(file.name=="adhan_2.m4a")"Serigne Mbacké Fall - 🇸🇳 Senegal المسجد طوبي، السنغال.m4a" else file.name
                     require(c.assets.list("audio")?.contains(name)==true){"Son intégré introuvable"}
                     bundledAliases[value]="asset:audio/$name"
-                }
-                if(file.path.startsWith(File(c.filesDir,"author_photos").path+"/")||file.path.startsWith(File(c.filesDir,"azan_audio").path+"/")||file.path.startsWith(File(c.filesDir,"restored_media").path+"/")){
+                }else{
+                    if(!file.isFile && allowMissingMedia)return
                     require(file.isFile){"Photo ou son personnel introuvable : ${file.name}"}
                     val ext=file.extension.takeIf{Regex("[a-zA-Z0-9]{1,8}").matches(it)}?:"bin"
                     val name="media/${BackupArchive.hash(file)}.$ext";media[name]=file;paths.put(value,name)
@@ -90,13 +89,27 @@ object BackupStore {
         visit(data)
         // Some devotion values are JSON strings. Traverse these too to include custom audio.
         val dev=data.getJSONObject("preferences").getJSONObject("diraasa_devotion_v1")
-        for(key in dev.keys()){val v=dev.getJSONObject(key).optString("value");try{visit(JSONTokener(v).nextValue())}catch(_:Exception){}}
+        for(key in dev.keys()){val v=dev.getJSONObject(key).optString("value");val parsed=try{JSONTokener(v).nextValue()}catch(_:Exception){continue};visit(parsed)}
+        if(!allowMissingMedia){
+            val authors=tableData.getJSONArray("authors")
+            for(i in 0 until authors.length()){
+                val author=authors.getJSONObject(i);val photo=author.optString("photo")
+                require(photo.isBlank()||paths.has(photo)){"Photo non incluse pour ${author.optString("name")} : sélectionnez à nouveau son image avant la sauvegarde"}
+            }
+        }
         data.put("attachments",paths)
         BackupArchive.write(target,remapData(data,bundledAliases),media)
     }
     fun summary(data:JSONObject):Map<String,Any> {val t=data.getJSONObject("tables");val dev=data.getJSONObject("preferences").getJSONObject("diraasa_devotion_v1")
         val library=try{JSONObject(dev.optJSONObject("counterLibrary")?.optString("value")?:"{}")}catch(_:Exception){JSONObject()}
-        return mapOf("createdAt" to data.getLong("createdAt"),"notes" to t.getJSONArray("notes").length(),"authors" to t.getJSONArray("authors").length(),"themes" to (0 until t.getJSONArray("note_references").length()).count{t.getJSONArray("note_references").getJSONObject(it).optString("field")=="title"},"azkar" to (library.optJSONArray("items")?.length()?:0),"wird" to (library.optJSONArray("chains")?.length()?:0),"attachments" to data.getJSONObject("attachments").length())
+        val attachments=data.getJSONObject("attachments")
+        val all=(attachments.keys().asSequence().map{attachments.getString(it)}).toSet()
+        val photos=mutableSetOf<String>();var missingPhotos=0
+        val authors=t.getJSONArray("authors")
+        for(i in 0 until authors.length()){val photo=authors.getJSONObject(i).optString("photo")
+            if(photo.isNotBlank()){if(attachments.has(photo))photos.add(attachments.getString(photo)) else missingPhotos++}
+        }
+        return mapOf("createdAt" to data.getLong("createdAt"),"notes" to t.getJSONArray("notes").length(),"authors" to t.getJSONArray("authors").length(),"themes" to (0 until t.getJSONArray("note_references").length()).count{t.getJSONArray("note_references").getJSONObject(it).optString("field")=="title"},"azkar" to (library.optJSONArray("items")?.length()?:0),"wird" to (library.optJSONArray("chains")?.length()?:0),"attachments" to all.size,"photos" to photos.size,"sounds" to (all-photos).size,"missingPhotos" to missingPhotos)
     }
     fun validate(data:JSONObject,directory:File) {
         val t=data.getJSONObject("tables");require(t.keys().asSequence().toSet()==tables.keys)
@@ -141,7 +154,7 @@ object BackupStore {
         validate(data,directory)
         val safety=File(c.filesDir,"recovery_backups").apply{mkdirs()}
         val safetyFile=File(safety,"Diraasa_avant_restauration_${System.currentTimeMillis()}.diraasa.zip")
-        snapshot(c,safetyFile) // Must finish successfully before any modification.
+        snapshot(c,safetyFile,allowMissingMedia=true) // Must finish successfully before any modification.
         val session=File(c.filesDir,"restored_media/${UUID.randomUUID()}").apply{mkdirs()}
         val paths=linkedMapOf<String,String>();val attachments=data.getJSONObject("attachments")
         var committed=false

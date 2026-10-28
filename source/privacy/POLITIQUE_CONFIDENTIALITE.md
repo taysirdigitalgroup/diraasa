@@ -27,3 +27,7 @@ Vous pouvez consulter, corriger et supprimer vos contenus dans l’application. 
 ## Services tiers, dons et utilisation limitée
 
 Diraasa ne contient ni publicité ni module Analytics ajouté. Les données Google sont utilisées uniquement pour la connexion et la sauvegarde/restauration demandées, sans vente ni utilisation publicitaire ; l’utilisation respecte la politique Google API Services User Data Policy, y compris les exigences Limited Use. Les liens PayPal, Wave, site TDG et contact ouvrent une application ou un site externe soumis à sa propre politique. Aucun numéro de carte ou mot de passe de paiement n’est collecté dans Diraasa. Ne saisissez pas de données sensibles inutiles dans les champs libres. Pour toute question ou demande concernant un mineur, contactez TDG. Cette politique sera mise à jour si les traitements changent.
+
+## Audio du Coran
+
+À votre demande, les audios Hafs en arabe ou français sont diffusés depuis le dépôt public GitHub de TDG via raw.githubusercontent.com. GitHub reçoit les informations techniques de connexion, dont votre adresse IP, ainsi que le chemin du fichier indiquant le verset et la langue demandés. Aucun identifiant Google ni contenu de vos notes ne lui est transmis. Cette version ne conserve pas de copie permanente des MP3 : la lecture nécessite une connexion et les fichiers distants ne sont pas inclus dans les sauvegardes.

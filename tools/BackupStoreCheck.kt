@@ -25,6 +25,14 @@ fun main(){
         BackupStore.validate(data,directory)
         val summary=BackupStore.summary(data)
         check(summary["notes"]==1 && summary["authors"]==1 && summary["themes"]==1 && summary["azkar"]==1 && summary["wird"]==1)
+        val withPhoto=JSONObject(data.toString())
+        withPhoto.getJSONObject("tables").getJSONArray("authors").getJSONObject(0).put("photo","/old/photo.img")
+        withPhoto.getJSONObject("attachments").put("/old/photo.img","media/"+"a".repeat(64)+".img")
+        check(BackupStore.summary(withPhoto)["photos"]==1)
+        check(BackupStore.summary(withPhoto)["attachments"]==1)
+        check(BackupStore.summary(withPhoto)["missingPhotos"]==0)
+        withPhoto.put("attachments",JSONObject())
+        check(BackupStore.summary(withPhoto)["missingPhotos"]==1)
         fun rejects(label:String,change:(JSONObject)->Unit){val copy=JSONObject(data.toString());change(copy);var rejected=false
             try{BackupStore.validate(copy,directory)}catch(_:Exception){rejected=true};check(rejected){label}}
         rejects("missing author"){it.getJSONObject("tables").getJSONArray("notes").getJSONObject(0).put("author_id",99)}

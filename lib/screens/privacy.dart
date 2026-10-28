@@ -65,6 +65,14 @@ const privacySections = <List<String>>[
     'لا يضم Diraasa إعلانات أو وحدة Analytics مضافة. تُستخدم بيانات Google لتسجيل الدخول والنسخ والاستعادة المطلوبة فقط دون بيع أو استخدام إعلاني، مع الالتزام بسياسة Google API Services User Data Policy ومتطلبات Limited Use. تفتح روابط PayPal وWave وموقع TDG والتواصل خدمات خارجية بسياساتها الخاصة. لا يجمع Diraasa أرقام بطاقات أو كلمات مرور للدفع. تجنب إدخال بيانات حساسة غير لازمة في الحقول الحرة. لأي سؤال أو طلب يتعلق بقاصر، تواصل مع TDG. سنحدث السياسة عند تغير المعالجة.',
     'Diraasa includes no advertising or added Analytics module. Google data is used only for requested sign-in and backup/restore, without sale or advertising use, following Google API Services User Data Policy including Limited Use requirements. PayPal, Wave, TDG website and contact links open external apps or sites with their own policies. Diraasa does not collect payment card numbers or payment passwords. Avoid unnecessary sensitive information in free-text fields. Contact TDG for questions or requests concerning a minor. This policy will be updated when processing changes.',
   ],
+  [
+    'Audio du Coran',
+    'صوت القرآن',
+    'Quran audio',
+    'À votre demande, les audios Hafs en arabe ou français sont diffusés depuis le dépôt public GitHub de TDG via raw.githubusercontent.com. GitHub reçoit les informations techniques de connexion, dont votre adresse IP, ainsi que le chemin du fichier indiquant le verset et la langue demandés. Aucun identifiant Google ni contenu de vos notes ne lui est transmis. Cette version ne conserve pas de copie permanente des MP3 : la lecture nécessite une connexion et les fichiers distants ne sont pas inclus dans les sauvegardes.',
+    'بطلبك تُبث ملفات حفص العربية أو الفرنسية من مستودع TDG العام على GitHub عبر raw.githubusercontent.com. تتلقى GitHub معلومات الاتصال التقنية ومنها عنوان IP ومسار الملف الذي يحدد الآية واللغة. لا تُرسل إليها بيانات دخول Google أو ملاحظاتك. لا تحتفظ هذه النسخة بملفات MP3 بشكل دائم؛ يتطلب التشغيل اتصالًا ولا تدخل الملفات البعيدة في النسخ الاحتياطية.',
+    'On request, Arabic or French Hafs audio streams from TDG’s public GitHub repository via raw.githubusercontent.com. GitHub receives technical connection data, including your IP address and the requested file path identifying the verse and language. No Google credentials or notes content is sent to GitHub. This version keeps no permanent MP3 copy: playback needs a connection and remote recordings are not included in backups.',
+  ],
 ];
 
 class PrivacyLink extends StatelessWidget {

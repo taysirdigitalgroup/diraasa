@@ -33,6 +33,7 @@ class AzanService:Service(){
     @Suppress("DEPRECATION")
     override fun onStartCommand(intent:Intent?,flags:Int,startId:Int):Int{
         if(intent?.action=="STOP"){stopSelf();return START_NOT_STICKY}
+        QuranAudio.pauseForAlarm()
         instance=this
         previewId=intent?.getStringExtra("previewId")?:""
         activeKind=intent?.getStringExtra("kind")?:"adhan"

@@ -1,9 +1,9 @@
-# Diraasa · دراسة — 2.3.2+42
+# Diraasa · دراسة — 2.4.0+43
 Carnet d’études arabes et dictionnaire مختار الصحاح, Android, hors ligne.
 Package : **com.tdg.diraasa**.
 
 ## Installer la mise à jour
-L’archive Diraasa_MAJ_2.3.2.tar.gz contient **lib/ complet** et les autres fichiers
+L’archive Diraasa_MAJ_2.4.0.tar.gz contient **lib/ complet** et les autres fichiers
 nécessaires, aux chemins de la racine du projet existant.
 Arrêter flutter run, extraire à côté de pubspec.yaml, puis :
 ```bash
@@ -517,3 +517,11 @@ La progression indéterminée est suspendue durant les confirmations de restaura
 
 ### Correctif 2.3.2
 Progression de sauvegarde fixe sous l’en-tête, hors de la liste défilante. Test du transfert synchronisé sur le démarrage de l’appel simulé et l’affichage de l’indicateur ; libération du Completer même en cas d’échec. Le .gitignore reprend la version fournie par le développeur (archives ZIP/tar.gz exclues).
+
+## 2.4.0 — Photos sauvegardées et audio Hafs
+
+Correction des pièces jointes : tous les chemins privés sont comparés sous forme canonique, pour gérer l’alias Android /data/user/0 ↔ /data/data. Le résumé d’import distingue photos et sons et avertit si une ancienne archive ne possède pas les photos référencées. **Refaire une sauvegarde depuis l’appareil où les photos existent** : une archive qui ne les contenait pas ne peut pas les recréer.
+
+Lecture en ligne Hafs par verset ou en continu sur la sourate affichée, AR/FR, pause/reprise, arrêt et position dans le MP3. Verset actif distingué et repositionnement automatique hors recherche. Les audios sont chargés depuis le dépôt public TDG, branche main : `hafs/ar/SSSVVV.mp3` et `hafs/fr/SSSVVV.mp3`. Basmala SSS000 au début sauf Fatiha (verset 001001) et At-Tawba (aucune). Pas de lecture Hafs associée à Warsh. Lecture arrêtée en quittant la page ou en arrière-plan ; pas de téléchargement permanent dans cette version. Aucun SDK ni service de traduction payant ajouté.
+
+Consulter `source/quran_audio/README.md` pour le dépôt, les commandes SSH TDG, les chemins et les limites. Les audios réels doivent être ajoutés par le développeur ; aucun MP3 de récitation n’est livré avec cette archive. Politique de confidentialité actualisée (GitHub raw).

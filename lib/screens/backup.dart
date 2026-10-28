@@ -75,6 +75,13 @@ const backupLabels = <String, List<String>>{
   'summary': ['Contenu de la sauvegarde', 'محتوى النسخة', 'Backup contents'],
   'azkar': ['Azkar', 'الأذكار', 'Azkar'],
   'wird': ['Wird', 'الأوراد', 'Wird'],
+  'photos': ['Photos', 'الصور', 'Photos'],
+  'sounds': ['Sons', 'الأصوات', 'Sounds'],
+  'missingPhotos': [
+    'Cette ancienne archive ne contient pas toutes les photos de profil. Refaites une sauvegarde depuis l’appareil qui les possède.',
+    'لا يحتوي هذا الأرشيف على جميع صور المؤلفين. أنشئ نسخة جديدة من الجهاز الذي يحتوي عليها.',
+    'This older archive is missing profile photos. Make a new backup on the device that has them.',
+  ],
   'attachments': ['Photos et sons', 'الصور والأصوات', 'Photos and sounds'],
   'done': ['Sauvegarde créée.', 'تم إنشاء النسخة.', 'Backup created.'],
   'restored': [
@@ -209,6 +216,14 @@ class _BackupPageState extends State<BackupPage> {
                   'attachments',
                 ])
                   SacredText('${bt(key)} : ${summary[key] ?? 0}'),
+                for (final key in ['photos', 'sounds'])
+                  if (summary[key] != null)
+                    SacredText('${bt(key)} : ${summary[key]}'),
+                if (((summary['missingPhotos'] as num?)?.toInt() ?? 0) > 0)
+                  SacredText(
+                    bt('missingPhotos'),
+                    style: TextStyle(color: Theme.of(ctx).colorScheme.error),
+                  ),
               ],
             ),
           ),
