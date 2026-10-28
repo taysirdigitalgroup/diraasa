@@ -150,6 +150,7 @@ const devotionLabels = <String, List<String>>{
   'contactTdg': ['Contacter TDG', 'التواصل مع TDG', 'Contact TDG'],
 
   'refresh': ['Actualiser', 'تحديث', 'Refresh'],
+  'chooseFajrAzan': ['Choisir un Azan du Fajr', 'اختيار أذان الفجر', 'Choose a Fajr Adhan'],
   'chooseAzan': ['Choisir un Azan', 'اختيار أذان', 'Choose an Adhan'],
   'activateAzan': ['Activer l’azan', 'تفعيل الأذان', 'Enable Adhan'],
   'soundBirds': ['Oiseaux du matin', 'عصافير الصباح', 'Morning birds'],

@@ -26,7 +26,7 @@ object PrayerSyncData {
             if(name !in allowed)continue
             val base=epoch(days.getJSONObject(i).optJSONObject("timings")?.optString(name)?:"")?:continue
             val at=base+(number(offsets.optString(name),0).coerceIn(-120,120)-number(leads.optString(name),defaults.getValue(name)).coerceIn(0,180))*60000L
-            if(at>now)events.add(mapOf("at" to at,"name" to "$name · أذان"))
+            if(at>now)events.add(mapOf("at" to at,"prayer" to name,"name" to "$name · أذان"))
         }
         return events.sortedBy{it["at"] as Long}
     }
@@ -45,7 +45,7 @@ class PrayerSyncWorker(context:Context,params:WorkerParameters):Worker(context,p
             val wanted=data.optBoolean("adhanWanted",AzanAlarms.status(c)["requested"]==true)
             val rows=PrayerSyncData.events(data)
             if(!wanted||rows.isEmpty()){AzanAlarms.disable(c);return}
-            if(AzanAlarms.exact(c)&&AzanAlarms.notifications(c)&&AlarmSupport.background(c))AzanAlarms.configure(c,mapOf("audio" to (data.optJSONObject("options")?.optString("audio","asset:audio/adhan_1.m4a")?:"asset:audio/adhan_1.m4a"),"events" to rows))
+            if(AzanAlarms.exact(c)&&AzanAlarms.notifications(c)&&AlarmSupport.background(c))AzanAlarms.configure(c,mapOf("audio" to (data.optJSONObject("options")?.optString("audio","asset:audio/adhan_1.m4a")?:"asset:audio/adhan_1.m4a"),"fajrAudio" to (data.optJSONObject("options")?.optString("fajrAudio","asset:audio/adhan_5.m4a")?:"asset:audio/adhan_5.m4a"),"events" to rows))
             else AzanAlarms.disable(c)
         }
         private fun migrated(c:Context):JSONObject?=synchronized(lock){

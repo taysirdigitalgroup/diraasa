@@ -105,6 +105,8 @@ const labels = <String, List<String>>{
   'deleteAuthorQuestion': ['Confirmer la suppression de cet auteur ?','تأكيد حذف هذا المؤلف؟','Confirm deleting this author?'],
   'deleteAuthorWarning': ['Ses notes seront conservées, avec un auteur vide. Cette suppression est définitive.','ستبقى ملاحظاته بدون مؤلف. لا يمكن التراجع عن الحذف.','Their notes will remain with no author. This deletion is permanent.'],
   "quote": ["Citation", "اقتباس", "Quote"],
+  "authorsDescription": ["Les auteurs de vos notes et citations enregistrés", "مؤلفو ملاحظاتك واقتباساتك المحفوظة", "Authors of your saved notes and quotations"],
+  "themesDescription": ["Les thématiques de vos notes et citations enregistrés", "مواضيع ملاحظاتك واقتباساتك المحفوظة", "Themes of your saved notes and quotations"],
   "authors": ["Auteurs", "المؤلفون", "Authors"],
   "themes": ["Thèmes", "المواضيع", "Themes"],
   "Livre": ["Livre", "كتاب", "Book"],

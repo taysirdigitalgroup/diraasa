@@ -498,3 +498,6 @@ Le test d’application des ajustements attend désormais la reconstruction du b
 
 ### Mise à jour 2.2.4
 Correction de la réouverture des modals Prières après leur animation de fermeture. Conservation des données et de tous les réglages.
+
+### Mise à jour 2.2.5
+Azan du Fajr séparé (Ali Ibn Ahmed Mala), choix persistants et sélection automatique du bon audio par prière. Lecture/pause intégrée aux listes et sous-titres Thèmes/Auteurs. Après extraction, effectuer une relance complète de l’application (code Android modifié), sans désinstallation ni suppression de données.

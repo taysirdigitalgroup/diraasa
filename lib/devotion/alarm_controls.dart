@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../core/app_core.dart';
 import '../widgets/sacred_text.dart';
@@ -112,6 +113,7 @@ class _AlarmReadinessState extends State<AlarmReadiness>
 Future<String?> chooseAlarmAudio(
   BuildContext context, {
   bool reminder = false,
+  bool fajr = false,
 }) async {
   final raw = await Store.call(reminder ? 'reminderCatalog' : 'audioCatalog');
   final rows = jsonDecode(raw as String) as List;
@@ -120,8 +122,12 @@ Future<String?> chooseAlarmAudio(
     final azans = await Store.call('audioCatalog');
     rows.addAll(jsonDecode(azans as String) as List);
   }
+  if (!reminder) {
+    rows.removeWhere((r) => (r['id'] == 'asset:audio/adhan_5.m4a') != fajr);
+  }
   if (!context.mounted) return null;
-  return showModalBottomSheet<String>(
+  try {
+  return await showModalBottomSheet<String>(
     context: context,
     showDragHandle: true,
     isScrollControlled: true,
@@ -133,7 +139,7 @@ Future<String?> chooseAlarmAudio(
             Padding(
               padding: const EdgeInsets.all(16),
               child: SacredText(
-                dt(reminder ? 'chooseAlarmSound' : 'chooseAzan'),
+                dt(reminder ? 'chooseAlarmSound' : fajr ? 'chooseFajrAzan' : 'chooseAzan'),
                 style: Theme.of(sheet).textTheme.titleLarge,
               ),
             ),
@@ -161,26 +167,68 @@ Future<String?> chooseAlarmAudio(
                       ? entry.value['label'].toString()
                       : dt(entry.value['labelKey'].toString()),
                 ),
-                leading: IconButton(
-                  icon: const Icon(Icons.play_circle_outline),
-                  onPressed: () =>
-                      Store.call('azanPreview', {'audio': entry.value['id']}),
-                ),
+                leading: AudioPreviewButton(audio: entry.value['id'].toString()),
                 onTap: () async {
-                  await Store.call('azanStop');
+                  await Store.call('azanPreviewStop');
                   if (sheet.mounted)
                     Navigator.pop(sheet, entry.value['id'].toString());
                 },
               ),
             ],
-            TextButton(
-              onPressed: () => Store.call('azanStop'),
-              child: SacredText(dt('stopAudio')),
-            ),
           ],
         ),
       ),
     ),
+  );
+  } finally {
+    await Store.call('azanPreviewStop');
+  }
+}
+
+class AudioPreviewButton extends StatefulWidget {
+  const AudioPreviewButton({super.key, required this.audio});
+  final String audio;
+  @override
+  State<AudioPreviewButton> createState() => _AudioPreviewButtonState();
+}
+class _AudioPreviewButtonState extends State<AudioPreviewButton> {
+  Timer? timer;
+  bool playing = false, busy = false;
+  @override
+  void initState() {
+    super.initState();
+    timer = Timer.periodic(const Duration(milliseconds: 500), (_) => refresh());
+    refresh();
+  }
+  Future<void> refresh() async {
+    try {
+      final status = await Store.call('azanPreviewStatus');
+      final next = status is Map && status['audio'] == widget.audio &&
+          status['playing'] == true;
+      if (mounted && next != playing) setState(() => playing = next);
+    } catch (_) {
+      if (mounted && playing) setState(() => playing = false);
+    }
+  }
+  Future<void> toggle() async {
+    if (busy) return;
+    setState(() => busy = true);
+    try {
+      await Store.call('azanPreviewToggle', {'audio': widget.audio});
+      await refresh();
+    } catch (e) {
+      if (mounted) errorMessage(context, e);
+    } finally {
+      if (mounted) setState(() => busy = false);
+    }
+  }
+  @override
+  void dispose() { timer?.cancel(); super.dispose(); }
+  @override
+  Widget build(BuildContext context) => IconButton(
+    tooltip: playing ? 'Pause' : dt('testAudio'),
+    onPressed: busy ? null : toggle,
+    icon: Icon(playing ? Icons.pause_circle_outline : Icons.play_circle_outline),
   );
 }
 

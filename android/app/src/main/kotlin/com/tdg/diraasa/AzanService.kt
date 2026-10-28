@@ -11,16 +11,30 @@ import android.os.PowerManager
 
 class AzanService:Service(){
     private var player:MediaPlayer?=null
+    private var prepared=false
     private val handler=android.os.Handler(android.os.Looper.getMainLooper())
     companion object{
+        private var instance:AzanService?=null
+        private var previewId=""
+        fun previewStatus():Map<String,Any> = mapOf("audio" to previewId,"playing" to (activeKind=="preview" && instance?.player?.isPlaying==true))
+        fun togglePreview(id:String):Boolean {
+            val service=instance?:return false
+            val player=service.player?:return false
+            if(activeKind!="preview"||previewId!=id)return false
+            if(!service.prepared)return true
+            if(player.isPlaying)player.pause() else player.start()
+            return true
+        }
         @Volatile var activeKind=""
             private set
-        fun play(c:Context,path:String,name:String,reminder:Boolean=false,preview:Boolean=false){val intent=Intent(c,AzanService::class.java).putExtra("audio",path).putExtra("name",name).putExtra("reminder",reminder).putExtra("kind",if(preview)"preview" else if(reminder)"reminder" else "adhan");if(Build.VERSION.SDK_INT>=26)c.startForegroundService(intent)else c.startService(intent)}
+        fun play(c:Context,path:String,name:String,reminder:Boolean=false,preview:Boolean=false,previewId:String=""){val intent=Intent(c,AzanService::class.java).putExtra("previewId",previewId).putExtra("audio",path).putExtra("name",name).putExtra("reminder",reminder).putExtra("kind",if(preview)"preview" else if(reminder)"reminder" else "adhan");if(Build.VERSION.SDK_INT>=26)c.startForegroundService(intent)else c.startService(intent)}
     }
     override fun onBind(intent:Intent?):IBinder?=null
     @Suppress("DEPRECATION")
     override fun onStartCommand(intent:Intent?,flags:Int,startId:Int):Int{
         if(intent?.action=="STOP"){stopSelf();return START_NOT_STICKY}
+        instance=this
+        previewId=intent?.getStringExtra("previewId")?:""
         activeKind=intent?.getStringExtra("kind")?:"adhan"
         val channel="diraasa_azan"
         if(Build.VERSION.SDK_INT>=26)(getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager).createNotificationChannel(NotificationChannel(channel,"Diraasa · Azan",NotificationManager.IMPORTANCE_LOW).apply{setSound(null,null)})
@@ -31,6 +45,7 @@ class AzanService:Service(){
             .setContentText("Diraasa · إيقاف / Arrêter / Stop").setContentIntent(open).setOngoing(true).addAction(android.R.drawable.ic_media_pause,"إيقاف · Stop",stop).build()
         if(Build.VERSION.SDK_INT>=29)startForeground(8520,notification,android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK)else startForeground(8520,notification)
         handler.removeCallbacksAndMessages(null)
+        prepared=false
         player?.release()
         try{
             player=MediaPlayer().apply{
@@ -38,12 +53,12 @@ class AzanService:Service(){
                 setWakeMode(this@AzanService,PowerManager.PARTIAL_WAKE_LOCK)
                 setDataSource(intent?.getStringExtra("audio")?:"")
                 isLooping=intent?.getBooleanExtra("reminder",false)==true
-                setOnPreparedListener{it.start()};setOnCompletionListener{stopSelf()};setOnErrorListener{_,_,_->stopSelf();true};prepareAsync()
+                setOnPreparedListener{prepared=true;it.start()};setOnCompletionListener{stopSelf()};setOnErrorListener{_,_,_->stopSelf();true};prepareAsync()
             }
             if(intent?.getBooleanExtra("reminder",false)==true)handler.postDelayed({stopSelf()},30000)
         }catch(_:Exception){stopSelf()}
         return START_NOT_STICKY
     }
     @Suppress("DEPRECATION")
-    override fun onDestroy(){activeKind="";handler.removeCallbacksAndMessages(null);player?.release();player=null;stopForeground(true);super.onDestroy()}
+    override fun onDestroy(){instance=null;previewId="";activeKind="";handler.removeCallbacksAndMessages(null);player?.release();player=null;stopForeground(true);super.onDestroy()}
 }

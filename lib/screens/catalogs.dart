@@ -50,6 +50,7 @@ class _AuthorsPageState extends State<AuthorsPage> {
       physics: const AlwaysScrollableScrollPhysics(), children: [
         Row(children: [Expanded(child: SacredText(tr('authors'), style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold))),
           IconButton(key: const ValueKey('new-author'), tooltip: tr('newAuthor'), onPressed: () => open(), icon: const Icon(Icons.person_add_alt_1))]),
+        Padding(padding: const EdgeInsets.only(bottom: 12), child: SacredText(tr('authorsDescription'), style: Theme.of(context).textTheme.bodySmall)),
         TextField(controller: queryController,key: const ValueKey('author-search'), textDirection: direction(query, fallback: Directionality.of(context)),
           decoration: InputDecoration(helperText:resultLabel(visible.length),helperStyle:resultStyle,hintText: tr('searchReferences'), prefixIcon: const Icon(Icons.search)),
           onChanged: (value) => setState(() => query = value)),
@@ -240,6 +241,7 @@ class _ThemesPageState extends State<ThemesPage> {
       physics: const AlwaysScrollableScrollPhysics(), children: [
         Row(children: [Expanded(child: SacredText(tr('themes'), style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold))),
           IconButton(key: const ValueKey('new-theme'), tooltip: tr('newTheme'), onPressed: add, icon: const Icon(Icons.add))]),
+        Padding(padding: const EdgeInsets.only(bottom: 12), child: SacredText(tr('themesDescription'), style: Theme.of(context).textTheme.bodySmall)),
         const SizedBox(height: 16),
         TextField(controller: queryController,decoration: InputDecoration(helperText:resultLabel(visible.length),helperStyle:resultStyle,hintText: tr('searchReferences'), prefixIcon: const Icon(Icons.search)),
           textDirection: direction(query, fallback: Directionality.of(context)), onChanged: (value) => setState(() => query = value)),

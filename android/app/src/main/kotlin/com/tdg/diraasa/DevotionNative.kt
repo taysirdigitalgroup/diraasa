@@ -20,7 +20,7 @@ class DevotionNative(private val activity: Activity) {
     private val worker = Executors.newSingleThreadExecutor()
     private val main = Handler(Looper.getMainLooper())
     private var audioResult: MethodChannel.Result? = null
-    fun accepts(method: String) = method in setOf("openExternal","localTimezone","reminderCatalog","applicationSettings","alarmTest","audioCatalog","backgroundSettings","detectLocation","devotionRead","devotionWrite","pickAzan","azanStatus","azanPermissions","azanExactSettings","azanSchedule","azanDisable","azanPreview","azanStop","remindersConfigure","devotionLaunch")
+    fun accepts(method: String) = method in setOf("openExternal","localTimezone","reminderCatalog","applicationSettings","alarmTest","audioCatalog","backgroundSettings","detectLocation","devotionRead","devotionWrite","pickAzan","azanStatus","azanPermissions","azanExactSettings","azanSchedule","azanDisable","azanPreview","azanPreviewToggle","azanPreviewStatus","azanPreviewStop","azanStop","remindersConfigure","devotionLaunch")
     fun handle(call: MethodCall, result: MethodChannel.Result) {
         val a = call.arguments as? Map<*,*> ?: emptyMap<Any,Any>()
         try {
@@ -75,6 +75,17 @@ class DevotionNative(private val activity: Activity) {
                 }
                 "azanDisable" -> { AzanAlarms.disable(activity);result.success(true) }
                 "azanStop" -> { activity.stopService(Intent(activity,AzanService::class.java));result.success(true) }
+                "azanPreviewStatus" -> result.success(AzanService.previewStatus())
+                "azanPreviewStop" -> { if(AzanService.activeKind=="preview")activity.stopService(Intent(activity,AzanService::class.java));result.success(true) }
+                "azanPreviewToggle" -> {
+                    val id=a["audio"]?.toString()?:""
+                    if(!AzanService.togglePreview(id)){
+                        val path=AlarmSupport.audio(activity,id)
+                        check(File(path).isFile){"Audio manquant"}
+                        AzanService.play(activity,path,"Diraasa · أذان",preview=true,previewId=id)
+                    }
+                    result.success(true)
+                }
                 "azanPreview" -> {
                     val path=AlarmSupport.audio(activity,a["audio"]?.toString() ?: "")
                     check(File(path).isFile) { "Audio manquant" }
@@ -92,7 +103,7 @@ class DevotionNative(private val activity: Activity) {
                             "remindersConfigure" -> ZikrReminders.configure(activity,a["reminders"] as? List<*>?:emptyList<Any>())
                             "azanSchedule" -> if(a["fromPrayerCache"]==true)synchronized(PrayerSyncWorker.lock){
                                 val bundle=org.json.JSONObject(activity.getSharedPreferences("diraasa_devotion_v1",Context.MODE_PRIVATE).getString("prayerBundle","{}")?:"{}")
-                                AzanAlarms.configure(activity,mapOf("audio" to (bundle.optJSONObject("options")?.optString("audio")?:a["audio"]),"events" to PrayerSyncData.events(bundle)))
+                                AzanAlarms.configure(activity,mapOf("audio" to (bundle.optJSONObject("options")?.optString("audio")?:a["audio"]),"fajrAudio" to (bundle.optJSONObject("options")?.optString("fajrAudio","asset:audio/adhan_5.m4a")?:"asset:audio/adhan_5.m4a"),"events" to PrayerSyncData.events(bundle)))
                             }else AzanAlarms.configure(activity,a)
                             else -> throw IllegalArgumentException("Méthode inconnue")
                         }

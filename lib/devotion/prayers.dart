@@ -31,6 +31,7 @@ class _PrayersPageState extends State<PrayersPage> with WidgetsBindingObserver {
   final form = GlobalKey<FormState>();
   int method = 3;
   bool hanafi = false, busy = true, enabled = false, stale = false;
+  String fajrAudio = 'asset:audio/adhan_5.m4a';
   String audio = 'asset:audio/adhan_1.m4a',
       timezone = '',
       error = '',
@@ -295,7 +296,7 @@ class _PrayersPageState extends State<PrayersPage> with WidgetsBindingObserver {
       case 'audio':
         return [
           FilledButton.tonalIcon(
-            onPressed: busy ? null : chooseAudio,
+            onPressed: busy ? null : () => chooseAudio(),
             icon: const Icon(Icons.library_music),
             label: SacredText(dt('chooseAzan')),
           ),
@@ -307,22 +308,15 @@ class _PrayersPageState extends State<PrayersPage> with WidgetsBindingObserver {
                     ?.toString() ??
                 dt('phoneAudio'),
           ),
-          Row(
-            children: [
-              Expanded(
-                child: TextButton(
-                  onPressed: preview,
-                  child: SacredText(dt('testAudio')),
-                ),
-              ),
-              Expanded(
-                child: TextButton(
-                  onPressed: () => Store.call('azanStop'),
-                  child: SacredText(dt('stopAudio')),
-                ),
-              ),
-            ],
+          const SizedBox(height: 16),
+          FilledButton.tonalIcon(
+            onPressed: busy ? null : () => chooseAudio(fajr: true),
+            icon: const Icon(Icons.wb_twilight),
+            label: SacredText(dt('chooseFajrAzan')),
           ),
+          SacredText(audioChoices.where((r) => r['id'] == fajrAudio)
+              .firstOrNull?['label']?.toString() ?? dt('phoneAudio')),
+
         ];
       default:
         return [];
@@ -396,6 +390,8 @@ class _PrayersPageState extends State<PrayersPage> with WidgetsBindingObserver {
               .map((p) => p.toString())
               .toSet();
         audio = saved['audio']?.toString() ?? 'asset:audio/adhan_1.m4a';
+        fajrAudio = saved['fajrAudio']?.toString() ?? 'asset:audio/adhan_5.m4a';
+        if (audio == 'asset:audio/adhan_5.m4a') audio = 'asset:audio/adhan_1.m4a';
         for (final p in prayerNames) {
           adjustments[p]!.text =
               (saved['adjustments'] as Map?)?[p]?.toString() ?? '0';
@@ -456,6 +452,7 @@ class _PrayersPageState extends State<PrayersPage> with WidgetsBindingObserver {
     'method': method,
     'hanafi': hanafi,
     'audio': audio,
+    'fajrAudio': fajrAudio,
     'adjustments': {
       for (final p in prayerNames)
         p:
@@ -500,6 +497,7 @@ class _PrayersPageState extends State<PrayersPage> with WidgetsBindingObserver {
       'options': {
         ...appliedOptions,
         'audio': audio,
+    'fajrAudio': fajrAudio,
         'activePrayers': activePrayers.toList(),
       },
       'days': days,
@@ -824,6 +822,7 @@ class _PrayersPageState extends State<PrayersPage> with WidgetsBindingObserver {
     final configured =
         await Store.call('azanSchedule', {
               'audio': audio,
+    'fajrAudio': fajrAudio,
               'events': rows,
               'fromPrayerCache': true,
             })
@@ -852,11 +851,11 @@ class _PrayersPageState extends State<PrayersPage> with WidgetsBindingObserver {
     }
   }
 
-  Future<void> chooseAudio() async {
+  Future<void> chooseAudio({bool fajr = false}) async {
     try {
-      final result = await chooseAlarmAudio(context);
+      final result = await chooseAlarmAudio(context, fajr: fajr);
       if (result is! String) return;
-      audio = result;
+      if (fajr) { fajrAudio = result; } else { audio = result; }
       await DevStore.write('prayerAudio', audio);
       await persistBundle();
       await reconcile();
@@ -1260,7 +1259,7 @@ List<AppRecord> buildPrayerEvents(
       final at = value
           .add(Duration(minutes: offsets[prayer] ?? 0))
           .millisecondsSinceEpoch;
-      if (at > instant) events.add({'at': at, 'name': '${dt(prayer)} · أذان'});
+      if (at > instant) events.add({'at': at, 'prayer': prayer, 'name': '${dt(prayer)} · أذان'});
     }
   }
   events.sort((a, b) => (a['at'] as int).compareTo(b['at'] as int));

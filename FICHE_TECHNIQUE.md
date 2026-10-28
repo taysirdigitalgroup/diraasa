@@ -622,3 +622,11 @@ Le test SQL ne remplace pas un essai de mise à jour sur appareil.
 - Verrou d’ouverture explicite, désactivé au retour de la route ; les rebuilds de sortie ne réenregistrent plus les callbacks.
 - Test : vérification explicite de la présence du champ après réouverture. Aucune modification de la base.
 - Tests Flutter et APK non exécutés ici.
+
+## 2.2.5+39 — 28 octobre 2026
+
+- Deux choix audio persistants : azan général et azan du Fajr (Ali Ibn Ahmed Mala, adhan_5.m4a). Ce dernier est exclu du catalogue général et réservé au catalogue Fajr ; les imports personnels restent disponibles. Les rappels gardent accès à tous les sons.
+- Sélection effective par prière dans les alarmes Android, y compris après redémarrage et renouvellement WorkManager ; choix Fajr ajouté aux préférences sans effacement. Ancien choix général adhan_5 reclassé et remplacé par adhan_1 pour les autres prières.
+- Préécoute : bouton lecture/pause avec reprise au même endroit, état lu depuis le service, retour lecture en fin de fichier. Fermeture du sélecteur arrête seulement la préécoute. Suppression du bouton Arrêter en bas de liste et des contrôles redondants du modal Azan.
+- Sous-titres discrets Thèmes et Auteurs, traduits FR/AR/EN.
+- Test widget ajouté pour séparation des listes et lecture/pause ; non exécuté ici (Flutter indisponible). Contrôle des échappements Kotlin réussi. Compilation Android et tests Flutter à exécuter sur le poste de développement.
