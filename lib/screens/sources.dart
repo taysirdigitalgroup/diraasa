@@ -8,8 +8,8 @@ import '../devotion/hisn.dart';
 import '../widgets/controls.dart';
 import '../widgets/sacred_text.dart';
 
-// Exact values supplied in FLUTTER_DEV_ENV_CONFIGS.md. No merchant URL or
-// second donation number was supplied for Wave / Orange Money.
+// PayPal from DEV ENV; Wave merchant link supplied by the developer.
+const donationWave = 'https://pay.wave.com/m/M_sn_DoZfd98ruV_6/c/sn/';
 const donationPaypal = 'https://paypal.me/MBENGUE28';
 const developerPhone = '+221 76 455 03 58';
 const developerPhoneRaw = '+221764550358';
@@ -319,46 +319,22 @@ class DonationsSection extends StatelessWidget {
           onTap: () => openReferenceLink(context, donationPaypal),
         ),
       ),
-      for (final service in ['Wave', 'Orange Money'])
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.all(12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                SacredText(
-                  service,
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-                const SizedBox(height: 6),
-                SacredText(
-                  dt('donationDetailsOnRequest'),
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-                Wrap(
-                  alignment: WrapAlignment.end,
-                  spacing: 8,
-                  children: [
-                    TextButton.icon(
-                      onPressed: () => copyPhone(context),
-                      icon: const Icon(Icons.copy, size: 18),
-                      label: const SacredText(
-                        developerPhone,
-                        textDirection: TextDirection.ltr,
-                      ),
-                    ),
-                    TextButton.icon(
-                      onPressed: () =>
-                          openReferenceLink(context, 'tel:$developerPhoneRaw'),
-                      icon: const Icon(Icons.phone_outlined, size: 18),
-                      label: SacredText(dt('contactTdg')),
-                    ),
-                  ],
-                ),
-              ],
-            ),
+      Card(
+        child: ListTile(
+          key: const ValueKey('donate-wave'),
+          leading: const Icon(Icons.favorite_outline),
+          title: const SacredText('Wave'),
+          subtitle: SacredText(
+            settings.language == 'ar'
+                ? 'التبرع عبر Wave'
+                : settings.language == 'en'
+                ? 'Donate with Wave'
+                : 'Faire un don avec Wave',
           ),
+          trailing: const Icon(Icons.open_in_new),
+          onTap: () => openReferenceLink(context, donationWave),
         ),
+      ),
     ],
   );
 }

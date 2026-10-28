@@ -6,6 +6,7 @@ import '../core/search.dart';
 import '../widgets/controls.dart';
 import 'editor.dart';
 import 'sources.dart';
+import 'privacy.dart';
 import '../widgets/rich_editor.dart';
 
 Future<void> copyText(BuildContext context, String text) async {
@@ -264,10 +265,22 @@ class About extends StatelessWidget {
             'https://taysirdigitalgroup.github.io/',
           ].map(
             (value) => ListTile(
-              title: SacredSelectableText(
-                value,
-                textDirection: TextDirection.ltr,
+              onTap: () => openReferenceLink(
+                context,
+                value.startsWith('+')
+                    ? 'tel:${value.replaceAll(' ', '')}'
+                    : value.contains('@')
+                    ? 'mailto:$value'
+                    : value,
               ),
+              leading: Icon(
+                value.startsWith('+')
+                    ? Icons.phone_outlined
+                    : value.contains('@')
+                    ? Icons.mail_outline
+                    : Icons.language,
+              ),
+              title: SacredText(value, textDirection: TextDirection.ltr),
               trailing: IconButton(
                 tooltip: tr('copy'),
                 icon: const Icon(Icons.copy),
@@ -276,9 +289,10 @@ class About extends StatelessWidget {
             ),
           ),
           const DonationsSection(),
+          const PrivacyLink(),
           const SizedBox(height: 24),
           const SacredText(
-            '2.2.1 · © 2026 Taysir Digital Group',
+            '2.3.0 · © 2026 Taysir Digital Group',
             textAlign: TextAlign.center,
           ),
         ],

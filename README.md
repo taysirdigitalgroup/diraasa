@@ -1,9 +1,9 @@
-# Diraasa · دراسة — 2.2.1+35
+# Diraasa · دراسة — 2.3.0+40
 Carnet d’études arabes et dictionnaire مختار الصحاح, Android, hors ligne.
 Package : **com.tdg.diraasa**.
 
 ## Installer la mise à jour
-L’archive Diraasa_MAJ_2.2.1.tar.gz contient **lib/ complet** et les autres fichiers
+L’archive Diraasa_MAJ_2.3.0.tar.gz contient **lib/ complet** et les autres fichiers
 nécessaires, aux chemins de la racine du projet existant.
 Arrêter flutter run, extraire à côté de pubspec.yaml, puis :
 ```bash
@@ -14,6 +14,16 @@ flutter_localizations provient du SDK Flutter ; pub get résout ses dépendances
 Ce correctif contient aussi les modifications natives : relancer l’application
 complètement, pas seulement un hot reload.
 Ne pas désinstaller, effacer les données ou changer la signature de l’application.
+
+## Sauvegarde et Restauration (2.3.0)
+
+Icône en header à côté du choix de langue. Export/import local `.diraasa.zip`, sauvegardes manuelles dans un dossier Drive visible, connexion Google conservée via Firebase Authentication, lien vers le dossier connecté. Notes, auteurs/photos, thèmes, azkar/wird, compteurs, rappels et préférences sont inclus. Textes/sons intégrés et identifiants Google sont exclus ; les sons personnels utilisés sont inclus.
+
+La restauration remplace les données après deux confirmations. Une copie de sécurité locale est créée avant modification ; un journal SQLite permet de terminer l’application des préférences après une fermeture interrompant l’import. Pas d’effacement pendant les migrations normales. Les archives ne sont pas chiffrées ; les conserver dans un emplacement privé.
+
+**Configuration Google nécessaire** : suivre `SIGNATURE_FIREBASE_DRIVE.md`, ajouter votre propre `android/app/google-services.json`, activer Google dans Firebase Authentication et Google Drive API dans le même projet. La sauvegarde locale reste disponible sans cette configuration. Android minimal 24 ; reste de l’environnement conservé.
+
+La politique FR/AR/EN est intégrée à l’app et disponible sous `source/privacy/` en Markdown/HTML pour publication sur votre site. Aucun site ni projet Firebase n’a été configuré à distance par cette mise à jour. Le lien Wave fourni est actif dans les dons ; Orange Money retiré ; téléphone et e-mail ouvrent les applications correspondantes.
 
 ## Fonctionnalités
 - Notes : création, modification explicite, suppression confirmée, auteur

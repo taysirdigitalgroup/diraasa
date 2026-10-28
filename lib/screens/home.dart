@@ -7,6 +7,7 @@ import '../widgets/controls.dart';
 import 'editor.dart';
 import 'readers.dart';
 import 'catalogs.dart';
+import 'backup.dart';
 import '../widgets/note_card.dart';
 import '../widgets/delete_confirmation.dart';
 import '../devotion/hub.dart';
@@ -19,7 +20,7 @@ class Home extends StatefulWidget {
 }
 
 class _HomeState extends State<Home> {
-  int tab = 0, revision = 0;
+  int tab = 0, revision = 0, dataEpoch = 0;
   List<AppRecord> notes = [], entries = [];
   String query = '',
       category = 'all',
@@ -310,6 +311,26 @@ class _HomeState extends State<Home> {
               ],
             ),
             actions: [
+              IconButton(
+                key: const ValueKey('open-backup'),
+                tooltip: bt('backupTitle'),
+                icon: const Icon(Icons.backup_outlined, size: 22),
+                onPressed: () async {
+                  await Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const BackupPage()),
+                  );
+                  if (!mounted) return;
+                  setState(() {
+                    dataEpoch++;
+                    category = settings.noteCategory;
+                    field = settings.noteField;
+                    mode = settings.dictionaryMode;
+                    letter = settings.dictionaryLetter;
+                  });
+                  await load();
+                },
+              ),
               const LanguageMenu(),
               const ThemeMenu(),
               IconButton(
@@ -392,10 +413,11 @@ class _HomeState extends State<Home> {
       body: tab == 4
           ? const SafeArea(child: DevotionHub(embedded: true))
           : tab == 2
-          ? const SafeArea(child: AuthorsPage())
+          ? SafeArea(child: AuthorsPage(key: ValueKey('authors-$dataEpoch')))
           : tab == 3
           ? SafeArea(
               child: ThemesPage(
+                key: ValueKey('themes-$dataEpoch'),
                 onOpen: (theme) async {
                   await Navigator.push(
                     context,

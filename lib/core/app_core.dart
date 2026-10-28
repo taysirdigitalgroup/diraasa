@@ -31,6 +31,7 @@ class AppSettings extends ChangeNotifier {
   ThemeMode get themeMode => theme == 'dark' ? ThemeMode.dark :
       theme == 'light' ? ThemeMode.light : ThemeMode.system;
   void notifySizeChanged() => notifyListeners();
+  Future<void> flush() async { await _pending; }
   Future<void> load() async {
     final raw = await Store.call('preferences');
     if (raw is! Map) return;

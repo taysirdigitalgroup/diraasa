@@ -314,9 +314,13 @@ class _PrayersPageState extends State<PrayersPage> with WidgetsBindingObserver {
             icon: const Icon(Icons.wb_twilight),
             label: SacredText(dt('chooseFajrAzan')),
           ),
-          SacredText(audioChoices.where((r) => r['id'] == fajrAudio)
-              .firstOrNull?['label']?.toString() ?? dt('phoneAudio')),
-
+          SacredText(
+            audioChoices
+                    .where((r) => r['id'] == fajrAudio)
+                    .firstOrNull?['label']
+                    ?.toString() ??
+                dt('phoneAudio'),
+          ),
         ];
       default:
         return [];
@@ -391,7 +395,8 @@ class _PrayersPageState extends State<PrayersPage> with WidgetsBindingObserver {
               .toSet();
         audio = saved['audio']?.toString() ?? 'asset:audio/adhan_1.m4a';
         fajrAudio = saved['fajrAudio']?.toString() ?? 'asset:audio/adhan_5.m4a';
-        if (audio == 'asset:audio/adhan_5.m4a') audio = 'asset:audio/adhan_1.m4a';
+        if (audio == 'asset:audio/adhan_5.m4a')
+          audio = 'asset:audio/adhan_1.m4a';
         for (final p in prayerNames) {
           adjustments[p]!.text =
               (saved['adjustments'] as Map?)?[p]?.toString() ?? '0';
@@ -415,6 +420,7 @@ class _PrayersPageState extends State<PrayersPage> with WidgetsBindingObserver {
       if (chosenAudio is String && chosenAudio.isNotEmpty) audio = chosenAudio;
       if (audio.isEmpty) audio = "asset:audio/adhan_1.m4a";
       audio = normalizeBundledAudio(audio);
+      if (audio == 'asset:audio/adhan_5.m4a') audio = 'asset:audio/adhan_1.m4a';
       final cache = bundle is Map ? bundle['days'] : null;
       if (cache is List)
         days = cache.map((r) => Map<String, dynamic>.from(r as Map)).toList();
@@ -497,7 +503,7 @@ class _PrayersPageState extends State<PrayersPage> with WidgetsBindingObserver {
       'options': {
         ...appliedOptions,
         'audio': audio,
-    'fajrAudio': fajrAudio,
+        'fajrAudio': fajrAudio,
         'activePrayers': activePrayers.toList(),
       },
       'days': days,
@@ -822,7 +828,7 @@ class _PrayersPageState extends State<PrayersPage> with WidgetsBindingObserver {
     final configured =
         await Store.call('azanSchedule', {
               'audio': audio,
-    'fajrAudio': fajrAudio,
+              'fajrAudio': fajrAudio,
               'events': rows,
               'fromPrayerCache': true,
             })
@@ -855,7 +861,11 @@ class _PrayersPageState extends State<PrayersPage> with WidgetsBindingObserver {
     try {
       final result = await chooseAlarmAudio(context, fajr: fajr);
       if (result is! String) return;
-      if (fajr) { fajrAudio = result; } else { audio = result; }
+      if (fajr) {
+        fajrAudio = result;
+      } else {
+        audio = result;
+      }
       await DevStore.write('prayerAudio', audio);
       await persistBundle();
       await reconcile();
@@ -1259,7 +1269,12 @@ List<AppRecord> buildPrayerEvents(
       final at = value
           .add(Duration(minutes: offsets[prayer] ?? 0))
           .millisecondsSinceEpoch;
-      if (at > instant) events.add({'at': at, 'prayer': prayer, 'name': '${dt(prayer)} · أذان'});
+      if (at > instant)
+        events.add({
+          'at': at,
+          'prayer': prayer,
+          'name': '${dt(prayer)} · أذان',
+        });
     }
   }
   events.sort((a, b) => (a['at'] as int).compareTo(b['at'] as int));

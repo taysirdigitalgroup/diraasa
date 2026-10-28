@@ -14,6 +14,8 @@ class MainActivity : FlutterActivity() {
     private val devotion by lazy { DevotionNative(this) }
     private var photoResult: MethodChannel.Result? = null
     private val worker = Executors.newSingleThreadExecutor()
+    private val backup by lazy { BackupNative(this, worker) }
+    private var recoveryError: String? = null
     private val main = Handler(Looper.getMainLooper())
     private lateinit var dict: SQLiteDatabase
     private lateinit var notes: SQLiteDatabase
@@ -22,11 +24,15 @@ class MainActivity : FlutterActivity() {
         .replace(Regex("[أإآٱ]"), "ا").replace('ى','ي').lowercase(java.util.Locale.ROOT)
     override fun configureFlutterEngine(engine: FlutterEngine) {
         super.configureFlutterEngine(engine)
+        try{BackupStore.recover(this)}catch(e:Exception){recoveryError=e.message?:"Restauration interrompue"}
         try{PrayerSyncWorker.ensure(this)}catch(_:Exception){}
         Thread{try{PrayerSyncWorker.restoreLatest(this)}catch(_:Exception){}}.start()
         val channel = MethodChannel(engine.dartExecutor.binaryMessenger, "tdg.diraasa/data")
         dataChannel = channel
         channel.setMethodCallHandler { call, result ->
+            if (BackupStore.recoveryPending) { try{BackupStore.recover(this)}catch(e:Exception){recoveryError=e.message} }
+            if (recoveryError != null) { result.error("RECOVERY",recoveryError,null); return@setMethodCallHandler }
+            if (backup.accepts(call.method)) { backup.handle(call,result); return@setMethodCallHandler }
             if (devotion.accepts(call.method)) { devotion.handle(call,result); return@setMethodCallHandler }
             if (call.method == "pickPhoto") {
                 if (photoResult != null) { result.error("BUSY", "Sélection déjà ouverte", null); return@setMethodCallHandler }
@@ -280,6 +286,7 @@ class MainActivity : FlutterActivity() {
     @Deprecated("Android activity result bridge")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: android.content.Intent?) {
         super.onActivityResult(requestCode,resultCode,data)
+        if (backup.activityResult(requestCode,resultCode,data)) return
         if (devotion.activityResult(requestCode,resultCode,data)) return
         if (requestCode != 8401) return
         val result = photoResult ?: return

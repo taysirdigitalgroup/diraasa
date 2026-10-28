@@ -5,8 +5,11 @@ plugins {
     id("com.android.application")
     id("kotlin-android")
     id("dev.flutter.flutter-gradle-plugin")
-    // id("com.google.gms.google-services")   // <- seulement si Firebase
+    id("com.google.gms.google-services") apply false
 }
+
+// Local backups remain usable before the Firebase project is configured.
+if (file("google-services.json").exists()) apply(plugin = "com.google.gms.google-services")
 
 val keystoreProperties = Properties()
 val keystorePropertiesFile = rootProject.file("key.properties")
@@ -37,7 +40,7 @@ android {
 
     defaultConfig {
         applicationId = "com.tdg.diraasa"  // <- à changer (même valeur que namespace)
-        minSdk = flutter.minSdkVersion
+        minSdk = maxOf(flutter.minSdkVersion, 24)
         targetSdk = 36
         versionCode = flutter.versionCode
         versionName = flutter.versionName
@@ -89,8 +92,13 @@ dependencies {
     implementation("androidx.multidex:multidex:2.0.1")
     implementation("androidx.core:core-ktx:1.13.1")
 
-    // Si Firebase est nécessaire sur ce projet, décommenter :
-    // implementation(platform("com.google.firebase:firebase-bom:34.15.0"))
+    // Firebase Authentication uniquement ; pas de collecte Analytics ajoutée.
+    implementation(platform("com.google.firebase:firebase-bom:34.15.0"))
+    implementation("com.google.firebase:firebase-auth")
+    implementation("androidx.credentials:credentials:1.3.0")
+    implementation("androidx.credentials:credentials-play-services-auth:1.3.0")
+    implementation("com.google.android.libraries.identity.googleid:googleid:1.1.1")
+    implementation("com.google.android.gms:play-services-auth:22.0.0")
     // implementation("com.google.firebase:firebase-analytics")
     // implementation("com.google.firebase:firebase-messaging")
     implementation("androidx.work:work-runtime-ktx:2.9.1")

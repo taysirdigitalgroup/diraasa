@@ -86,6 +86,11 @@ void main() {
       'https://paypal.me/MBENGUE28',
     );
     expect(find.text('Wave'), findsOneWidget);
-    expect(find.text('Orange Money'), findsOneWidget);
+    expect(find.text('Orange Money'), findsNothing);
+    expect(find.text(donationWave), findsNothing);
+    await tester.tap(find.byKey(const ValueKey('donate-wave')));
+    await tester.pump();
+    expect(calls.last.method, 'openExternal');
+    expect((calls.last.arguments as Map)['url'], donationWave);
   });
 }

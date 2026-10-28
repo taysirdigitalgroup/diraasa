@@ -6,3 +6,8 @@ android/local.properties
 android/key.properties
 *.jks
 *.keystore
+
+android/app/google-services.json
+*.diraasa.zip
+*.zip
+*.tar.gz

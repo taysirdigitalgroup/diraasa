@@ -36,9 +36,9 @@ class DevotionNative(private val activity: Activity) {
                 }
                 "openExternal" -> {
                     val uri=Uri.parse(a["url"]?.toString()?:"")
-                    require(uri.scheme in setOf("https","tel")){"Lien non autorisé"}
+                    require(uri.scheme in setOf("https","tel","mailto")){"Lien non autorisé"}
                     if(uri.scheme=="https")require(!uri.host.isNullOrBlank())
-                    activity.startActivity(Intent(if(uri.scheme=="tel")Intent.ACTION_DIAL else Intent.ACTION_VIEW,uri))
+                    activity.startActivity(Intent(if(uri.scheme=="tel")Intent.ACTION_DIAL else if(uri.scheme=="mailto")Intent.ACTION_SENDTO else Intent.ACTION_VIEW,uri))
                     result.success(true)
                 }
                 "localTimezone" -> result.success(java.util.TimeZone.getDefault().id)
@@ -95,11 +95,11 @@ class DevotionNative(private val activity: Activity) {
                     try {
                         val value:Any? = when(call.method) {
                             "devotionRead" -> activity.getSharedPreferences("diraasa_devotion_v1",Context.MODE_PRIVATE).getString(a["key"].toString(),null)
-                            "devotionWrite" -> {
+                            "devotionWrite" -> synchronized(PrayerSyncWorker.lock) { synchronized(BackupStore.lock) {
                                 if(a["key"]=="prayerBundle")PrayerSyncWorker.writeBundle(activity,a["value"].toString())
                                 else check(activity.getSharedPreferences("diraasa_devotion_v1",Context.MODE_PRIVATE).edit().putString(a["key"].toString(),a["value"].toString()).commit())
                                 true
-                            }
+                            }}
                             "remindersConfigure" -> ZikrReminders.configure(activity,a["reminders"] as? List<*>?:emptyList<Any>())
                             "azanSchedule" -> if(a["fromPrayerCache"]==true)synchronized(PrayerSyncWorker.lock){
                                 val bundle=org.json.JSONObject(activity.getSharedPreferences("diraasa_devotion_v1",Context.MODE_PRIVATE).getString("prayerBundle","{}")?:"{}")
