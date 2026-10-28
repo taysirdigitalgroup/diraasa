@@ -21,7 +21,7 @@ class QuranAudio(private val context:Context,private val changed:(Map<String,Any
     private var focus:AudioFocusRequest?=null
     private var ownsFocus=false
     private var queue=listOf<Int>();private var index=0
-    private var chapter=1;private var language="ar";private var generation=0
+    private var chapter=1;private var sequence=QuranAudioSequence.parse("ar");private val language:String get()=sequence.language;private var generation=0
     private var pendingSeek:Int?=null
     private var revision=0L;private var session=""
     private var state="stopped";private var error="";private var wantsPlay=false
@@ -63,11 +63,12 @@ class QuranAudio(private val context:Context,private val changed:(Map<String,Any
     }
     fun start(args:Map<*,*>):Map<String,Any>{
         val newChapter=(args["chapter"] as? Number)?.toInt()?:0;val lang=args["language"]?.toString()?:""
+        val newSequence=QuranAudioSequence.parse(lang)
         val input=(args["verses"] as? List<*>)?.map{(it as? Number)?.toInt()?:-1}?:emptyList()
-        require(newChapter in 1..114&&lang in setOf("ar","fr","en")&&input.size in 1..287)
+        require(newChapter in 1..114&&input.size in 1..287)
         input.forEach{QuranAudioSource.filename(newChapter,it)}
         require(input.distinct().size==input.size&&input.zipWithNext().all{(a,b)->b==a+1})
-        stop();session=args["session"]?.toString()?:"";active=this;chapter=newChapter;language=lang;queue=input;index=0;wantsPlay=true;error=""
+        stop();session=args["session"]?.toString()?:"";active=this;chapter=newChapter;sequence=newSequence;queue=input;index=0;wantsPlay=true;error=""
         if(AzanService.activeKind in setOf("adhan","reminder")||!acquire()){state="error";error="focus";publish();return status()}
         load();return status()
     }
@@ -82,7 +83,8 @@ class QuranAudio(private val context:Context,private val changed:(Map<String,Any
         timeout=Runnable{if(token==generation&&state=="loading")failed()}.also{handler.postDelayed(it,25000)}
         cache.request(QuranAudioKey(chapter,queue[index],language),
             onReady={file->if(token==generation)prepare(file,token)},
-            onError={e->if(token==generation)failed(if(e is QuranAudioOffline)"offline" else null)})
+            onError={e->if(token==generation)failed(if(e is QuranAudioOffline)"offline" else null)},
+            languages=sequence.languages)
     }
     private fun prepare(file:File,token:Int){
         val media=MediaPlayer();player=media
@@ -94,7 +96,7 @@ class QuranAudio(private val context:Context,private val changed:(Map<String,Any
                 if(wantsPlay&&acquire()){p.start();state="playing"}else state="paused";publish()
             }}
             media.setOnCompletionListener{if(token==generation){
-                if(index+1<queue.size){index++;load()}else{
+                if(!sequence.advance()){load()}else if(index+1<queue.size){index++;load()}else{
                     state="completed";active=null;wantsPlay=false;player?.release();player=null;cache.pausePrefetch();abandon();publish()
                 }
             }}

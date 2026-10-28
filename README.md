@@ -1,9 +1,9 @@
-# Diraasa · دراسة — 2.4.2+45
+# Diraasa · دراسة — 2.4.3+46
 Carnet d’études arabes et dictionnaire مختار الصحاح, Android, hors ligne.
 Package : **com.tdg.diraasa**.
 
 ## Installer la mise à jour
-L’archive Diraasa_MAJ_2.4.2.tar.gz contient **lib/ complet** et les autres fichiers
+L’archive Diraasa_MAJ_2.4.3.tar.gz contient **lib/ complet** et les autres fichiers
 nécessaires, aux chemins de la racine du projet existant.
 Arrêter flutter run, extraire à côté de pubspec.yaml, puis :
 ```bash
@@ -533,3 +533,6 @@ Anglais ajouté sous hafs/en/SSSVVV.mp3. Internet explicitement requis ; pas de 
 Chemins adaptés aux dossiers réels : quran-hafs-ar, quran-hafs-fr, quran-hafs-en sur main. Les 21 MP3 attendus d’Al-Fatiha ont passé le contrôle technique HTTP/décodage/durée/hash ; rapport inclus. Le 001000 anglais supplémentaire est ignoré pour éviter une double introduction avant le verset 1.
 
 Cache temporaire : courant +3 avant/+3 après, dans la sourate et langue courantes. Chargement unique du MP3 courant avant lecture locale ; priorité au préchargement des suivants, nettoyage hors fenêtre, isolation des langues et annulation des chargements obsolètes. Réutilisation des fichiers déjà prêts sans connexion tant qu’ils restent en cache ; Internet nécessaire pour les autres. Pas de bibliothèque hors ligne ni d’inclusion du cache dans les sauvegardes. Maximum 128 Mio finalisés +32 Mio temporaires.
+
+### 2.4.3 — lectures mixtes
+Hafs apparaît en premier et est choisi par défaut en l'absence de préférence. Les préférences existantes sont conservées. Audio : AR, FR, EN et toutes les permutations de deux ou trois langues (15 choix au total). Chaque verset est lu dans l'ordre des langues indiqué, puis le suivant. La lecture isolée joue également toutes les langues sélectionnées. Le cache temporaire ±3 s'applique à toutes les langues du mode, sous la même limite de mémoire disque.

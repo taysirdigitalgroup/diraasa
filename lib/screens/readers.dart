@@ -292,7 +292,7 @@ class About extends StatelessWidget {
           const PrivacyLink(),
           const SizedBox(height: 24),
           const SacredText(
-            '2.4.2 · © 2026 Taysir Digital Group',
+            '2.4.3 · © 2026 Taysir Digital Group',
             textAlign: TextAlign.center,
           ),
         ],

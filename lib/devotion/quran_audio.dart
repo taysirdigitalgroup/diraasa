@@ -87,6 +87,8 @@ class QuranAudioController extends ChangeNotifier {
   String language = 'ar', state = 'stopped', error = '';
   int verse = -1, chapter = 0, position = 0, duration = 0;
   int cacheReady = 0, cacheTarget = 0;
+  String playingLanguage = '';
+
   bool continuous = false;
   bool get hasPlayback => state == 'playing' || state == 'paused';
   bool get active => ['playing', 'paused', 'loading'].contains(state);
@@ -95,7 +97,7 @@ class QuranAudioController extends ChangeNotifier {
       final value = await DevStore.read('quranAudioLanguage');
       if (!_disposed &&
           _generation == 0 &&
-          ['ar', 'fr', 'en'].contains(value)) {
+          quranAudioModes.contains(value)) {
         language = value as String;
         notifyListeners();
       }
@@ -109,6 +111,7 @@ class QuranAudioController extends ChangeNotifier {
     if (revision != null && revision < _lastRevision) return;
     if (revision != null) _lastRevision = revision;
     state = raw['state']?.toString() ?? 'stopped';
+    playingLanguage = raw['language']?.toString() ?? '';
     verse = (raw['verse'] as num?)?.toInt() ?? -1;
     chapter = (raw['chapter'] as num?)?.toInt() ?? 0;
     position = (raw['position'] as num?)?.toInt() ?? 0;
@@ -232,7 +235,7 @@ class QuranAudioController extends ChangeNotifier {
   }
 
   Future<void> selectLanguage(String value) async {
-    if (!['ar', 'fr', 'en'].contains(value)) return;
+    if (!quranAudioModes.contains(value)) return;
     await stop();
     if (_disposed) return;
     language = value;
@@ -294,11 +297,13 @@ class _QuranAudioControlsState extends State<QuranAudioControls> {
                     labelText: qa('audioLanguage'),
                     isDense: true,
                   ),
-                  items: ['ar', 'fr', 'en']
+                  items: quranAudioModes
                       .map(
                         (v) => DropdownMenuItem(
                           value: v,
-                          child: SacredText(qa(v)),
+                          child: SacredText(v.contains('-')
+                              ? '${settings.language == 'ar' ? 'مختلط' : settings.language == 'en' ? 'Mixed' : 'Mixte'} ${v.split('-').join('/').toUpperCase()}'
+                              : qa(v)),
                         ),
                       )
                       .toList(),
@@ -339,7 +344,7 @@ class _QuranAudioControlsState extends State<QuranAudioControls> {
           ),
           if (audio.active && audio.cacheTarget > 0)
             SacredText(
-              '${qa('cache')} : ${audio.cacheReady}/${audio.cacheTarget}',
+              '${audio.playingLanguage.toUpperCase()} · ${qa('cache')} : ${audio.cacheReady}/${audio.cacheTarget}',
               style: Theme.of(context).textTheme.labelSmall,
             ),
           if (audio.state == 'loading') const LinearProgressIndicator(),

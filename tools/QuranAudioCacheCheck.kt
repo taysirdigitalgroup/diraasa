@@ -41,6 +41,15 @@ fun main(){
         request(QuranAudioKey(2,10,"en"));waitFor{cache.counts()==(7 to 7)}
         check(calls[QuranAudioKey(2,10,"en")]==1)
         check(File(dir,"window").listFiles()!!.filter{it.extension=="mp3"}.size<=7)
+        val mixedReady=CountDownLatch(1)
+        val mixed=listOf("ar","fr","en")
+        cache.request(QuranAudioKey(2,10,"ar"),{mixedReady.countDown()},{throw it},mixed)
+        check(mixedReady.await(5,TimeUnit.SECONDS));waitFor{cache.counts()==(21 to 21)}
+        val previousCalls=calls.toMap()
+        val frenchReady=CountDownLatch(1)
+        cache.request(QuranAudioKey(2,10,"fr"),{frenchReady.countDown()},{throw it},mixed)
+        check(frenchReady.await(5,TimeUnit.SECONDS));waitFor{cache.counts()==(21 to 21)}
+        check(calls.toMap()==previousCalls){"Switching a mixed language refetched cached files"}
         val entered=CountDownLatch(1);val release=CountDownLatch(1)
         val running=java.util.concurrent.atomic.AtomicBoolean(false)
         val stale=java.util.concurrent.atomic.AtomicInteger(0)

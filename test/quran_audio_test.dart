@@ -7,6 +7,20 @@ import 'package:diraasa/devotion/quran_audio_plan.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  test('15 modes audio : toutes les permutations sans répétition', () {
+    final expected = <String>{'ar', 'fr', 'en'};
+    for (final a in ['ar', 'fr', 'en']) {
+      for (final b in ['ar', 'fr', 'en']) {
+        if (a == b) continue;
+        expected.add('$a-$b');
+        for (final c in ['ar', 'fr', 'en']) {
+          if (c != a && c != b) expected.add('$a-$b-$c');
+        }
+      }
+    }
+    expect(quranAudioModes.toSet(), expected);
+    expect(quranAudioModes.length, 15);
+  });
   setUp(() {
     settings = AppSettings(initialLanguage: 'fr');
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger

@@ -42,7 +42,7 @@ class QuranAudioHttpDownloader(private val online:()->Boolean):QuranAudioDownloa
                 require(url.protocol=="https" && url.host in setOf("raw.githubusercontent.com","media.githubusercontent.com","objects.githubusercontent.com"))
                 val c=(url.openConnection() as HttpURLConnection).apply{
                     connectTimeout=10000;readTimeout=10000;instanceFollowRedirects=false
-                    setRequestProperty("User-Agent","Diraasa-Quran-Audio/2.4.2")
+                    setRequestProperty("User-Agent","Diraasa-Quran-Audio/2.4.3")
                     setRequestProperty("Accept","audio/mpeg,application/octet-stream")
                 };connection=c
                 val code=c.responseCode
@@ -92,9 +92,10 @@ class QuranAudioCache(
     private var ready:((File)->Unit)?=null;private var failed:((Exception)->Unit)?=null
     init{root.deleteRecursively();check(root.mkdirs()||root.isDirectory)}
     fun counts():Pair<Int,Int> = synchronized(lock){desired.count{File(root,it.name).isFile} to desired.size}
-    fun request(key:QuranAudioKey,onReady:(File)->Unit,onError:(Exception)->Unit){
+    fun request(key:QuranAudioKey,onReady:(File)->Unit,onError:(Exception)->Unit,languages:List<String> = listOf(key.language)){
+        require(languages.distinct().size==languages.size && key.language in languages)
         synchronized(lock){
-            check(!closed);epoch++;delivered=-1;accepting=true;current=key;desired=QuranAudioWindow.priority(key);ready=onReady;failed=onError
+            check(!closed);epoch++;delivered=-1;accepting=true;current=key;desired=(listOf(key)+QuranAudioWindow.priority(key).flatMap{neighbor->languages.map{QuranAudioKey(key.chapter,neighbor.verse,it)}}).distinct();ready=onReady;failed=onError
             val currentReady=File(root,key.name).isFile
             if(running !in desired || (!currentReady && running!=key))downloader.cancel()
             evict();executor.queue.clear()

@@ -1,6 +1,6 @@
 # Diraasa — Fiche technique et historique
-Version application : **2.2.1+35**  
-Date : **27 octobre 2026**  
+Version application : **2.4.3+46**  
+Date : **28 octobre 2026**  
 Application Android : **com.tdg.diraasa**  
 Éditeur : Taysir Digital Group — Aliou Mbengue
 
@@ -690,3 +690,12 @@ Le test SQL ne remplace pas un essai de mise à jour sur appareil.
 - Tests : cache JVM (fenêtre, basmala, réutilisation, éviction et changement de langue), compilation Kotlin isolée, plan Dart et audit des vrais MP3. Flutter/APK et lecture Android réelle non exécutés ici.
 
 - Précision du développeur : le fichier anglais préalable 001000.mp3 était une formule avant la basmala et a été retiré du dépôt. La lecture commence à 001001 sans préambule ajouté ; aucune renumérotation.
+
+## 2.4.3+46 — 28 octobre 2026
+- Hafs en tête du sélecteur et valeur par défaut à la première ouverture ; le choix existant Hafs/Warsh reste conservé.
+- Audio : 3 langues simples et les 12 permutations sans répétition de 2 ou 3 langues. Choix persistant, partagé avec les sauvegardes existantes.
+- Chaque verset (ou basmala séparée) est lu successivement dans toutes les langues choisies, puis passage au suivant. Même fonctionnement pour une lecture isolée.
+- Séquençage natif : pas de dépendance à un minuteur Flutter pour changer de langue. En cas de fichier absent ou invalide, arrêt avec erreur sans saut silencieux.
+- Cache : fenêtre ±3 versets pour toutes les langues du mode, priorité au fichier courant ; plafond global 128 Mio conservé.
+- Aucun changement de schéma de base de données, aucune réinitialisation.
+- Limites : Flutter, APK et lecture sur téléphone non exécutés dans cet environnement.

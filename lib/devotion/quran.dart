@@ -17,7 +17,7 @@ class QuranPage extends StatefulWidget {
 class _QuranPageState extends State<QuranPage> {
   final search = SacredController();
   List<AppRecord> chapters = [];
-  String reading = 'warsh', query = '';
+  String reading = 'hafs', query = '';
   String? error;
   bool loading = true;
   int limit = 60, revision = 0;
@@ -111,7 +111,7 @@ class _QuranPageState extends State<QuranPage> {
                       key: ValueKey('reading-$reading'),
                       initialValue: reading,
                       decoration: InputDecoration(labelText: dt('reading')),
-                      items: ['warsh', 'hafs']
+                      items: ['hafs', 'warsh']
                           .map(
                             (r) => DropdownMenuItem(
                               value: r,

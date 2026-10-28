@@ -95,3 +95,7 @@ La synchronisation des changements de verset et d’état est transmise directem
 ## Vérification réelle Al-Fatiha du 28 octobre 2026
 
 Les sept fichiers attendus par langue ont été téléchargés depuis les dossiers réels du dépôt : 21 réponses HTTP200, format audio/mpeg, décodage complet, durée et SHA-256 contrôlés sans erreur. Rapport AUDIT_FATIHA_2.4.2.json inclus. Le fichier préalable anglais 001000.mp3, présent lors du premier contrôle puis retiré par le développeur, n’est pas demandé pour Al-Fatiha (dont 001001 est déjà le verset 1). Il ne faut pas renuméroter les fichiers. La vérification sémantique de la récitation/traduction reste distincte de ce contrôle technique.
+
+## Lecture mixte — 2.4.3
+Les 15 modes sont les trois langues simples et toutes les permutations sans répétition de deux et trois langues. L'ordre du libellé est l'ordre de lecture pour chaque verset : AR/FR/EN joue 001001 AR, FR, EN puis 001002 AR, FR, EN. Un verset isolé joue aussi toutes les langues du mode. Basmala séparée identique : chaque langue une seule fois ; aucun 001000.
+Les événements natifs conservent le même numéro de verset pendant les changements de langue. Le statut indique la langue réellement jouée et la sélection conserve le mode complet. Le cache contient jusqu'à 7 versets × nombre de langues (plafond 128 Mio). Chaque fichier manquant ou invalide arrête la lecture sans changement silencieux de langue.
