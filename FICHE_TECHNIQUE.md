@@ -649,3 +649,10 @@ Le test SQL ne remplace pas un essai de mise à jour sur appareil.
 - État awaitingDecision distinct du verrou busy : masquer la progression pendant les décisions de restauration et de suppression du compte ; conserver le verrou pour empêcher une opération concurrente. Retour de l’indicateur pendant les traitements réels, puis libération du verrou dans finally.
 - Tests : absence de progression pendant les deux confirmations, actions toujours verrouillées, progression réelle contrôlée avec Completer, annulation du résumé sans import, puis nouvelle sélection possible. Aucun allongement des timeouts ni assouplissement des attentes de restauration.
 - Données, configuration Firebase, clés et moteur natif inchangés. Tests Flutter non exécutés ici.
+
+## 2.3.2+42 — 28 octobre 2026
+
+- Progression de sauvegarde sortie de ListView et placée dans une zone fixe sous l’AppBar, avec clé backup-progress. Elle reste indépendante du défilement et demeure masquée pendant les confirmations (verrou busy conservé).
+- Test du transfert : attente bornée en frames du véritable appel natif simulé et de l’indicateur ; assertion d’un appel unique, du verrouillage pendant l’attente et du déverrouillage après réponse. Le mock attend explicitement le Completer capturé et finally le libère même si une assertion échoue.
+- .gitignore identique au fichier fourni par le développeur, y compris *.zip et *.tar.gz.
+- Aucun changement natif, de données, de schéma ou de configuration Firebase. Syntaxe Dart contrôlée ; tests Flutter non exécutés ici.

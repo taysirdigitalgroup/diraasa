@@ -259,178 +259,192 @@ class _BackupPageState extends State<BackupPage> {
     canPop: !busy,
     child: Scaffold(
       appBar: AppBar(title: SacredText(bt('backupTitle'))),
-      body: ListView(
-        padding: const EdgeInsets.all(20),
+      body: Column(
         children: [
-          SacredText(bt('backupIntro')),
-          const SizedBox(height: 12),
-          if (busy && !awaitingDecision) const LinearProgressIndicator(),
-          if (error != null)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              child: SacredText(
-                error!,
-                style: TextStyle(color: Theme.of(context).colorScheme.error),
-              ),
-            ),
-          if (message != null)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              child: SacredText(message!),
-            ),
-          const SizedBox(height: 16),
-          SacredText(
-            bt('local'),
-            style: Theme.of(context).textTheme.titleLarge,
-          ),
-          action(
-            'export',
-            Icons.save_alt,
-            () => run(() async {
-              final result = await Store.call('backupExportLocal');
-              if (mounted && result != null)
-                setState(() => message = bt('done'));
-            }),
-          ),
-          action(
-            'import',
-            Icons.restore,
-            () => run(() => restore('backupPrepareLocal')),
-          ),
-          const SizedBox(height: 20),
-          SacredText(
-            bt('drive'),
-            style: Theme.of(context).textTheme.titleLarge,
-          ),
-          if (status['configured'] == false)
-            SacredText(
-              bt('notConfigured'),
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
-          if (status['connected'] == true) ...[
-            ListTile(
-              leading: const Icon(Icons.account_circle_outlined),
-              title: SacredText(
-                status['email']?.toString() ?? '',
-                textDirection: TextDirection.ltr,
-              ),
-              trailing: IconButton(
-                tooltip: bt('disconnect'),
-                icon: const Icon(Icons.logout),
-                onPressed: busy
-                    ? null
-                    : () => run(() async {
-                        await Store.call('driveDisconnect');
-                        driveFiles = null;
-                        await refresh();
-                      }),
-              ),
-            ),
-            action(
-              'driveBackup',
-              Icons.cloud_upload_outlined,
-              () => run(() async {
-                await Store.call('driveBackup');
-                await refresh();
-                if (mounted)
-                  setState(() {
-                    message = bt('done');
-                    driveFiles = null;
-                  });
-              }),
-            ),
-            action(
-              'driveList',
-              Icons.cloud_download_outlined,
-              () => run(() async {
-                final files = await Store.rows('driveList');
-                if (mounted) setState(() => driveFiles = files);
-              }),
-            ),
-            action(
-              'driveFolder',
-              Icons.folder_open,
-              () => run(() async {
-                final folder = await Store.call('driveOpenFolder');
-                if (folder is Map && folder['url'] is String) {
-                  await Store.call('openExternal', {'url': folder['url']});
-                }
-              }),
-            ),
-            if (driveFiles != null) ...[
-              if (driveFiles!.isEmpty) SacredText(bt('emptyBackup')),
-              for (final file in driveFiles!)
-                ListTile(
-                  leading: const Icon(Icons.inventory_2_outlined),
-                  title: SacredText(file['name'].toString()),
-                  subtitle: SacredText(file['createdTime']?.toString() ?? ''),
-                  trailing: const Icon(Icons.restore),
-                  onTap: busy
-                      ? null
-                      : () => run(
-                          () => restore('drivePrepare', {'id': file['id']}),
-                        ),
+          if (busy && !awaitingDecision)
+            const LinearProgressIndicator(key: ValueKey('backup-progress')),
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.all(20),
+              children: [
+                SacredText(bt('backupIntro')),
+                const SizedBox(height: 12),
+                if (error != null)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    child: SacredText(
+                      error!,
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.error,
+                      ),
+                    ),
+                  ),
+                if (message != null)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    child: SacredText(message!),
+                  ),
+                const SizedBox(height: 16),
+                SacredText(
+                  bt('local'),
+                  style: Theme.of(context).textTheme.titleLarge,
                 ),
-            ],
-            TextButton.icon(
-              onPressed: busy
-                  ? null
-                  : () => run(() async {
-                      if (!await withDecision(
-                        () => confirmDeletion(
-                          context,
-                          question: bt('deleteAccount'),
-                          warning: bt('deleteAccountWarning'),
+                action(
+                  'export',
+                  Icons.save_alt,
+                  () => run(() async {
+                    final result = await Store.call('backupExportLocal');
+                    if (mounted && result != null)
+                      setState(() => message = bt('done'));
+                  }),
+                ),
+                action(
+                  'import',
+                  Icons.restore,
+                  () => run(() => restore('backupPrepareLocal')),
+                ),
+                const SizedBox(height: 20),
+                SacredText(
+                  bt('drive'),
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+                if (status['configured'] == false)
+                  SacredText(
+                    bt('notConfigured'),
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                if (status['connected'] == true) ...[
+                  ListTile(
+                    leading: const Icon(Icons.account_circle_outlined),
+                    title: SacredText(
+                      status['email']?.toString() ?? '',
+                      textDirection: TextDirection.ltr,
+                    ),
+                    trailing: IconButton(
+                      tooltip: bt('disconnect'),
+                      icon: const Icon(Icons.logout),
+                      onPressed: busy
+                          ? null
+                          : () => run(() async {
+                              await Store.call('driveDisconnect');
+                              driveFiles = null;
+                              await refresh();
+                            }),
+                    ),
+                  ),
+                  action(
+                    'driveBackup',
+                    Icons.cloud_upload_outlined,
+                    () => run(() async {
+                      await Store.call('driveBackup');
+                      await refresh();
+                      if (mounted)
+                        setState(() {
+                          message = bt('done');
+                          driveFiles = null;
+                        });
+                    }),
+                  ),
+                  action(
+                    'driveList',
+                    Icons.cloud_download_outlined,
+                    () => run(() async {
+                      final files = await Store.rows('driveList');
+                      if (mounted) setState(() => driveFiles = files);
+                    }),
+                  ),
+                  action(
+                    'driveFolder',
+                    Icons.folder_open,
+                    () => run(() async {
+                      final folder = await Store.call('driveOpenFolder');
+                      if (folder is Map && folder['url'] is String) {
+                        await Store.call('openExternal', {
+                          'url': folder['url'],
+                        });
+                      }
+                    }),
+                  ),
+                  if (driveFiles != null) ...[
+                    if (driveFiles!.isEmpty) SacredText(bt('emptyBackup')),
+                    for (final file in driveFiles!)
+                      ListTile(
+                        leading: const Icon(Icons.inventory_2_outlined),
+                        title: SacredText(file['name'].toString()),
+                        subtitle: SacredText(
+                          file['createdTime']?.toString() ?? '',
                         ),
-                      ))
-                        return;
-                      await Store.call('driveDeleteAccount');
-                      driveFiles = null;
+                        trailing: const Icon(Icons.restore),
+                        onTap: busy
+                            ? null
+                            : () => run(
+                                () =>
+                                    restore('drivePrepare', {'id': file['id']}),
+                              ),
+                      ),
+                  ],
+                  TextButton.icon(
+                    onPressed: busy
+                        ? null
+                        : () => run(() async {
+                            if (!await withDecision(
+                              () => confirmDeletion(
+                                context,
+                                question: bt('deleteAccount'),
+                                warning: bt('deleteAccountWarning'),
+                              ),
+                            ))
+                              return;
+                            await Store.call('driveDeleteAccount');
+                            driveFiles = null;
+                            await refresh();
+                          }),
+                    icon: const Icon(Icons.person_remove_outlined),
+                    label: SacredText(bt('deleteAccount')),
+                  ),
+                ] else
+                  action(
+                    'connect',
+                    Icons.account_circle_outlined,
+                    () => run(() async {
+                      await Store.call('driveConnect');
                       await refresh();
                     }),
-              icon: const Icon(Icons.person_remove_outlined),
-              label: SacredText(bt('deleteAccount')),
+                  ),
+                const SizedBox(height: 10),
+                SacredText(
+                  bt('manual'),
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+                const SizedBox(height: 12),
+                SacredText(
+                  bt('privateFile'),
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+                if (recoveryFiles?.isNotEmpty == true) ...[
+                  const SizedBox(height: 20),
+                  SacredText(
+                    bt('recovery'),
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  for (final file in recoveryFiles!)
+                    ListTile(
+                      title: SacredText(file['name'].toString()),
+                      trailing: const Icon(Icons.restore),
+                      onTap: busy
+                          ? null
+                          : () => run(
+                              () => restore('backupPrepareRecovery', {
+                                'id': file['id'],
+                              }),
+                            ),
+                    ),
+                ],
+                const SizedBox(height: 28),
+                const PrivacyLink(),
+              ],
             ),
-          ] else
-            action(
-              'connect',
-              Icons.account_circle_outlined,
-              () => run(() async {
-                await Store.call('driveConnect');
-                await refresh();
-              }),
-            ),
-          const SizedBox(height: 10),
-          SacredText(
-            bt('manual'),
-            style: Theme.of(context).textTheme.bodySmall,
           ),
-          const SizedBox(height: 12),
-          SacredText(
-            bt('privateFile'),
-            style: Theme.of(context).textTheme.bodySmall,
-          ),
-          if (recoveryFiles?.isNotEmpty == true) ...[
-            const SizedBox(height: 20),
-            SacredText(
-              bt('recovery'),
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            for (final file in recoveryFiles!)
-              ListTile(
-                title: SacredText(file['name'].toString()),
-                trailing: const Icon(Icons.restore),
-                onTap: busy
-                    ? null
-                    : () => run(
-                        () => restore('backupPrepareRecovery', {
-                          'id': file['id'],
-                        }),
-                      ),
-              ),
-          ],
-          const SizedBox(height: 28),
-          const PrivacyLink(),
         ],
       ),
     ),

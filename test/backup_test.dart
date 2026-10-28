@@ -22,7 +22,9 @@ void main() {
             case 'backupRecoveryList':
               return [];
             case 'backupExportLocal':
-              return exportGate == null ? true : exportGate!.future;
+              final gate = exportGate;
+              if (gate != null) return await gate.future;
+              return true;
             case 'backupPrepareLocal':
               return {
                 'createdAt': 1793145600000,
@@ -100,22 +102,37 @@ void main() {
   testWidgets('Progression pendant le transfert, actions verrouillées', (
     tester,
   ) async {
-    exportGate = Completer<dynamic>();
+    final transfer = Completer<dynamic>();
+    exportGate = transfer;
     await open(tester);
-    await tester.tap(find.byKey(const ValueKey('export')));
-    await tester.pump();
-    expect(find.byType(LinearProgressIndicator), findsOneWidget);
-    expect(
-      tester.widget<ListTile>(find.byKey(const ValueKey('import'))).onTap,
-      isNull,
-    );
-    exportGate!.complete(true);
-    await tester.pumpAndSettle();
-    expect(find.byType(LinearProgressIndicator), findsNothing);
-    expect(
-      tester.widget<ListTile>(find.byKey(const ValueKey('import'))).onTap,
-      isNotNull,
-    );
+    try {
+      await tester.tap(find.byKey(const ValueKey('export')));
+      // Wait for the method channel to enter the blocked transfer. A single
+      // frame does not guarantee that async preference flushing has finished.
+      final progress = find.byKey(const ValueKey('backup-progress'));
+      for (var frame = 0; frame < 20; frame++) {
+        if (calls.contains('backupExportLocal') &&
+            progress.evaluate().isNotEmpty)
+          break;
+        await tester.pump(const Duration(milliseconds: 16));
+      }
+      expect(calls.where((c) => c == 'backupExportLocal').length, 1);
+      expect(progress, findsOneWidget);
+      expect(
+        tester.widget<ListTile>(find.byKey(const ValueKey('import'))).onTap,
+        isNull,
+      );
+      transfer.complete(true);
+      await tester.pumpAndSettle();
+      expect(progress, findsNothing);
+      expect(
+        tester.widget<ListTile>(find.byKey(const ValueKey('import'))).onTap,
+        isNotNull,
+      );
+    } finally {
+      if (!transfer.isCompleted) transfer.complete(true);
+      await tester.pumpAndSettle();
+    }
   });
   testWidgets('Annuler le résumé libère le verrou et permet un nouvel import', (
     tester,
