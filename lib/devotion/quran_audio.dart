@@ -25,6 +25,12 @@ const quranAudioLabels = <String, List<String>>{
   'audioLanguage': ['Audio', 'الصوت', 'Audio'],
   'ar': ['Arabe', 'العربية', 'Arabic'],
   'fr': ['Français', 'الفرنسية', 'French'],
+  'en': ['Anglais', 'الإنجليزية', 'English'],
+  'offline': [
+    'Ce verset n’est pas en cache. Connectez-vous à Internet pour le charger.',
+    'هذه الآية غير مخزنة مؤقتًا. اتصل بالإنترنت لتحميلها.',
+    'This verse is not cached. Connect to the Internet to load it.',
+  ],
   'pause': ['Pause', 'إيقاف مؤقت', 'Pause'],
   'resume': ['Reprendre', 'استئناف', 'Resume'],
   'play': ['Écouter', 'استماع', 'Play'],
@@ -45,31 +51,51 @@ const quranAudioLabels = <String, List<String>>{
     'الصوت غير متاح. تحقق من الاتصال ووجود الملف في المستودع.',
     'Audio unavailable. Check the connection and that the file exists in the repository.',
   ],
+  'cache': ['Audios en cache', 'الأصوات المخزنة مؤقتًا', 'Cached audio'],
   'streaming': [
-    'Écoute en ligne · synchronisation par verset',
-    'استماع عبر الإنترنت · متابعة الآية الحالية',
-    'Online audio · verse-level synchronization',
+    'Chargement Internet · cache temporaire : 3 avant / 3 après',
+    'تحميل عبر الإنترنت · تخزين مؤقت: ٣ قبل / ٣ بعد',
+    'Internet loading · temporary cache: 3 before / 3 after',
   ],
 };
+
+final _quranAudioEvents = StreamController<AppRecord>.broadcast();
+void deliverQuranAudioEvent(dynamic value) {
+  if (value is Map) _quranAudioEvents.add(Map<String, dynamic>.from(value));
+}
 
 typedef QuranAudioApi =
     Future<dynamic> Function(String method, AppRecord? args);
 
 class QuranAudioController extends ChangeNotifier {
   QuranAudioController({QuranAudioApi? api})
-    : _api = api ?? ((method, args) => Store.call(method, args));
+    : _api = api ?? ((method, args) => Store.call(method, args)) {
+    _events = _quranAudioEvents.stream.listen((value) {
+      if (!_disposed && _session.isNotEmpty && value['session'] == _session)
+        _apply(value);
+    });
+  }
   final QuranAudioApi _api;
+  static int _nextId = 0;
+  final int _id = ++_nextId;
+  late final StreamSubscription<AppRecord> _events;
+  String _session = '';
+  int _lastRevision = -1;
   Timer? _timer;
   bool _disposed = false, _polling = false;
   int _generation = 0;
   String language = 'ar', state = 'stopped', error = '';
   int verse = -1, chapter = 0, position = 0, duration = 0;
+  int cacheReady = 0, cacheTarget = 0;
   bool continuous = false;
+  bool get hasPlayback => state == 'playing' || state == 'paused';
   bool get active => ['playing', 'paused', 'loading'].contains(state);
   Future<void> loadLanguage() async {
     try {
       final value = await DevStore.read('quranAudioLanguage');
-      if (!_disposed && _generation == 0 && ['ar', 'fr'].contains(value)) {
+      if (!_disposed &&
+          _generation == 0 &&
+          ['ar', 'fr', 'en'].contains(value)) {
         language = value as String;
         notifyListeners();
       }
@@ -78,12 +104,18 @@ class QuranAudioController extends ChangeNotifier {
 
   void _apply(dynamic raw) {
     if (_disposed || raw is! Map) return;
+    if (raw['session'] != null && raw['session'] != _session) return;
+    final revision = (raw['revision'] as num?)?.toInt();
+    if (revision != null && revision < _lastRevision) return;
+    if (revision != null) _lastRevision = revision;
     state = raw['state']?.toString() ?? 'stopped';
     verse = (raw['verse'] as num?)?.toInt() ?? -1;
     chapter = (raw['chapter'] as num?)?.toInt() ?? 0;
     position = (raw['position'] as num?)?.toInt() ?? 0;
     duration = (raw['duration'] as num?)?.toInt() ?? 0;
     error = raw['error']?.toString() ?? '';
+    cacheReady = (raw['cacheReady'] as num?)?.toInt() ?? 0;
+    cacheTarget = (raw['cacheTarget'] as num?)?.toInt() ?? 0;
     if (!active) {
       _timer?.cancel();
       _timer = null;
@@ -120,6 +152,8 @@ class QuranAudioController extends ChangeNotifier {
     _timer?.cancel();
     _timer = null;
     final token = ++_generation;
+    _session = '$_id-$token';
+    _lastRevision = -1;
     continuous = all;
     chapter = surah;
     verse = queue.first;
@@ -130,6 +164,7 @@ class QuranAudioController extends ChangeNotifier {
     notifyListeners();
     try {
       final value = await _api('quranAudioStart', {
+        'session': _session,
         'chapter': surah,
         'language': language,
         'verses': queue,
@@ -177,6 +212,8 @@ class QuranAudioController extends ChangeNotifier {
   Future<void> seek(int milliseconds) =>
       _command('quranAudioSeek', {'position': milliseconds});
   Future<void> stop() async {
+    final session = _session;
+    _session = '';
     ++_generation;
     _timer?.cancel();
     _timer = null;
@@ -189,12 +226,13 @@ class QuranAudioController extends ChangeNotifier {
       notifyListeners();
     }
     try {
-      await _api('quranAudioStop', null);
+      if (session.isNotEmpty)
+        await _api('quranAudioStop', {'session': session});
     } catch (_) {}
   }
 
   Future<void> selectLanguage(String value) async {
-    if (!['ar', 'fr'].contains(value)) return;
+    if (!['ar', 'fr', 'en'].contains(value)) return;
     await stop();
     if (_disposed) return;
     language = value;
@@ -204,10 +242,18 @@ class QuranAudioController extends ChangeNotifier {
 
   @override
   void dispose() {
+    final session = _session;
     _disposed = true;
     ++_generation;
     _timer?.cancel();
-    unawaited(_api('quranAudioStop', null).catchError((Object _) => null));
+    unawaited(_events.cancel());
+    if (session.isNotEmpty) {
+      unawaited(
+        _api('quranAudioStop', {
+          'session': session,
+        }).catchError((Object _) => null),
+      );
+    }
     super.dispose();
   }
 }
@@ -248,7 +294,7 @@ class _QuranAudioControlsState extends State<QuranAudioControls> {
                     labelText: qa('audioLanguage'),
                     isDense: true,
                   ),
-                  items: ['ar', 'fr']
+                  items: ['ar', 'fr', 'en']
                       .map(
                         (v) => DropdownMenuItem(
                           value: v,
@@ -291,6 +337,11 @@ class _QuranAudioControlsState extends State<QuranAudioControls> {
                 ),
             ],
           ),
+          if (audio.active && audio.cacheTarget > 0)
+            SacredText(
+              '${qa('cache')} : ${audio.cacheReady}/${audio.cacheTarget}',
+              style: Theme.of(context).textTheme.labelSmall,
+            ),
           if (audio.state == 'loading') const LinearProgressIndicator(),
           if (audio.duration > 0 && audio.active)
             Row(
@@ -322,7 +373,11 @@ class _QuranAudioControlsState extends State<QuranAudioControls> {
             ),
           if (audio.state == 'error')
             SacredText(
-              '${qa(audio.error == 'focus' ? 'focus' : 'unavailable')} ${RegExp(r'^\d{6}\.mp3$').hasMatch(audio.error) ? audio.error : ''}',
+              '${qa(audio.error == 'focus'
+                  ? 'focus'
+                  : audio.error == 'offline'
+                  ? 'offline'
+                  : 'unavailable')} ${RegExp(r'^\d{6}\.mp3$').hasMatch(audio.error) ? audio.error : ''}',
               style: TextStyle(
                 color: Theme.of(context).colorScheme.error,
                 fontSize: 12,

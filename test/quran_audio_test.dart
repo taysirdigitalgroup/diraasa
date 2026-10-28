@@ -24,15 +24,20 @@ void main() {
     expect(quranAudioFilename(114, 6), '114006.mp3');
     expect(
       quranAudioUri(2, 0, 'fr').toString(),
-      endsWith('/hafs/fr/002000.mp3'),
+      endsWith('/quran-hafs-fr/002000.mp3'),
     );
     expect(quranAudioPlaylist(1, [1, 2, 3], 1, continuous: true), [1, 2, 3]);
     expect(quranAudioPlaylist(2, [1, 2, 3], 1, continuous: true), [0, 1, 2, 3]);
     expect(quranAudioPlaylist(9, [1, 2, 3], 1, continuous: true), [1, 2, 3]);
     expect(quranAudioPlaylist(2, [1, 2, 3], 2, continuous: true), [2, 3]);
     expect(quranAudioPlaylist(2, [1, 2, 3], 1, continuous: false), [1]);
+    expect(
+      quranAudioUri(114, 6, 'en').toString(),
+      endsWith('/quran-hafs-en/114006.mp3'),
+    );
+    expect(() => quranAudioFilename(114, 7), throwsArgumentError);
     expect(() => quranAudioFilename(9, 0), throwsArgumentError);
-    expect(() => quranAudioUri(2, 1, 'en'), throwsArgumentError);
+    expect(() => quranAudioUri(2, 1, 'es'), throwsArgumentError);
   });
   test(
     'Synchronisation du verset natif, pause, reprise, recherche audio et arrêt',
@@ -89,6 +94,51 @@ void main() {
       );
     },
   );
+  test('Événements natifs immédiats, sans retour à un état périmé', () async {
+    String session = '';
+    final audio = QuranAudioController(
+      api: (method, args) async {
+        if (method == 'quranAudioStart') session = args!['session'] as String;
+        return {
+          'state': 'loading',
+          'session': session,
+          'revision': 1,
+          'chapter': 1,
+          'verse': 1,
+        };
+      },
+    );
+    addTearDown(audio.dispose);
+    await audio.play(1, [1, 2], 1, all: true);
+    expect(audio.hasPlayback, false);
+    deliverQuranAudioEvent({
+      'session': session,
+      'revision': 3,
+      'state': 'playing',
+      'chapter': 1,
+      'verse': 2,
+    });
+    await Future<void>.delayed(Duration.zero);
+    expect(audio.verse, 2);
+    expect(audio.hasPlayback, true);
+    deliverQuranAudioEvent({
+      'session': session,
+      'revision': 2,
+      'state': 'loading',
+      'chapter': 1,
+      'verse': 1,
+    });
+    deliverQuranAudioEvent({
+      'session': 'other',
+      'revision': 4,
+      'state': 'playing',
+      'chapter': 1,
+      'verse': 1,
+    });
+    await Future<void>.delayed(Duration.zero);
+    expect(audio.verse, 2);
+    expect(audio.state, 'playing');
+  });
   testWidgets(
     'Warsh sans lecture Hafs ; contrôles Hafs sans débordement à 320 px',
     (tester) async {

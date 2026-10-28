@@ -1,0 +1,23 @@
+{
+  "checkedOn": "2026-10-28",
+  "repository": "https://github.com/taysirdigitalgroup/diraasa-quran-sounds",
+  "branch": "main",
+  "public": true,
+  "repositoryFilesObserved": 205,
+  "observation": "Flutter project files were present; expected raw samples were absent at check time.",
+  "samples": [
+    {
+      "url": "https://raw.githubusercontent.com/taysirdigitalgroup/diraasa-quran-sounds/main/hafs/ar/001001.mp3",
+      "status": 404
+    },
+    {
+      "url": "https://raw.githubusercontent.com/taysirdigitalgroup/diraasa-quran-sounds/main/hafs/fr/001001.mp3",
+      "status": 404
+    },
+    {
+      "url": "https://raw.githubusercontent.com/taysirdigitalgroup/diraasa-quran-sounds/main/hafs/en/001001.mp3",
+      "status": 404
+    }
+  ],
+  "realAudioContentVerified": false
+}

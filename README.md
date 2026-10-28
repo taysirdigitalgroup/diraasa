@@ -1,9 +1,9 @@
-# Diraasa · دراسة — 2.4.0+43
+# Diraasa · دراسة — 2.4.2+45
 Carnet d’études arabes et dictionnaire مختار الصحاح, Android, hors ligne.
 Package : **com.tdg.diraasa**.
 
 ## Installer la mise à jour
-L’archive Diraasa_MAJ_2.4.0.tar.gz contient **lib/ complet** et les autres fichiers
+L’archive Diraasa_MAJ_2.4.2.tar.gz contient **lib/ complet** et les autres fichiers
 nécessaires, aux chemins de la racine du projet existant.
 Arrêter flutter run, extraire à côté de pubspec.yaml, puis :
 ```bash
@@ -525,3 +525,11 @@ Correction des pièces jointes : tous les chemins privés sont comparés sous fo
 Lecture en ligne Hafs par verset ou en continu sur la sourate affichée, AR/FR, pause/reprise, arrêt et position dans le MP3. Verset actif distingué et repositionnement automatique hors recherche. Les audios sont chargés depuis le dépôt public TDG, branche main : `hafs/ar/SSSVVV.mp3` et `hafs/fr/SSSVVV.mp3`. Basmala SSS000 au début sauf Fatiha (verset 001001) et At-Tawba (aucune). Pas de lecture Hafs associée à Warsh. Lecture arrêtée en quittant la page ou en arrière-plan ; pas de téléchargement permanent dans cette version. Aucun SDK ni service de traduction payant ajouté.
 
 Consulter `source/quran_audio/README.md` pour le dépôt, les commandes SSH TDG, les chemins et les limites. Les audios réels doivent être ajoutés par le développeur ; aucun MP3 de récitation n’est livré avec cette archive. Politique de confidentialité actualisée (GitHub raw).
+
+### 2.4.1 — Audio Hafs AR/FR/EN et vérifications
+Anglais ajouté sous hafs/en/SSSVVV.mp3. Internet explicitement requis ; pas de lecture hors ligne permanente. Références contrôlées selon les nombres de versets Hafs, playlist ordonnée et unique, durée audio positive vérifiée après préparation. Le suivi démarre à la préparation/lecture effective plutôt qu’à la mise en chargement. Outil tools/audit_quran_audio.py pour auditer techniquement les MP3 locaux avant push (format/décodage/durée/hash/fichiers manquants). Contrôle du contenu récité ou traduit distinct, à effectuer sur les vrais enregistrements.
+
+### 2.4.2 — Cache glissant et fichiers réels Al-Fatiha
+Chemins adaptés aux dossiers réels : quran-hafs-ar, quran-hafs-fr, quran-hafs-en sur main. Les 21 MP3 attendus d’Al-Fatiha ont passé le contrôle technique HTTP/décodage/durée/hash ; rapport inclus. Le 001000 anglais supplémentaire est ignoré pour éviter une double introduction avant le verset 1.
+
+Cache temporaire : courant +3 avant/+3 après, dans la sourate et langue courantes. Chargement unique du MP3 courant avant lecture locale ; priorité au préchargement des suivants, nettoyage hors fenêtre, isolation des langues et annulation des chargements obsolètes. Réutilisation des fichiers déjà prêts sans connexion tant qu’ils restent en cache ; Internet nécessaire pour les autres. Pas de bibliothèque hors ligne ni d’inclusion du cache dans les sauvegardes. Maximum 128 Mio finalisés +32 Mio temporaires.

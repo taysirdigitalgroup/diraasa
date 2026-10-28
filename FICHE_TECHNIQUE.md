@@ -666,3 +666,27 @@ Le test SQL ne remplace pas un essai de mise à jour sur appareil.
 - MediaPlayer Android natif, préparation asynchrone, focus audio, abandon sur sortie/arrière-plan, pause avant azan/rappel/préécoute, timeout 25 s et arrêt sur fichier absent ; pas de SDK supplémentaire. Politique de confidentialité et références mises à jour pour les requêtes GitHub.
 - Guide source/quran_audio/README.md : structure des fichiers et correction SSH avec alias github.com-tdg, remote set-url et IdentitiesOnly yes. Aucune commande Git n’a été exécutée sur le PC du développeur ni aucun audio poussé par cette mise à jour.
 - Contrôles : syntaxe Dart, plan de lecture Dart autonome, compilation Kotlin isolée et tests JVM de chemins/médias/archives (voir rapport). Tests Flutter et APK non exécutés ici ; streaming réel à vérifier après publication des MP3. Données, clés et configuration Firebase conservées.
+
+## 2.4.1+44 — 28 octobre 2026
+
+- Langue audio EN ajoutée au lecteur, aux préférences et aux liens raw Hafs. Chemins : hafs/ar, hafs/fr, hafs/en. Politique de confidentialité et documentation actualisées.
+- Références bornées aux 114 sourates et aux nombres exacts de versets du corpus Hafs fourni ; refus des doublons et des sauts dans une playlist native. Basmala 000 gardée selon les mêmes règles.
+- Internet requis affiché ; détection d’absence de réseau avant chargement. Préparation asynchrone : durée positive exigée, timeout et erreurs explicites, pas de saut silencieux ni de remplacement de langue.
+- Synchronisation : distinction du verset lors de la préparation achevée/lecture ou pause, pas dès le début du buffering. Changement de langue arrêté puis reprise possible depuis la référence courante.
+- Outil audit_quran_audio.py : liste attendue Hafs, identification MP3, refus LFS/HTML, décodage FFmpeg complet, durée et SHA-256. Test avec MP3 synthétique temporaire et faux pointeur LFS réussi. Cette validation technique ne certifie pas que la récitation/traduction dit le bon verset.
+- Contrôle public du dépôt : les trois échantillons hafs/ar/001001.mp3, hafs/fr/001001.mp3 et hafs/en/001001.mp3 renvoyaient HTTP404 au moment de la vérification. Aucun corpus réel déclaré vérifié.
+- Compilation Kotlin isolée et contrôles de syntaxe/plan de lecture réalisés ; tests Flutter/APK et streaming réels non exécutés ici. Base, images, clés et configuration Google inchangées.
+
+- Complément synchronisation 2.4.1 : événements natifs immédiats (préparation, progression de la playlist, pause, reprise, arrêt, erreur), routés dans le gestionnaire de canal existant. Identité de session et révision monotone pour refuser les états périmés ou issus d’une autre lecture ; arrêt limité à la session propriétaire. Polling conservé pour la position, pas comme seul mécanisme de changement de verset.
+
+## 2.4.2+45 — 28 octobre 2026
+
+- URL raw corrigées pour les dossiers réellement publiés : quran-hafs-ar, quran-hafs-fr, quran-hafs-en. Pas de renommage demandé au développeur.
+- Vérification effective d’Al-Fatiha : les 21 fichiers 001001..001007 des trois langues sont présents, HTTP200/audio-mpeg, décodés sans erreur, durées et hashes relevés. Rapport source/quran_audio/AUDIT_FATIHA_2.4.2.json. Le 001000 anglais n’est pas joué pour Fatiha. Cela ne constitue pas une certification sémantique du contenu parlé.
+- Cache natif temporaire glissant : courant +3 avant/+3 après, limité à la sourate/langue. Priorité courant puis suivants puis précédents ; un seul téléchargement à la fois ; validation MIME/durée, écriture temporaire et renommage atomique avant exposition au lecteur. Lecture locale après chargement, pas de double transfert streaming+cache.
+- Éviction des fichiers hors fenêtre, réutilisation sans nouveau réseau, annulation des tâches obsolètes, isolation des langues et des instances de lecteur. Plafond 32 Mio/fichier, 128 Mio finalisés (+32 Mio au maximum en cours). Sous plafonds, jusqu’à sept fichiers ; moins aux limites de sourate.
+- Cache sous cacheDir, jamais dans les sauvegardes. Nettoyage à la fermeture du lecteur natif et au prochain démarrage ; stop/arrière-plan annulent le préchargement mais gardent la fenêtre déjà prête pendant la vie du lecteur. Pas de téléchargement intégral/offline permanent.
+- Interface : compteur d’audios prêts, messages réseau adaptés ; les fichiers prêts peuvent encore jouer temporairement sans connexion. Politique et docs actualisées. Pas de nouvelle dépendance SDK ni modification de base/configuration Firebase.
+- Tests : cache JVM (fenêtre, basmala, réutilisation, éviction et changement de langue), compilation Kotlin isolée, plan Dart et audit des vrais MP3. Flutter/APK et lecture Android réelle non exécutés ici.
+
+- Précision du développeur : le fichier anglais préalable 001000.mp3 était une formule avant la basmala et a été retiré du dépôt. La lecture commence à 001001 sans préambule ajouté ; aucune renumérotation.

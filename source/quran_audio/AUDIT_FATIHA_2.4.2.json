@@ -1,0 +1,223 @@
+{
+  "expectedFiles": 21,
+  "checkedFiles": 21,
+  "validFiles": 21,
+  "technicalPassed": true,
+  "fullDecode": true,
+  "semanticMappingVerified": false,
+  "note": "Names, numbering and decoding are technical checks. A human content review must confirm that each recording recites/translates the corresponding verse.",
+  "missing": [],
+  "errors": [],
+  "files": [
+    {
+      "file": "quran-hafs-ar/001001.mp3",
+      "chapter": 1,
+      "verse": 1,
+      "language": "ar",
+      "bytes": 49109,
+      "durationSeconds": 6.112653,
+      "sha256": "b36a204a31ce2ac1e23ce3b4ed3e16f862f74cfa54de4b0a246fe3579620b802",
+      "decoded": true
+    },
+    {
+      "file": "quran-hafs-ar/001002.mp3",
+      "chapter": 1,
+      "verse": 2,
+      "language": "ar",
+      "bytes": 45765,
+      "durationSeconds": 5.694694,
+      "sha256": "50eb656cf4490c63ceaf269c7c84b36d46cdf36f56d34a0e32f8051eb77bfb53",
+      "decoded": true
+    },
+    {
+      "file": "quran-hafs-ar/001003.mp3",
+      "chapter": 1,
+      "verse": 3,
+      "language": "ar",
+      "bytes": 38033,
+      "durationSeconds": 4.728163,
+      "sha256": "24e1c1dc98dbc01604e4ce71bd635c7fe1d08fa3f56e1a14dd35aee05fcaffcf",
+      "decoded": true
+    },
+    {
+      "file": "quran-hafs-ar/001004.mp3",
+      "chapter": 1,
+      "verse": 4,
+      "language": "ar",
+      "bytes": 38242,
+      "durationSeconds": 4.754286,
+      "sha256": "be5dd757e5bbee314fda37c6d6431fefa1fe335534a8247066778c0d494c97be",
+      "decoded": true
+    },
+    {
+      "file": "quran-hafs-ar/001005.mp3",
+      "chapter": 1,
+      "verse": 5,
+      "language": "ar",
+      "bytes": 54751,
+      "durationSeconds": 6.817959,
+      "sha256": "9e8496b0fcd85b35adcf2ba1bab7c086587e7523b44c3118302bcda1095e3286",
+      "decoded": true
+    },
+    {
+      "file": "quran-hafs-ar/001006.mp3",
+      "chapter": 1,
+      "verse": 6,
+      "language": "ar",
+      "bytes": 45765,
+      "durationSeconds": 5.694694,
+      "sha256": "c771008f0c5be2b0b9dddeeb927b336d49dbb903717111e0a48ebfe1f03dc7f8",
+      "decoded": true
+    },
+    {
+      "file": "quran-hafs-ar/001007.mp3",
+      "chapter": 1,
+      "verse": 7,
+      "language": "ar",
+      "bytes": 106996,
+      "durationSeconds": 13.348571,
+      "sha256": "ea3e883e2feea9642efd501d43e42a381cbccf912a8ada4535cb028d5783bc25",
+      "decoded": true
+    },
+    {
+      "file": "quran-hafs-en/001001.mp3",
+      "chapter": 1,
+      "verse": 1,
+      "language": "en",
+      "bytes": 171910,
+      "durationSeconds": 7.162917,
+      "sha256": "0521d985419dafe7994551924013ce76164d499c08330c53326151ca41004b45",
+      "decoded": true
+    },
+    {
+      "file": "quran-hafs-en/001002.mp3",
+      "chapter": 1,
+      "verse": 2,
+      "language": "en",
+      "bytes": 121754,
+      "durationSeconds": 5.073083,
+      "sha256": "6e667fc75f0b6094e81354d28754e637b9d7d5b744a1ba6478eb819dbae932d5",
+      "decoded": true
+    },
+    {
+      "file": "quran-hafs-en/001003.mp3",
+      "chapter": 1,
+      "verse": 3,
+      "language": "en",
+      "bytes": 124889,
+      "durationSeconds": 5.203708,
+      "sha256": "418a02a52f12ecf565efbe30a6733e18d3ce597aa39c338bf70a511b773ce384",
+      "decoded": true
+    },
+    {
+      "file": "quran-hafs-en/001004.mp3",
+      "chapter": 1,
+      "verse": 4,
+      "language": "en",
+      "bytes": 82884,
+      "durationSeconds": 3.4535,
+      "sha256": "698d186d93ab2352401f47ddc174838711e83d8ab00afb022ab7d9901dacd10d",
+      "decoded": true
+    },
+    {
+      "file": "quran-hafs-en/001005.mp3",
+      "chapter": 1,
+      "verse": 5,
+      "language": "en",
+      "bytes": 123008,
+      "durationSeconds": 5.125333,
+      "sha256": "66944319c391d112460edd0eafab767dda6a5c3209b24df9266ca4aeebc05df3",
+      "decoded": true
+    },
+    {
+      "file": "quran-hafs-en/001006.mp3",
+      "chapter": 1,
+      "verse": 6,
+      "language": "en",
+      "bytes": 81630,
+      "durationSeconds": 3.40125,
+      "sha256": "83814ac6a25fb146fd4c9233343535ebf3743cbe67a1ee207c6c3f33a0020ee0",
+      "decoded": true
+    },
+    {
+      "file": "quran-hafs-en/001007.mp3",
+      "chapter": 1,
+      "verse": 7,
+      "language": "en",
+      "bytes": 250904,
+      "durationSeconds": 10.454333,
+      "sha256": "150a6a56f03e467d29ebe2189eabbfb4b5302b2419cac3566483d272465f4dc8",
+      "decoded": true
+    },
+    {
+      "file": "quran-hafs-fr/001001.mp3",
+      "chapter": 1,
+      "verse": 1,
+      "language": "fr",
+      "bytes": 92170,
+      "durationSeconds": 5.668571,
+      "sha256": "10300bd876596e65bbb76197015ca456d2cec67a4402fc0058d9560fa54a97da",
+      "decoded": true
+    },
+    {
+      "file": "quran-hafs-fr/001002.mp3",
+      "chapter": 1,
+      "verse": 2,
+      "language": "fr",
+      "bytes": 45066,
+      "durationSeconds": 2.690612,
+      "sha256": "a5aa39645a17ef87326083243dbc762862fef6c4f9ace6ed4b52c9418151fb74",
+      "decoded": true
+    },
+    {
+      "file": "quran-hafs-fr/001003.mp3",
+      "chapter": 1,
+      "verse": 3,
+      "language": "fr",
+      "bytes": 59402,
+      "durationSeconds": 3.578776,
+      "sha256": "8551c03e4217c2e2dc8ad3c2687aae8210cd889bca94602d70121a01c88cd25a",
+      "decoded": true
+    },
+    {
+      "file": "quran-hafs-fr/001004.mp3",
+      "chapter": 1,
+      "verse": 4,
+      "language": "fr",
+      "bytes": 34826,
+      "durationSeconds": 2.063673,
+      "sha256": "67ac436c1ea0122e92d55524880fe689c0e7da7cd0bd51fbae826d0cac59ca4a",
+      "decoded": true
+    },
+    {
+      "file": "quran-hafs-fr/001005.mp3",
+      "chapter": 1,
+      "verse": 5,
+      "language": "fr",
+      "bytes": 77834,
+      "durationSeconds": 4.780408,
+      "sha256": "c68eda1ab99be29a2da4cefdba48ce30a57103edae1d6a83c176c8be0a3af2a0",
+      "decoded": true
+    },
+    {
+      "file": "quran-hafs-fr/001006.mp3",
+      "chapter": 1,
+      "verse": 6,
+      "language": "fr",
+      "bytes": 32778,
+      "durationSeconds": 1.985306,
+      "sha256": "fef0b22d67fee8ca7af86e66fc5119ca18dab07b6ca416a771078e325bf055d8",
+      "decoded": true
+    },
+    {
+      "file": "quran-hafs-fr/001007.mp3",
+      "chapter": 1,
+      "verse": 7,
+      "language": "fr",
+      "bytes": 122890,
+      "durationSeconds": 7.601633,
+      "sha256": "24f5cb0d2d6d74c53b99aa291e9ddc2a26084422c01a1aafc241602831bcd9e0",
+      "decoded": true
+    }
+  ]
+}

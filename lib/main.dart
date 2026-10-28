@@ -4,6 +4,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'core/app_core.dart';
 import 'screens/home.dart';
 import 'devotion/tasbih.dart';
+import 'devotion/quran_audio.dart';
 export 'core/app_core.dart';
 export 'core/search.dart';
 export 'screens/home.dart';
@@ -40,6 +41,8 @@ class _DiraasaState extends State<Diraasa> with WidgetsBindingObserver {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     Store.channel.setMethodCallHandler((call) async {
+      if (call.method == 'quranAudioChanged')
+        deliverQuranAudioEvent(call.arguments);
       if (call.method == 'devotionPending') await openPending();
     });
     WidgetsBinding.instance.addPostFrameCallback((_) => openPending());

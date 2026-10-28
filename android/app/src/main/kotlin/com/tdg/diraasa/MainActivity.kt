@@ -33,7 +33,7 @@ class MainActivity : FlutterActivity() {
         channel.setMethodCallHandler { call, result ->
             if (call.method.startsWith("quranAudio")) {
                 try {
-                    val audio=quranAudio?:QuranAudio(this).also{quranAudio=it}
+                    val audio=quranAudio?:QuranAudio(this){value->dataChannel?.invokeMethod("quranAudioChanged",value)}.also{quranAudio=it}
                     val args=call.arguments as? Map<*,*>?:emptyMap<Any,Any>()
                     val value=when(call.method){
                         "quranAudioStart"->audio.start(args)
@@ -41,7 +41,7 @@ class MainActivity : FlutterActivity() {
                         "quranAudioPause"->audio.pause()
                         "quranAudioResume"->audio.resume()
                         "quranAudioSeek"->audio.seek((args["position"] as? Number)?.toInt()?:0)
-                        "quranAudioStop"->audio.stop()
+                        "quranAudioStop"->audio.stopIfSession(args["session"]?.toString()?:"")
                         else->throw IllegalArgumentException("Commande audio inconnue")
                     }
                     result.success(value)
@@ -301,6 +301,11 @@ class MainActivity : FlutterActivity() {
         setIntent(intent)
         if(intent.hasExtra("devotionTarget"))dataChannel?.invokeMethod("devotionPending",null)
     }
+    override fun onDestroy() {
+        quranAudio?.close()
+        super.onDestroy()
+    }
+
     override fun onStop() {
         quranAudio?.stop()
         super.onStop()

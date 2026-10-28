@@ -289,7 +289,7 @@ class _SurahPageState extends State<SurahPage> with WidgetsBindingObserver {
     if (!mounted || mark == audioMark) return;
     setState(() {
       audioMark = mark;
-      if (audio.active && audio.verse >= 0 && query.trim().isEmpty) {
+      if (audio.hasPlayback && audio.verse >= 0 && query.trim().isEmpty) {
         anchorVerse = audio.verse == 0 ? 1 : audio.verse;
       }
     });
@@ -310,9 +310,11 @@ class _SurahPageState extends State<SurahPage> with WidgetsBindingObserver {
       await audio.play(
         widget.chapter['number'] as int,
         verseNumbers,
-        audio.verse > 0 && audio.state != 'completed'
+        audio.state == 'completed'
+            ? widget.initialVerse
+            : audio.verse > 0
             ? audio.verse
-            : widget.initialVerse,
+            : anchorVerse,
         all: true,
       );
     }
@@ -360,7 +362,7 @@ class _SurahPageState extends State<SurahPage> with WidgetsBindingObserver {
       const anchor = ValueKey('surah-anchor');
       Widget verseCard(AppRecord verse) => Card(
         key: ValueKey('ayah-${verse['number']}'),
-        color: audio.active && verse['number'] == audio.verse
+        color: audio.hasPlayback && verse['number'] == audio.verse
             ? Theme.of(context).colorScheme.secondaryContainer
             : verse['number'] == widget.initialVerse && widget.initialVerse != 1
             ? Theme.of(context).colorScheme.primaryContainer
@@ -448,7 +450,7 @@ class _SurahPageState extends State<SurahPage> with WidgetsBindingObserver {
                   onChanged: (value) => setState(() {
                     query = value;
                     if (query.trim().isEmpty &&
-                        audio.active &&
+                        audio.hasPlayback &&
                         audio.verse >= 0) {
                       anchorVerse = audio.verse == 0 ? 1 : audio.verse;
                     }
@@ -487,7 +489,8 @@ class _SurahPageState extends State<SurahPage> with WidgetsBindingObserver {
                             fontFamily: widget.reading == 'warsh'
                                 ? 'UthmaniWarsh'
                                 : 'UthmaniHafs',
-                            backgroundColor: audio.active && audio.verse == 0
+                            backgroundColor:
+                                audio.hasPlayback && audio.verse == 0
                                 ? Theme.of(
                                     context,
                                   ).colorScheme.secondaryContainer
