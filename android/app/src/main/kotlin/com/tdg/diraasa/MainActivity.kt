@@ -12,7 +12,7 @@ import java.util.concurrent.Executors
 class MainActivity : FlutterActivity() {
     private var dataChannel: MethodChannel? = null
     private val devotion by lazy { DevotionNative(this) }
-    private var quranAudio: QuranAudio? = null
+    private var audioNotificationAsked=false
     private var photoResult: MethodChannel.Result? = null
     private val worker = Executors.newSingleThreadExecutor()
     private val backup by lazy { BackupNative(this, worker) }
@@ -30,21 +30,26 @@ class MainActivity : FlutterActivity() {
         Thread{try{PrayerSyncWorker.restoreLatest(this)}catch(_:Exception){}}.start()
         val channel = MethodChannel(engine.dartExecutor.binaryMessenger, "tdg.diraasa/data")
         dataChannel = channel
+        QuranAudioService.observe(this){value->dataChannel?.invokeMethod("quranAudioChanged",value)}
         channel.setMethodCallHandler { call, result ->
             if (call.method.startsWith("quranAudio")) {
                 try {
-                    val audio=quranAudio?:QuranAudio(this){value->dataChannel?.invokeMethod("quranAudioChanged",value)}.also{quranAudio=it}
                     val args=call.arguments as? Map<*,*>?:emptyMap<Any,Any>()
-                    val value=when(call.method){
-                        "quranAudioStart"->audio.start(args)
-                        "quranAudioStatus"->audio.status()
-                        "quranAudioPause"->audio.pause()
-                        "quranAudioResume"->audio.resume()
-                        "quranAudioSeek"->audio.seek((args["position"] as? Number)?.toInt()?:0)
-                        "quranAudioStop"->audio.stopIfSession(args["session"]?.toString()?:"")
-                        else->throw IllegalArgumentException("Commande audio inconnue")
+                    when(call.method){
+                        "quranAudioStart"->{
+                            if(android.os.Build.VERSION.SDK_INT>=33&&!audioNotificationAsked&&checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS)!=android.content.pm.PackageManager.PERMISSION_GRANTED){
+                                audioNotificationAsked=true
+                                requestPermissions(arrayOf(android.Manifest.permission.POST_NOTIFICATIONS),8405)
+                            }
+                            QuranAudioService.start(this,args,{result.success(it)},{result.error("QURAN_AUDIO",it.message,null)})
+                        }
+                        "quranAudioLaunch"->{
+                            val launch=intent?.getBooleanExtra("quranAudioOpen",false)==true
+                            intent?.removeExtra("quranAudioOpen")
+                            result.success(if(launch)QuranAudioService.status()else null)
+                        }
+                        else->result.success(QuranAudioService.command(call.method,args))
                     }
-                    result.success(value)
                 }catch(e:Exception){result.error("QURAN_AUDIO",e.message,null)}
                 return@setMethodCallHandler
             }
@@ -299,16 +304,13 @@ class MainActivity : FlutterActivity() {
     override fun onNewIntent(intent: android.content.Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
+        if(intent.getBooleanExtra("quranAudioOpen",false))dataChannel?.invokeMethod("quranAudioOpen",null)
         if(intent.hasExtra("devotionTarget"))dataChannel?.invokeMethod("devotionPending",null)
     }
     override fun onDestroy() {
-        quranAudio?.close()
+        QuranAudioService.detach(this)
+        dataChannel=null
         super.onDestroy()
-    }
-
-    override fun onStop() {
-        quranAudio?.stop()
-        super.onStop()
     }
 
     @Deprecated("Android activity result bridge")

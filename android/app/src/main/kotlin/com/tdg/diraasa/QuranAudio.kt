@@ -23,7 +23,7 @@ class QuranAudio(private val context:Context,private val changed:(Map<String,Any
     private var queue=listOf<Int>();private var index=0
     private var chapter=1;private var sequence=QuranAudioSequence.parse("ar");private val language:String get()=sequence.language;private var generation=0
     private var pendingSeek:Int?=null
-    private var revision=0L;private var session=""
+    private var revision=0L;private var session="";private var continuous=false
     private var state="stopped";private var error="";private var wantsPlay=false
     private var timeout:Runnable?=null
     private val attributes=AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_MEDIA).setContentType(AudioAttributes.CONTENT_TYPE_SPEECH).build()
@@ -57,6 +57,7 @@ class QuranAudio(private val context:Context,private val changed:(Map<String,Any
         val ready=state in setOf("playing","paused");val counts=cache.counts()
         return mapOf("revision" to revision,"session" to session,"state" to state,"chapter" to chapter,
             "verse" to (queue.getOrNull(index)?:-1),"language" to language,
+            "mode" to sequence.languages.joinToString("-"),"continuous" to continuous,
             "position" to (pendingSeek?:if(ready)try{player?.currentPosition?:0}catch(_:Exception){0} else 0),
             "duration" to (if(ready)try{player?.duration?.coerceAtLeast(0)?:0}catch(_:Exception){0} else 0),
             "cacheReady" to counts.first,"cacheTarget" to counts.second,"error" to error)
@@ -68,7 +69,7 @@ class QuranAudio(private val context:Context,private val changed:(Map<String,Any
         require(newChapter in 1..114&&input.size in 1..287)
         input.forEach{QuranAudioSource.filename(newChapter,it)}
         require(input.distinct().size==input.size&&input.zipWithNext().all{(a,b)->b==a+1})
-        stop();session=args["session"]?.toString()?:"";active=this;chapter=newChapter;sequence=newSequence;queue=input;index=0;wantsPlay=true;error=""
+        stop();session=args["session"]?.toString()?:"";active=this;chapter=newChapter;sequence=newSequence;continuous=args["continuous"]==true;queue=input;index=0;wantsPlay=true;error=""
         if(AzanService.activeKind in setOf("adhan","reminder")||!acquire()){state="error";error="focus";publish();return status()}
         load();return status()
     }
@@ -90,6 +91,7 @@ class QuranAudio(private val context:Context,private val changed:(Map<String,Any
         val media=MediaPlayer();player=media
         try{
             media.setAudioAttributes(attributes)
+            media.setWakeMode(context,android.os.PowerManager.PARTIAL_WAKE_LOCK)
             media.setOnSeekCompleteListener{if(token==generation){pendingSeek=null;publish()}}
             media.setOnPreparedListener{p->if(token==generation){clearTimeout()
                 if(p.duration<=0){failed();return@setOnPreparedListener}

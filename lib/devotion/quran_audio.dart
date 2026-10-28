@@ -95,12 +95,37 @@ class QuranAudioController extends ChangeNotifier {
   Future<void> loadLanguage() async {
     try {
       final value = await DevStore.read('quranAudioLanguage');
-      if (!_disposed &&
-          _generation == 0 &&
-          quranAudioModes.contains(value)) {
+      if (!_disposed && _generation == 0 && quranAudioModes.contains(value)) {
         language = value as String;
         notifyListeners();
       }
+    } catch (_) {}
+  }
+
+  Future<void> attach(int surah) async {
+    final token = _generation;
+    try {
+      final raw = await _api('quranAudioStatus', null);
+      if (_disposed ||
+          token != _generation ||
+          raw is! Map ||
+          raw['chapter'] != surah ||
+          !['playing', 'paused', 'loading'].contains(raw['state']) ||
+          raw['session'] is! String ||
+          (raw['session'] as String).isEmpty)
+        return;
+      if (_session != raw['session']) _lastRevision = -1;
+      _session = raw['session'] as String;
+      final mode = raw['mode'];
+      if (quranAudioModes.contains(mode)) language = mode as String;
+      continuous = raw['continuous'] == true;
+      _apply(raw);
+      _timer?.cancel();
+      if (active)
+        _timer = Timer.periodic(
+          const Duration(milliseconds: 500),
+          (_) => poll(),
+        );
     } catch (_) {}
   }
 
@@ -171,6 +196,7 @@ class QuranAudioController extends ChangeNotifier {
         'chapter': surah,
         'language': language,
         'verses': queue,
+        'continuous': all,
       });
       if (_disposed || token != _generation) return;
       _apply(value);
@@ -245,18 +271,11 @@ class QuranAudioController extends ChangeNotifier {
 
   @override
   void dispose() {
-    final session = _session;
     _disposed = true;
     ++_generation;
     _timer?.cancel();
     unawaited(_events.cancel());
-    if (session.isNotEmpty) {
-      unawaited(
-        _api('quranAudioStop', {
-          'session': session,
-        }).catchError((Object _) => null),
-      );
-    }
+    // The Android foreground service owns playback beyond this page.
     super.dispose();
   }
 }
@@ -301,9 +320,15 @@ class _QuranAudioControlsState extends State<QuranAudioControls> {
                       .map(
                         (v) => DropdownMenuItem(
                           value: v,
-                          child: SacredText(v.contains('-')
-                              ? '${settings.language == 'ar' ? 'مختلط' : settings.language == 'en' ? 'Mixed' : 'Mixte'} ${v.split('-').join('/').toUpperCase()}'
-                              : qa(v)),
+                          child: SacredText(
+                            v.contains('-')
+                                ? '${settings.language == 'ar'
+                                      ? 'مختلط'
+                                      : settings.language == 'en'
+                                      ? 'Mixed'
+                                      : 'Mixte'} ${v.split('-').join('/').toUpperCase()}'
+                                : qa(v),
+                          ),
                         ),
                       )
                       .toList(),

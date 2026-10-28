@@ -1,9 +1,9 @@
-# Diraasa · دراسة — 2.4.3+46
+# Diraasa · دراسة — 2.4.4+47
 Carnet d’études arabes et dictionnaire مختار الصحاح, Android, hors ligne.
 Package : **com.tdg.diraasa**.
 
 ## Installer la mise à jour
-L’archive Diraasa_MAJ_2.4.3.tar.gz contient **lib/ complet** et les autres fichiers
+L’archive Diraasa_MAJ_2.4.4.tar.gz contient **lib/ complet** et les autres fichiers
 nécessaires, aux chemins de la racine du projet existant.
 Arrêter flutter run, extraire à côté de pubspec.yaml, puis :
 ```bash
@@ -536,3 +536,8 @@ Cache temporaire : courant +3 avant/+3 après, dans la sourate et langue courant
 
 ### 2.4.3 — lectures mixtes
 Hafs apparaît en premier et est choisi par défaut en l'absence de préférence. Les préférences existantes sont conservées. Audio : AR, FR, EN et toutes les permutations de deux ou trois langues (15 choix au total). Chaque verset est lu dans l'ordre des langues indiqué, puis le suivant. La lecture isolée joue également toutes les langues sélectionnées. Le cache temporaire ±3 s'applique à toutes les langues du mode, sous la même limite de mémoire disque.
+
+### 2.4.4 — lecteur Coran en notification
+La lecture Hafs (AR/FR/EN et modes mixtes) continue lorsque vous quittez la page, changez d’application ou éteignez l’écran. Le service Android mediaPlayback publie une notification avec lecture/pause et arrêt ; les commandes système exposent aussi le déplacement dans le fichier courant. Toucher la notification rouvre la sourate au verset lu, sans recommencer le son. Retirer Diraasa des applications récentes ne coupe pas le service. Débrancher les écouteurs, un appel utilisant le focus audio ou un azan/rappel met la lecture en pause. Arrêter explicitement la lecture la termine et retire le lecteur. Un arrêt forcé Android, la destruction du processus ou un redémarrage ne relancent pas automatiquement le son.
+
+Mise à jour native : arrêter complètement `flutter run`, extraire à la racine du projet puis relancer. Accepter les notifications si Android le demande. Aucun changement de base de données ni des versions de l’environnement TDG.

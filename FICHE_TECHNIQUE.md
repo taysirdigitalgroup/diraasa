@@ -1,5 +1,5 @@
 # Diraasa — Fiche technique et historique
-Version application : **2.4.3+46**  
+Version application : **2.4.4+47**  
 Date : **28 octobre 2026**  
 Application Android : **com.tdg.diraasa**  
 Éditeur : Taysir Digital Group — Aliou Mbengue
@@ -699,3 +699,14 @@ Le test SQL ne remplace pas un essai de mise à jour sur appareil.
 - Cache : fenêtre ±3 versets pour toutes les langues du mode, priorité au fichier courant ; plafond global 128 Mio conservé.
 - Aucun changement de schéma de base de données, aucune réinitialisation.
 - Limites : Flutter, APK et lecture sur téléphone non exécutés dans cet environnement.
+
+## 2.4.4+47 — 28 octobre 2026
+- QuranAudioService possède le lecteur, le cache et une MediaSession Android ; l’activité Flutter se rattache à son état sans en gérer la durée de vie. Aucun SDK supplémentaire.
+- Service de premier plan de type mediaPlayback, notification silencieuse avec lecture/pause, arrêt et commandes système de déplacement dans le MP3 courant. Métadonnées : sourate, verset, langue effectivement jouée, durée/position.
+- Continuité hors page, en arrière-plan, écran éteint et après retrait de la tâche récente. Aucun redémarrage automatique au boot ou après destruction du processus (START_NOT_STICKY).
+- WakeLock borné et renouvelé pendant lecture/chargement, relâché en pause/arrêt ; MediaPlayer configuré pour l’écran éteint. Aucun suivi GPS lié au lecteur.
+- La notification rouvre Hafs au verset courant. Le contrôleur récupère la session, le mode mixte, la position et l’état ; un statut ancien ne peut pas écraser un événement plus récent. Quitter la page ne stoppe plus la lecture.
+- Débranchement des écouteurs : pause. Perte de focus, azan et rappel : pause conservée.
+- Déclaration du service non exporté dans AndroidManifest, permissions mediaPlayback et WakeLock déjà présentes. Demande de notification Android 13+ au premier lancement du lecteur dans l’activité.
+- Confidentialité mise à jour : lecteur en arrière-plan et référence du verset/langue potentiellement visible sur l’écran verrouillé selon les réglages système.
+- Schéma SQLite et notes inchangés ; aucune migration destructive.

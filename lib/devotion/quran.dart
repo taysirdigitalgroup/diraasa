@@ -280,7 +280,13 @@ class _SurahPageState extends State<SurahPage> with WidgetsBindingObserver {
     super.initState();
     anchorVerse = widget.initialVerse;
     audio = QuranAudioController()..addListener(audioChanged);
-    if (widget.reading == 'hafs') audio.loadLanguage();
+    if (widget.reading == 'hafs') {
+      unawaited(
+        audio.loadLanguage().then(
+          (_) => audio.attach(widget.chapter['number'] as int),
+        ),
+      );
+    }
     WidgetsBinding.instance.addObserver(this);
   }
 
@@ -322,9 +328,8 @@ class _SurahPageState extends State<SurahPage> with WidgetsBindingObserver {
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.paused ||
-        state == AppLifecycleState.detached) {
-      unawaited(audio.stop());
+    if (state == AppLifecycleState.resumed && widget.reading == 'hafs') {
+      unawaited(audio.attach(widget.chapter['number'] as int));
     }
   }
 

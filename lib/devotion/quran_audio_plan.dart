@@ -162,7 +162,19 @@ List<int> quranAudioPlaylist(
 
 // Ordered languages for each verse; combinations never repeat a language.
 const quranAudioModes = <String>[
-  'ar', 'fr', 'en',
-  'ar-fr-en', 'ar-en-fr', 'fr-ar-en', 'fr-en-ar', 'en-ar-fr', 'en-fr-ar',
-  'ar-fr', 'ar-en', 'fr-ar', 'fr-en', 'en-ar', 'en-fr',
+  'ar',
+  'fr',
+  'en',
+  'ar-fr-en',
+  'ar-en-fr',
+  'fr-ar-en',
+  'fr-en-ar',
+  'en-ar-fr',
+  'en-fr-ar',
+  'ar-fr',
+  'ar-en',
+  'fr-ar',
+  'fr-en',
+  'en-ar',
+  'en-fr',
 ];

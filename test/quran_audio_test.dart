@@ -33,6 +33,47 @@ void main() {
     () => TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(Store.channel, null),
   );
+  test(
+    'Quitter la page garde la lecture ; retour rattache le verset et le mode',
+    () async {
+      final calls = <String>[];
+      final status = <String, dynamic>{
+        'session': 'service-session',
+        'revision': 20,
+        'state': 'playing',
+        'chapter': 1,
+        'verse': 4,
+        'language': 'fr',
+        'mode': 'ar-fr-en',
+        'continuous': true,
+        'position': 1200,
+        'duration': 5000,
+      };
+      Future<dynamic> api(String method, AppRecord? args) async {
+        calls.add(method);
+        return status;
+      }
+
+      final first = QuranAudioController(api: api);
+      await first.attach(1);
+      expect(first.verse, 4);
+      expect(first.language, 'ar-fr-en');
+      expect(first.playingLanguage, 'fr');
+      expect(first.continuous, isTrue);
+      first.dispose();
+      await Future<void>.delayed(Duration.zero);
+      expect(calls, isNot(contains('quranAudioStop')));
+      final second = QuranAudioController(api: api);
+      addTearDown(second.dispose);
+      await second.attach(2);
+      expect(second.active, isFalse);
+      await second.attach(1);
+      expect(second.hasPlayback, isTrue);
+      expect(second.verse, 4);
+      await second.stop();
+      expect(calls.where((c) => c == 'quranAudioStop'), hasLength(1));
+    },
+  );
   test('Noms Hafs et basmalas sans doublon ni basmala pour At-Tawba', () {
     expect(quranAudioFilename(1, 1), '001001.mp3');
     expect(quranAudioFilename(114, 6), '114006.mp3');

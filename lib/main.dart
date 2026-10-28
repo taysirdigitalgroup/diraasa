@@ -1,3 +1,5 @@
+import 'devotion/quran.dart';
+import 'devotion/core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
@@ -43,12 +45,43 @@ class _DiraasaState extends State<Diraasa> with WidgetsBindingObserver {
     Store.channel.setMethodCallHandler((call) async {
       if (call.method == 'quranAudioChanged')
         deliverQuranAudioEvent(call.arguments);
+      if (call.method == 'quranAudioOpen') await openQuranAudio();
       if (call.method == 'devotionPending') await openPending();
     });
     WidgetsBinding.instance.addPostFrameCallback((_) => openPending());
   }
 
+  bool openingQuranAudio = false;
+  Future<void> openQuranAudio() async {
+    if (!mounted || openingQuranAudio) return;
+    openingQuranAudio = true;
+    try {
+      final raw = await Store.call('quranAudioLaunch');
+      if (raw is! Map ||
+          !['playing', 'paused', 'loading'].contains(raw['state']))
+        return;
+      final chapters = await QuranData.book('hafs');
+      final matches = chapters.where((c) => c['number'] == raw['chapter']);
+      if (!mounted || matches.isEmpty) return;
+      final verse = (raw['verse'] as num?)?.toInt() ?? 1;
+      appNavigatorKey.currentState?.push(
+        MaterialPageRoute(
+          builder: (_) => SurahPage(
+            reading: 'hafs',
+            chapter: matches.first,
+            initialVerse: verse > 0 ? verse : 1,
+          ),
+        ),
+      );
+    } catch (e) {
+      debugPrint('Diraasa Quran audio: $e');
+    } finally {
+      openingQuranAudio = false;
+    }
+  }
+
   Future<void> openPending() async {
+    await openQuranAudio();
     if (!mounted || checkingLaunch) return;
     checkingLaunch = true;
     try {
