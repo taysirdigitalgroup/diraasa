@@ -20,8 +20,9 @@ def build(source, dest):
     """)
     count=0
     for i,(title,content) in enumerate(src.execute('SELECT title,content_raw FROM songs'),1):
-        db.execute('INSERT INTO pages VALUES(?,?,?)',(i,title,content))
-        if i<=5: continue
+        if i<=5:
+            db.execute('INSERT INTO pages VALUES(?,?,?)',(i,title,content))
+            continue
         text=content.strip()
         # Source blocks already represent one root article or cross-reference.
         prefix=text.split(':',1)[0]
@@ -34,12 +35,13 @@ def build(source, dest):
         db.execute('INSERT INTO entries VALUES(?,?,?,?,?,?,?)',(i,word,root,text,norm,norm[:1],i))
         db.execute('INSERT INTO search(docid,terms) VALUES(?,?)',(i,aliases))
         count+=1
+    db.execute('PRAGMA user_version=2')
     db.commit()
     assert db.execute('PRAGMA integrity_check').fetchone()[0]=='ok'
-    assert db.execute('SELECT count(*) FROM pages').fetchone()[0]==3772
+    assert db.execute('SELECT count(*) FROM pages').fetchone()[0]==5
     for i,text in db.execute('SELECT id,definition FROM entries'):
         assert text==src.execute('SELECT content_raw FROM songs LIMIT 1 OFFSET ?',(i-1,)).fetchone()[0].strip()
-    report={'source_blocks':3772,'articles':count,'intro_blocks':5,'source_sha256':hashlib.sha256(Path(source).read_bytes()).hexdigest(),'preserved_text':True}
+    report={'source_blocks':3772,'articles':count,'intro_blocks':5,'stored_pages':5,'redundant_pages_removed':3767,'dictionary_version':2,'source_sha256':hashlib.sha256(Path(source).read_bytes()).hexdigest(),'preserved_text':True}
     Path(dest).with_suffix('.json').write_text(json.dumps(report,ensure_ascii=False,indent=2))
     db.close()
     print(json.dumps(report))

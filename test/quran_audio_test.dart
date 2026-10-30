@@ -4,6 +4,7 @@ import 'package:diraasa/core/app_core.dart';
 import 'package:diraasa/devotion/quran.dart';
 import 'package:diraasa/devotion/quran_audio.dart';
 import 'package:diraasa/devotion/quran_audio_plan.dart';
+import 'package:diraasa/devotion/quran_text.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -72,6 +73,93 @@ void main() {
       expect(second.verse, 4);
       await second.stop();
       expect(calls.where((c) => c == 'quranAudioStop'), hasLength(1));
+    },
+  );
+  test('Traduction et repli arabe ne changent jamais la référence', () {
+    final verse = <String, dynamic>{
+      'number': 2,
+      'text': 'الحمد لله',
+      'translations': {'fr': 'Louange à Allah.', 'en': 'Praise be to Allah.'},
+    };
+    expect(quranVerseText(verse, 'fr').text, 'Louange à Allah.');
+    expect(quranVerseText(verse, 'en').language, 'en');
+    expect(quranVerseText({'text': 'الحمد لله'}, 'fr').language, 'ar');
+    expect(verse['number'], 2);
+  });
+  testWidgets(
+    'Le texte suit la langue effective du son, cache sans texte technique',
+    (tester) async {
+      var session = '';
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(Store.channel, (call) async {
+            if (call.method == 'devotionRead') return null;
+            if (call.method == 'quranAudioStatus') return {'state': 'stopped'};
+            if (call.method == 'quranAudioStart') {
+              session = (call.arguments as Map)['session'] as String;
+              return {
+                'session': session,
+                'revision': 1,
+                'state': 'playing',
+                'chapter': 1,
+                'verse': 1,
+                'language': 'fr',
+                'duration': 5000,
+              };
+            }
+            return true;
+          });
+      await tester.pumpWidget(
+        MaterialApp(
+          home: SurahPage(
+            reading: 'hafs',
+            chapter: {
+              'number': 1,
+              'title': 'الفاتحة',
+              'basmala': '',
+              'verses': [
+                {
+                  'number': 1,
+                  'text': 'بسم الله',
+                  'translations': {
+                    'fr': 'Au nom du Très Miséricordieux.',
+                    'en': 'In the name of the Most Merciful.',
+                  },
+                },
+              ],
+            },
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('play-ayah-1')));
+      await tester.pump();
+      expect(
+        find.textContaining(
+          'Au nom du Très Miséricordieux.',
+          findRichText: true,
+        ),
+        findsWidgets,
+      );
+      deliverQuranAudioEvent({
+        'session': session,
+        'revision': 2,
+        'state': 'playing',
+        'chapter': 1,
+        'verse': 1,
+        'language': 'en',
+        'duration': 5000,
+      });
+      await tester.pump();
+      await tester.pump();
+      expect(
+        find.textContaining(
+          'In the name of the Most Merciful.',
+          findRichText: true,
+        ),
+        findsWidgets,
+      );
+      expect(find.textContaining('Cache temporaire'), findsNothing);
+      await tester.pumpWidget(const SizedBox());
     },
   );
   test('Noms Hafs et basmalas sans doublon ni basmala pour At-Tawba', () {

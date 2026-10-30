@@ -1,3 +1,4 @@
+import 'quran_text.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
@@ -150,7 +151,11 @@ const devotionLabels = <String, List<String>>{
   'contactTdg': ['Contacter TDG', 'التواصل مع TDG', 'Contact TDG'],
 
   'refresh': ['Actualiser', 'تحديث', 'Refresh'],
-  'chooseFajrAzan': ['Choisir un Azan du Fajr', 'اختيار أذان الفجر', 'Choose a Fajr Adhan'],
+  'chooseFajrAzan': [
+    'Choisir un Azan du Fajr',
+    'اختيار أذان الفجر',
+    'Choose a Fajr Adhan',
+  ],
   'chooseAzan': ['Choisir un Azan', 'اختيار أذان', 'Choose an Adhan'],
   'activateAzan': ['Activer l’azan', 'تفعيل الأذان', 'Enable Adhan'],
   'soundBirds': ['Oiseaux du matin', 'عصافير الصباح', 'Morning birds'],
@@ -477,15 +482,34 @@ List<AppRecord> decodeChapters(String raw) {
   }).toList();
 }
 
+List<AppRecord> decodeTranslatedHafs(List<String> sources) {
+  final chapters = mergeQuranTranslations(sources);
+  for (final chapter in chapters) {
+    chapter['_normalized'] = normalize(chapter['title'].toString());
+    for (final verse in chapter['verses'] as List) {
+      verse['_normalized'] = normalize(verse['text'].toString());
+    }
+  }
+  return chapters;
+}
+
 class QuranData {
   static final Map<String, Future<List<AppRecord>>> _books = {};
-  static Future<List<AppRecord>> book(String reading) => _books.putIfAbsent(
-    reading,
-    () async => compute(
-      decodeChapters,
-      await rootBundle.loadString('assets/devotion/quran_$reading.json'),
-    ),
-  );
+  static Future<List<AppRecord>> book(String reading) =>
+      _books.putIfAbsent(reading, () async {
+        if (reading != 'hafs') {
+          return compute(
+            decodeChapters,
+            await rootBundle.loadString('assets/devotion/quran_$reading.json'),
+          );
+        }
+        final raw = await Future.wait([
+          rootBundle.loadString('assets/devotion/quran_hafs.json'),
+          rootBundle.loadString('assets/devotion/quran_fr.json'),
+          rootBundle.loadString('assets/devotion/quran_en.json'),
+        ]);
+        return compute(decodeTranslatedHafs, raw);
+      });
 }
 
 String westernDigits(String text) {

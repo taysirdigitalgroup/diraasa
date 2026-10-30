@@ -27,7 +27,7 @@ class MainActivity : FlutterActivity() {
         super.configureFlutterEngine(engine)
         try{BackupStore.recover(this)}catch(e:Exception){recoveryError=e.message?:"Restauration interrompue"}
         try{PrayerSyncWorker.ensure(this)}catch(_:Exception){}
-        Thread{try{PrayerSyncWorker.restoreLatest(this)}catch(_:Exception){}}.start()
+        Thread{try{PrayerSyncWorker.restoreLatest(this)}catch(e:Exception){android.util.Log.e("DiraasaAlarms","Prayer restore failed",e)};try{ZikrReminders.sync(this)}catch(e:Exception){android.util.Log.e("DiraasaAlarms","Reminder restore failed",e)}}.start()
         val channel = MethodChannel(engine.dartExecutor.binaryMessenger, "tdg.diraasa/data")
         dataChannel = channel
         QuranAudioService.observe(this){value->dataChannel?.invokeMethod("quranAudioChanged",value)}
@@ -122,6 +122,7 @@ class MainActivity : FlutterActivity() {
                             assets.open("dictionary.db").use { input -> tmp.outputStream().use { input.copyTo(it) } }
                             check(tmp.renameTo(target))
                         }
+                        DictionaryMaintenance.prepare(target)
                         dict = SQLiteDatabase.openDatabase(target.path,null,SQLiteDatabase.OPEN_READONLY)
                     }
                     if (!::notes.isInitialized) {

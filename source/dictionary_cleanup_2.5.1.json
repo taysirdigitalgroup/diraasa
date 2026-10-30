@@ -1,0 +1,14 @@
+{
+  "version": "2.5.1+50",
+  "pagesRemoved": 3767,
+  "pagesRemaining": 5,
+  "entriesRemaining": 3767,
+  "beforeBytes": 10268672,
+  "afterBytes": 6660096,
+  "preservationSha256": {
+    "entries": "c3daee2cb7e352bc2c538b0283118487de5a64f02527230d08d84d203260dbac",
+    "intro": "288d86256e6cb708c3f7e6e74ed642a8f5403e95f16adae281609d8c1b2b4e66",
+    "search": "d7aa8fa74ffce6145eb38723e26bfbab42530ad234ab6b543de32cc7005a8b5e"
+  },
+  "entriesIntroSearchUnchanged": true
+}

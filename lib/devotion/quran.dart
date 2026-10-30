@@ -7,6 +7,7 @@ import '../widgets/sacred_text.dart';
 import '../widgets/controls.dart';
 import 'core.dart';
 import 'quran_audio.dart';
+import 'quran_text.dart';
 
 class QuranPage extends StatefulWidget {
   const QuranPage({super.key});
@@ -90,10 +91,32 @@ class _QuranPageState extends State<QuranPage> {
       } else if (query.trim().isEmpty) {
         hits.add((chapter: chapter, verse: null));
       } else {
-        if (match(chapter, 'title')) hits.add((chapter: chapter, verse: null));
+        if (match(chapter, 'title') ||
+            (chapter['translationTitles'] as Map? ?? {}).values.any(
+              (t) => matchesSearch(t.toString(), query),
+            ))
+          hits.add((chapter: chapter, verse: null));
         for (final raw in chapter['verses'] as List) {
           final verse = Map<String, dynamic>.from(raw as Map);
-          if (match(verse, 'text')) hits.add((chapter: chapter, verse: verse));
+          if (match(verse, 'text')) {
+            hits.add((chapter: chapter, verse: verse));
+          } else {
+            for (final lang in ['fr', 'en']) {
+              final display = quranVerseText(verse, lang);
+              if (display.language == lang &&
+                  matchesSearch(display.text, query)) {
+                hits.add((
+                  chapter: chapter,
+                  verse: {
+                    ...verse,
+                    'text': display.text,
+                    '_displayLanguage': lang,
+                  },
+                ));
+                break;
+              }
+            }
+          }
         }
       }
     }
@@ -218,7 +241,10 @@ class _QuranPageState extends State<QuranPage> {
                                     query: reference == null ? query : '',
 
                                     style: TextStyle(
-                                      fontFamily: reading == 'warsh'
+                                      fontFamily:
+                                          verse['_displayLanguage'] != null
+                                          ? null
+                                          : reading == 'warsh'
                                           ? 'UthmaniWarsh'
                                           : 'UthmaniHafs',
                                       fontSize: 24,
@@ -236,6 +262,9 @@ class _QuranPageState extends State<QuranPage> {
                                   chapter: chapter,
                                   initialVerse: verse?['number'] as int? ?? 1,
                                   initialQuery: reference == null ? query : '',
+                                  initialTextLanguage:
+                                      verse?['_displayLanguage'] as String? ??
+                                      'ar',
                                 ),
                               ),
                             ),
@@ -258,8 +287,9 @@ class SurahPage extends StatefulWidget {
     required this.chapter,
     this.initialVerse = 1,
     this.initialQuery = '',
+    this.initialTextLanguage = 'ar',
   });
-  final String reading, initialQuery;
+  final String reading, initialQuery, initialTextLanguage;
   final AppRecord chapter;
   final int initialVerse;
   @override
@@ -272,6 +302,34 @@ class _SurahPageState extends State<SurahPage> with WidgetsBindingObserver {
   late final QuranAudioController audio;
   int anchorVerse = 1;
   String audioMark = '';
+  String textLanguage = 'ar';
+  String get basmalaText {
+    final translated =
+        (widget.chapter['translationBasmalas'] as Map?)?[displayLanguage];
+    return translated is String && translated.isNotEmpty
+        ? translated
+        : widget.chapter['basmala'].toString();
+  }
+
+  String get displayLanguage =>
+      audio.hasPlayback && audio.playingLanguage.isNotEmpty
+      ? audio.playingLanguage
+      : textLanguage;
+  ({String text, String language}) verseDisplay(AppRecord verse) {
+    final current = quranVerseText(verse, displayLanguage);
+    final needle = query.isNotEmpty ? query : widget.initialQuery;
+    if (!audio.hasPlayback &&
+        needle.isNotEmpty &&
+        parseReference(needle) == null &&
+        !matchesSearch(current.text, needle)) {
+      for (final lang in ['ar', 'fr', 'en']) {
+        final other = quranVerseText(verse, lang);
+        if (matchesSearch(other.text, needle)) return other;
+      }
+    }
+    return current;
+  }
+
   List<int> get verseNumbers => (widget.chapter['verses'] as List)
       .map((v) => (v['number'] as num).toInt())
       .toList();
@@ -279,6 +337,7 @@ class _SurahPageState extends State<SurahPage> with WidgetsBindingObserver {
   void initState() {
     super.initState();
     anchorVerse = widget.initialVerse;
+    textLanguage = widget.reading == 'hafs' ? widget.initialTextLanguage : 'ar';
     audio = QuranAudioController()..addListener(audioChanged);
     if (widget.reading == 'hafs') {
       unawaited(
@@ -291,7 +350,8 @@ class _SurahPageState extends State<SurahPage> with WidgetsBindingObserver {
   }
 
   void audioChanged() {
-    final mark = '${audio.state}:${audio.verse}:${audio.error}';
+    final mark =
+        '${audio.state}:${audio.verse}:${audio.playingLanguage}:${audio.error}';
     if (!mounted || mark == audioMark) return;
     setState(() {
       audioMark = mark;
@@ -356,7 +416,13 @@ class _SurahPageState extends State<SurahPage> with WidgetsBindingObserver {
           : verses
                 .where(
                   (v) => reference == null
-                      ? matchesSearch(v['text'].toString(), query)
+                      ? (matchesSearch(v['text'].toString(), query) ||
+                            ['fr', 'en'].any(
+                              (lang) => matchesSearch(
+                                quranVerseText(v, lang).text,
+                                query,
+                              ),
+                            ))
                       : reference.chapter == widget.chapter['number'] &&
                             (reference.verse == null ||
                                 v['number'] == reference.verse),
@@ -410,17 +476,21 @@ class _SurahPageState extends State<SurahPage> with WidgetsBindingObserver {
                 ],
               ),
               MatchText(
-                verse['text'].toString(),
+                verseDisplay(verse).text,
                 selectable: true,
                 query: query.isNotEmpty && reference == null
                     ? query
                     : widget.initialQuery,
                 style: TextStyle(
-                  fontFamily: widget.reading == 'warsh'
+                  fontFamily: verseDisplay(verse).language != 'ar'
+                      ? null
+                      : widget.reading == 'warsh'
                       ? 'UthmaniWarsh'
                       : 'UthmaniHafs',
-                  fontSize: settings.textSize + 4,
-                  height: 2,
+                  fontSize:
+                      settings.textSize +
+                      (verseDisplay(verse).language == 'ar' ? 4 : 0),
+                  height: verseDisplay(verse).language == 'ar' ? 2 : 1.6,
                 ),
               ),
             ],
@@ -468,6 +538,42 @@ class _SurahPageState extends State<SurahPage> with WidgetsBindingObserver {
                   child: ReadingSize(),
                 ),
               if (!keyboard && widget.reading == 'hafs')
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Row(
+                    children: [
+                      SacredText(
+                        settings.language == 'ar'
+                            ? 'النص'
+                            : settings.language == 'en'
+                            ? 'Text'
+                            : 'Texte',
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: DropdownButton<String>(
+                          isExpanded: true,
+                          value: displayLanguage,
+                          items: ['ar', 'fr', 'en']
+                              .map(
+                                (lang) => DropdownMenuItem(
+                                  value: lang,
+                                  child: SacredText(qa(lang)),
+                                ),
+                              )
+                              .toList(),
+                          onChanged: audio.hasPlayback
+                              ? null
+                              : (lang) {
+                                  if (lang != null)
+                                    setState(() => textLanguage = lang);
+                                },
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              if (!keyboard && widget.reading == 'hafs')
                 QuranAudioControls(
                   audio: audio,
                   onContinuous: () => playContinuous(),
@@ -488,10 +594,12 @@ class _SurahPageState extends State<SurahPage> with WidgetsBindingObserver {
                     children: [
                       Expanded(
                         child: SacredText(
-                          widget.chapter['basmala'].toString(),
+                          basmalaText,
                           textAlign: TextAlign.center,
                           style: TextStyle(
-                            fontFamily: widget.reading == 'warsh'
+                            fontFamily: displayLanguage != 'ar'
+                                ? null
+                                : widget.reading == 'warsh'
                                 ? 'UthmaniWarsh'
                                 : 'UthmaniHafs',
                             backgroundColor:

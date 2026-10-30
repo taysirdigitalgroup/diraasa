@@ -99,3 +99,8 @@ Les sept fichiers attendus par langue ont été téléchargés depuis les dossie
 ## Lecture mixte — 2.4.3
 Les 15 modes sont les trois langues simples et toutes les permutations sans répétition de deux et trois langues. L'ordre du libellé est l'ordre de lecture pour chaque verset : AR/FR/EN joue 001001 AR, FR, EN puis 001002 AR, FR, EN. Un verset isolé joue aussi toutes les langues du mode. Basmala séparée identique : chaque langue une seule fois ; aucun 001000.
 Les événements natifs conservent le même numéro de verset pendant les changements de langue. Le statut indique la langue réellement jouée et la sélection conserve le mode complet. Le cache contient jusqu'à 7 versets × nombre de langues (plafond 128 Mio). Chaque fichier manquant ou invalide arrête la lecture sans changement silencieux de langue.
+
+## Priorité de ces règles depuis 2.5.0
+Les descriptions historiques de cache ±3 et d’arrêt sur fichier absent ci-dessus sont remplacées par : courant + 2 suivants en mono-langue ; langues du verset courant et du suivant en mixte. Aucun cache arrière. Les compteurs de cache sont internes, pas affichés dans le lecteur. Un fichier défaillant est signalé par son nom et sa langue, puis la séquence continue/mixte avance ; une lecture isolée mono-langue s’arrête avec le message. Pause pendant chargement ou passage après un échec : pas de démarrage intempestif, reprise sécurisée après préparation.
+
+Textes FR/EN : voir source/quran_translations/README.md et EXTRACTION_REPORT.json. Synchronisation Hafs par sourate/verset/langue effectivement lue ; arabe par défaut et repli.

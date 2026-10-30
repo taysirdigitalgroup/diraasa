@@ -1,0 +1,6 @@
+Diraasa 2.5.1+50
+Cette mise à jour contient lib/ complet et toutes les modifications depuis 2.4.5, y compris la version 2.5.0.
+Extraire dans votre projet Diraasa 2.4.5 ou plus récent à côté de pubspec.yaml.
+Les sources inchangées déjà présentes ne sont pas dupliquées.
+Conserver key.properties, google-services.json et vos clés locales. Aucune base de notes utilisateur n’est incluse.
+Relance complète nécessaire. Le dictionnaire privé sera nettoyé au premier chargement.

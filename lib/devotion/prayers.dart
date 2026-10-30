@@ -39,7 +39,15 @@ class _PrayersPageState extends State<PrayersPage> with WidgetsBindingObserver {
   Set<String> activePrayers = prayerNames.toSet();
   List<AppRecord> days = [];
   DateTime date = DateTime.now();
-  int until = 0, syncedAt = 0;
+  int until = 0, syncedAt = 0, nextAlarm = 0;
+  String alarmProblem = '';
+  void readAlarmStatus(Map status) {
+    enabled = status['enabled'] == true;
+    until = (status['until'] as num?)?.toInt() ?? 0;
+    nextAlarm = (status['nextAt'] as num?)?.toInt() ?? 0;
+    alarmProblem = status['lastError']?.toString() ?? '';
+  }
+
   bool adhanWanted = false;
   AppRecord appliedOptions = {};
   Map<String, int> azanLeads = Map.of(defaultAzanLeads);
@@ -432,8 +440,7 @@ class _PrayersPageState extends State<PrayersPage> with WidgetsBindingObserver {
       final status = await Store.call('azanStatus');
       if (!mounted) return;
       if (status is Map) {
-        enabled = status['enabled'] == true;
-        until = (status['until'] as num?)?.toInt() ?? 0;
+        readAlarmStatus(status);
       }
       adhanWanted = bundle is Map && bundle['adhanWanted'] is bool
           ? bundle['adhanWanted'] as bool
@@ -526,6 +533,8 @@ class _PrayersPageState extends State<PrayersPage> with WidgetsBindingObserver {
     if (!mounted || busy || cacheCheckBusy || _panelContext != null) return;
     cacheCheckBusy = true;
     try {
+      final nativeStatus = await Store.call('azanStatus');
+      if (mounted && nativeStatus is Map) readAlarmStatus(nativeStatus);
       final raw = await DevStore.read('prayerBundle');
       if (mounted &&
           _panelContext == null &&
@@ -815,6 +824,7 @@ class _PrayersPageState extends State<PrayersPage> with WidgetsBindingObserver {
       await Store.call('azanDisable');
       enabled = false;
       until = 0;
+      nextAlarm = 0;
       return;
     }
     final status = await Store.call('azanStatus') as Map;
@@ -825,16 +835,25 @@ class _PrayersPageState extends State<PrayersPage> with WidgetsBindingObserver {
       enabled = false;
       return;
     }
-    final configured =
-        await Store.call('azanSchedule', {
-              'audio': audio,
-              'fajrAudio': fajrAudio,
-              'events': rows,
-              'fromPrayerCache': true,
-            })
-            as Map;
-    enabled = configured['enabled'] == true;
-    until = (configured['until'] as num?)?.toInt() ?? 0;
+    try {
+      final configured =
+          await Store.call('azanSchedule', {
+                'audio': audio,
+                'fajrAudio': fajrAudio,
+                'events': rows,
+                'fromPrayerCache': true,
+              })
+              as Map;
+      readAlarmStatus(configured);
+    } catch (_) {
+      enabled = false;
+      nextAlarm = 0;
+      try {
+        final status = await Store.call('azanStatus');
+        if (status is Map) readAlarmStatus(status);
+      } catch (_) {}
+      rethrow;
+    }
   }
 
   Future<void> toggle([bool? value]) async {
@@ -1205,6 +1224,20 @@ class _PrayersPageState extends State<PrayersPage> with WidgetsBindingObserver {
                           : Icons.notifications_off_outlined,
                     ),
                   ),
+                  if (enabled && nextAlarm > 0)
+                    SacredText(
+                      '${settings.language == 'ar'
+                          ? 'الأذان القادم'
+                          : settings.language == 'en'
+                          ? 'Next scheduled adhan'
+                          : 'Prochain appel programmé'} : ${syncLabel(nextAlarm)}',
+                      style: const TextStyle(fontSize: 11),
+                    ),
+                  if (alarmProblem.isNotEmpty)
+                    SacredText(
+                      alarmProblem,
+                      style: const TextStyle(fontSize: 12),
+                    ),
                   TextButton(
                     key: const ValueKey('adjust-azan-times'),
                     onPressed: busy ? null : () => openPanel('azanAdjustments'),

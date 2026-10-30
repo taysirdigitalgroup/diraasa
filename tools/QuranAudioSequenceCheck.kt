@@ -5,6 +5,8 @@ fun main(){
     check(modes.size==15&&modes.toSet().size==15)
     for(mode in modes){
         val sequence=QuranAudioSequence.parse(mode)
+        check(sequence.skipsUnavailable(true))
+        check(sequence.skipsUnavailable(false)==(mode.split("-").size>1))
         val actual=mutableListOf<String>();var verse=1
         while(verse<=7){actual.add("$verse:${sequence.language}");if(sequence.advance())verse++}
         check(actual==(1..7).flatMap{v->mode.split("-").map{"$v:$it"}})

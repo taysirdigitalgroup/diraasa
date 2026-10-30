@@ -5,7 +5,6 @@ import '../core/app_core.dart';
 import '../core/search.dart';
 import '../devotion/core.dart';
 import '../devotion/hisn.dart';
-import '../devotion/quran_audio.dart';
 import '../widgets/controls.dart';
 import '../widgets/sacred_text.dart';
 
@@ -66,7 +65,7 @@ class SourcesSection extends StatelessWidget {
               () => ReferenceDocument(
                 title: dt('quranReferences'),
                 text:
-                    '${dt('quranReferenceText')}\n\n${qa('streaming')}\nhttps://github.com/taysirdigitalgroup/diraasa-quran-sounds',
+                    '${dt('quranReferenceText')}\n\nTraduction FR : Muhammad Hamidullah — PDF coran-francais.com fourni.\nTraduction EN : Talal Itani — ClearQuran, édition Allah — PDF fourni, licence Creative Commons Attribution / NonCommercial / NoDerivs mentionnée dans le document.\n114 sourates et 6 236 versets par langue, référencés selon Hafs.\n\nhttps://github.com/taysirdigitalgroup/diraasa-quran-sounds',
                 url:
                     'https://github.com/taysirdigitalgroup/diraasa-quran-sounds',
               ),

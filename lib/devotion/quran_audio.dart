@@ -51,12 +51,6 @@ const quranAudioLabels = <String, List<String>>{
     'الصوت غير متاح. تحقق من الاتصال ووجود الملف في المستودع.',
     'Audio unavailable. Check the connection and that the file exists in the repository.',
   ],
-  'cache': ['Audios en cache', 'الأصوات المخزنة مؤقتًا', 'Cached audio'],
-  'streaming': [
-    'Chargement Internet · cache temporaire : 3 avant / 3 après',
-    'تحميل عبر الإنترنت · تخزين مؤقت: ٣ قبل / ٣ بعد',
-    'Internet loading · temporary cache: 3 before / 3 after',
-  ],
 };
 
 final _quranAudioEvents = StreamController<AppRecord>.broadcast();
@@ -87,7 +81,7 @@ class QuranAudioController extends ChangeNotifier {
   String language = 'ar', state = 'stopped', error = '';
   int verse = -1, chapter = 0, position = 0, duration = 0;
   int cacheReady = 0, cacheTarget = 0;
-  String playingLanguage = '';
+  String playingLanguage = '', warning = '', warningLanguage = '';
 
   bool continuous = false;
   bool get hasPlayback => state == 'playing' || state == 'paused';
@@ -137,6 +131,8 @@ class QuranAudioController extends ChangeNotifier {
     if (revision != null) _lastRevision = revision;
     state = raw['state']?.toString() ?? 'stopped';
     playingLanguage = raw['language']?.toString() ?? '';
+    warning = raw['warning']?.toString() ?? '';
+    warningLanguage = raw['warningLanguage']?.toString() ?? '';
     verse = (raw['verse'] as num?)?.toInt() ?? -1;
     chapter = (raw['chapter'] as num?)?.toInt() ?? 0;
     position = (raw['position'] as num?)?.toInt() ?? 0;
@@ -187,6 +183,7 @@ class QuranAudioController extends ChangeNotifier {
     verse = queue.first;
     state = 'loading';
     error = '';
+    warning = '';
     position = 0;
     duration = 0;
     notifyListeners();
@@ -328,6 +325,8 @@ class _QuranAudioControlsState extends State<QuranAudioControls> {
                                       ? 'Mixed'
                                       : 'Mixte'} ${v.split('-').join('/').toUpperCase()}'
                                 : qa(v),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
                       )
@@ -367,11 +366,6 @@ class _QuranAudioControlsState extends State<QuranAudioControls> {
                 ),
             ],
           ),
-          if (audio.active && audio.cacheTarget > 0)
-            SacredText(
-              '${audio.playingLanguage.toUpperCase()} · ${qa('cache')} : ${audio.cacheReady}/${audio.cacheTarget}',
-              style: Theme.of(context).textTheme.labelSmall,
-            ),
           if (audio.state == 'loading') const LinearProgressIndicator(),
           if (audio.duration > 0 && audio.active)
             Row(
@@ -401,7 +395,7 @@ class _QuranAudioControlsState extends State<QuranAudioControls> {
                 ),
               ],
             ),
-          if (audio.state == 'error')
+          if (audio.state == 'error' && audio.warning.isEmpty)
             SacredText(
               '${qa(audio.error == 'focus'
                   ? 'focus'
@@ -413,10 +407,14 @@ class _QuranAudioControlsState extends State<QuranAudioControls> {
                 fontSize: 12,
               ),
             ),
-          if (!audio.active && audio.state != 'error')
+          if (audio.warning.isNotEmpty)
             SacredText(
-              qa('streaming'),
-              style: Theme.of(context).textTheme.labelSmall,
+              settings.language == 'ar'
+                  ? 'الصوت ${audio.warning} (${audio.warningLanguage.toUpperCase()}) غير متاح أو الاتصال غير مستقر'
+                  : settings.language == 'en'
+                  ? 'Audio ${audio.warning} (${audio.warningLanguage.toUpperCase()}) unavailable or connection unstable'
+                  : 'Audio ${audio.warning} (${audio.warningLanguage.toUpperCase()}) indisponible ou connexion instable',
+              style: Theme.of(context).textTheme.bodySmall,
             ),
         ],
       ),

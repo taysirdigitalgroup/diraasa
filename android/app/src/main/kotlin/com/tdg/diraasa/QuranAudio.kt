@@ -9,14 +9,14 @@ import android.media.MediaPlayer
 import android.os.Build
 import java.io.File
 
-/** Reader-only player with a temporary 3-behind/current/3-ahead MP3 cache. */
+/** Service-owned player with a bounded current/next MP3 cache. */
 class QuranAudio(private val context:Context,private val changed:(Map<String,Any>)->Unit={}) {
     companion object {
         private var active:QuranAudio?=null
         fun pauseForAlarm(){active?.let{it.pause();it.abandon()}}
     }
     private val handler=android.os.Handler(android.os.Looper.getMainLooper())
-    private var player:MediaPlayer?=null
+    private var player:MediaPlayer?=null;private var prepared=false
     private val manager=context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
     private var focus:AudioFocusRequest?=null
     private var ownsFocus=false
@@ -24,7 +24,7 @@ class QuranAudio(private val context:Context,private val changed:(Map<String,Any
     private var chapter=1;private var sequence=QuranAudioSequence.parse("ar");private val language:String get()=sequence.language;private var generation=0
     private var pendingSeek:Int?=null
     private var revision=0L;private var session="";private var continuous=false
-    private var state="stopped";private var error="";private var wantsPlay=false
+    private var state="stopped";private var error="";private var warning="";private var warningLanguage="";private var wantsPlay=false
     private var timeout:Runnable?=null
     private val attributes=AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_MEDIA).setContentType(AudioAttributes.CONTENT_TYPE_SPEECH).build()
     private val listener=AudioManager.OnAudioFocusChangeListener{change->if(change!=AudioManager.AUDIOFOCUS_GAIN){ownsFocus=false;pause()}}
@@ -60,7 +60,7 @@ class QuranAudio(private val context:Context,private val changed:(Map<String,Any
             "mode" to sequence.languages.joinToString("-"),"continuous" to continuous,
             "position" to (pendingSeek?:if(ready)try{player?.currentPosition?:0}catch(_:Exception){0} else 0),
             "duration" to (if(ready)try{player?.duration?.coerceAtLeast(0)?:0}catch(_:Exception){0} else 0),
-            "cacheReady" to counts.first,"cacheTarget" to counts.second,"error" to error)
+            "warning" to warning,"warningLanguage" to warningLanguage,"cacheReady" to counts.first,"cacheTarget" to counts.second,"error" to error)
     }
     fun start(args:Map<*,*>):Map<String,Any>{
         val newChapter=(args["chapter"] as? Number)?.toInt()?:0;val lang=args["language"]?.toString()?:""
@@ -69,7 +69,7 @@ class QuranAudio(private val context:Context,private val changed:(Map<String,Any
         require(newChapter in 1..114&&input.size in 1..287)
         input.forEach{QuranAudioSource.filename(newChapter,it)}
         require(input.distinct().size==input.size&&input.zipWithNext().all{(a,b)->b==a+1})
-        stop();session=args["session"]?.toString()?:"";active=this;chapter=newChapter;sequence=newSequence;continuous=args["continuous"]==true;queue=input;index=0;wantsPlay=true;error=""
+        stop();session=args["session"]?.toString()?:"";active=this;chapter=newChapter;sequence=newSequence;continuous=args["continuous"]==true;queue=input;index=0;wantsPlay=true;error="";warning="";warningLanguage=""
         if(AzanService.activeKind in setOf("adhan","reminder")||!acquire()){state="error";error="focus";publish();return status()}
         load();return status()
     }
@@ -80,8 +80,8 @@ class QuranAudio(private val context:Context,private val changed:(Map<String,Any
         return connectivity.getNetworkCapabilities(network)?.hasCapability(android.net.NetworkCapabilities.NET_CAPABILITY_INTERNET)==true
     }
     private fun load(){
-        val token=++generation;pendingSeek=null;clearTimeout();player?.release();player=null;state="loading";publish()
-        timeout=Runnable{if(token==generation&&state=="loading")failed()}.also{handler.postDelayed(it,25000)}
+        val token=++generation;pendingSeek=null;clearTimeout();player?.release();player=null;prepared=false;state="loading";publish()
+        timeout=Runnable{if(token==generation&&!prepared&&state in setOf("loading","paused"))failed()}.also{handler.postDelayed(it,15000)}
         cache.request(QuranAudioKey(chapter,queue[index],language),
             onReady={file->if(token==generation)prepare(file,token)},
             onError={e->if(token==generation)failed(if(e is QuranAudioOffline)"offline" else null)},
@@ -94,23 +94,36 @@ class QuranAudio(private val context:Context,private val changed:(Map<String,Any
             media.setWakeMode(context,android.os.PowerManager.PARTIAL_WAKE_LOCK)
             media.setOnSeekCompleteListener{if(token==generation){pendingSeek=null;publish()}}
             media.setOnPreparedListener{p->if(token==generation){clearTimeout()
-                if(p.duration<=0){failed();return@setOnPreparedListener}
+                if(p.duration<=0){failed();return@setOnPreparedListener};prepared=true
                 if(wantsPlay&&acquire()){p.start();state="playing"}else state="paused";publish()
             }}
-            media.setOnCompletionListener{if(token==generation){
-                if(!sequence.advance()){load()}else if(index+1<queue.size){index++;load()}else{
-                    state="completed";active=null;wantsPlay=false;player?.release();player=null;cache.pausePrefetch();abandon();publish()
-                }
-            }}
+            media.setOnCompletionListener{if(token==generation){if(advanceTrack())load()else completed()}}
             media.setOnErrorListener{_,_,_->if(token==generation)failed();true}
             media.setDataSource(file.path);media.prepareAsync()
         }catch(_:Exception){if(token==generation)failed()}
     }
-    private fun failed(reason:String?=null){active=null;pendingSeek=null;generation++;clearTimeout();state="error";error=reason?:filename();wantsPlay=false;player?.release();player=null;cache.pausePrefetch();cache.invalidate(QuranAudioKey(chapter,queue[index],language));abandon();publish()}
-    fun pause():Map<String,Any>{wantsPlay=false;if(state=="playing"){player?.pause();state="paused"};publish();return status()}
-    fun resume():Map<String,Any>{if(state=="paused"&&AzanService.activeKind !in setOf("adhan","reminder")&&acquire()){wantsPlay=true;player?.start();state="playing"};publish();return status()}
-    fun seek(position:Int):Map<String,Any>{if(state in setOf("playing","paused")){pendingSeek=position.coerceIn(0,player?.duration?.coerceAtLeast(0)?:0);player?.seekTo(pendingSeek!!)};return status()}
+    private fun advanceTrack():Boolean {
+        if(!sequence.advance())return true
+        if(index+1<queue.size){index++;return true}
+        return false
+    }
+    private fun completed(){
+        state="completed";active=null;wantsPlay=false;player?.release();player=null;cache.pausePrefetch();abandon();publish()
+    }
+    private fun failed(reason:String?=null){
+        warning=filename();warningLanguage=language
+        pendingSeek=null;generation++;clearTimeout();player?.release();player=null;prepared=false
+        cache.pausePrefetch();cache.invalidate(QuranAudioKey(chapter,queue[index],language))
+        if(!sequence.skipsUnavailable(continuous)){active=null;state="error";error=reason?:warning;wantsPlay=false;abandon();publish();return}
+        if(!advanceTrack()){completed();return}
+        state=if(wantsPlay)"loading" else "paused";publish()
+        val token=generation
+        if(wantsPlay)handler.postDelayed({if(token==generation&&wantsPlay)load()},400)
+    }
+    fun pause():Map<String,Any>{wantsPlay=false;if(state=="playing")player?.pause();if(state in setOf("playing","loading"))state="paused";publish();return status()}
+    fun resume():Map<String,Any>{if(state=="paused"&&AzanService.activeKind !in setOf("adhan","reminder")&&acquire()){wantsPlay=true;if(player==null)load()else if(prepared){player?.start();state="playing"}else state="loading"};publish();return status()}
+    fun seek(position:Int):Map<String,Any>{if(prepared&&state in setOf("playing","paused")){pendingSeek=position.coerceIn(0,player?.duration?.coerceAtLeast(0)?:0);player?.seekTo(pendingSeek!!)};return status()}
     fun stopIfSession(expected:String):Map<String,Any> = if(expected==session)stop() else status()
-    fun stop():Map<String,Any>{if(active===this)active=null;pendingSeek=null;generation++;clearTimeout();wantsPlay=false;state="stopped";player?.release();player=null;queue=emptyList();index=0;cache.pausePrefetch();abandon();publish();return status()}
+    fun stop():Map<String,Any>{if(active===this)active=null;pendingSeek=null;generation++;clearTimeout();wantsPlay=false;state="stopped";player?.release();player=null;prepared=false;queue=emptyList();index=0;cache.pausePrefetch();abandon();publish();return status()}
     fun close(){stop();cache.close();handler.removeCallbacksAndMessages(null)}
 }

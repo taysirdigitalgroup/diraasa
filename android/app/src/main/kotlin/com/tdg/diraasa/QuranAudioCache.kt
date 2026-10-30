@@ -17,11 +17,14 @@ object QuranAudioWindow {
     fun around(key:QuranAudioKey):List<QuranAudioKey>{
         val first=if(key.chapter in setOf(1,9))1 else 0
         val last=QuranAudioSource.verseCount(key.chapter)
-        return (maxOf(first,key.verse-3)..minOf(last,key.verse+3)).map{QuranAudioKey(key.chapter,it,key.language)}
+        return (maxOf(first,key.verse)..minOf(last,key.verse+2)).map{QuranAudioKey(key.chapter,it,key.language)}
     }
-    fun priority(key:QuranAudioKey):List<QuranAudioKey>{
-        val window=around(key).associateBy{it.verse}
-        return listOfNotNull(window[key.verse])+ (1..3).mapNotNull{window[key.verse+it]} + (1..3).mapNotNull{window[key.verse-it]}
+    fun priority(key:QuranAudioKey):List<QuranAudioKey> = around(key)
+    fun mixed(key:QuranAudioKey,languages:List<String>):List<QuranAudioKey>{
+        require(languages.isNotEmpty()&&languages.distinct().size==languages.size&&key.language in languages)
+        val ahead=if(languages.size==1)2 else 1
+        val last=minOf(QuranAudioSource.verseCount(key.chapter),key.verse+ahead)
+        return (listOf(key)+(key.verse..last).flatMap{verse->languages.map{QuranAudioKey(key.chapter,verse,it)}}).distinct()
     }
 }
 class QuranAudioOffline:Exception("offline")
@@ -42,7 +45,7 @@ class QuranAudioHttpDownloader(private val online:()->Boolean):QuranAudioDownloa
                 require(url.protocol=="https" && url.host in setOf("raw.githubusercontent.com","media.githubusercontent.com","objects.githubusercontent.com"))
                 val c=(url.openConnection() as HttpURLConnection).apply{
                     connectTimeout=10000;readTimeout=10000;instanceFollowRedirects=false
-                    setRequestProperty("User-Agent","Diraasa-Quran-Audio/2.4.3")
+                    setRequestProperty("User-Agent","Diraasa-Quran-Audio/2.5.0")
                     setRequestProperty("Accept","audio/mpeg,application/octet-stream")
                 };connection=c
                 val code=c.responseCode
@@ -95,7 +98,7 @@ class QuranAudioCache(
     fun request(key:QuranAudioKey,onReady:(File)->Unit,onError:(Exception)->Unit,languages:List<String> = listOf(key.language)){
         require(languages.distinct().size==languages.size && key.language in languages)
         synchronized(lock){
-            check(!closed);epoch++;delivered=-1;accepting=true;current=key;desired=(listOf(key)+QuranAudioWindow.priority(key).flatMap{neighbor->languages.map{QuranAudioKey(key.chapter,neighbor.verse,it)}}).distinct();ready=onReady;failed=onError
+            check(!closed);epoch++;delivered=-1;accepting=true;current=key;desired=QuranAudioWindow.mixed(key,languages);ready=onReady;failed=onError
             val currentReady=File(root,key.name).isFile
             if(running !in desired || (!currentReady && running!=key))downloader.cancel()
             evict();executor.queue.clear()

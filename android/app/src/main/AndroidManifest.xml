@@ -19,7 +19,7 @@
  <service android:name=".QuranAudioService" android:exported="false" android:stopWithTask="false" android:foregroundServiceType="mediaPlayback"/>
  <service android:name=".AzanService" android:exported="false" android:foregroundServiceType="mediaPlayback"/>
  <receiver android:name=".AzanReceiver" android:exported="false">
-  <intent-filter><action android:name="android.intent.action.BOOT_COMPLETED"/><action android:name="android.intent.action.MY_PACKAGE_REPLACED"/><action android:name="android.intent.action.TIME_SET"/><action android:name="android.intent.action.TIMEZONE_CHANGED"/><action android:name="android.app.action.SCHEDULE_EXACT_ALARM_PERMISSION_STATE_CHANGED"/></intent-filter>
+  <intent-filter><action android:name="android.intent.action.BOOT_COMPLETED"/><action android:name="android.intent.action.USER_UNLOCKED"/><action android:name="android.intent.action.MY_PACKAGE_REPLACED"/><action android:name="android.intent.action.TIME_SET"/><action android:name="android.intent.action.TIMEZONE_CHANGED"/><action android:name="android.app.action.SCHEDULE_EXACT_ALARM_PERMISSION_STATE_CHANGED"/></intent-filter>
  </receiver>
  <meta-data android:name="flutterEmbedding" android:value="2"/>
  </application>

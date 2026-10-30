@@ -5,6 +5,7 @@ class QuranAudioSequence(val languages:List<String>) {
     init { require(languages.size in 1..3 && languages.distinct().size==languages.size && languages.all{it in setOf("ar","fr","en")}) }
     var languageIndex=0; private set
     val language:String get()=languages[languageIndex]
+    fun skipsUnavailable(continuous:Boolean)=continuous||languages.size>1
     /** True when every language of the current verse has finished. */
     fun advance():Boolean {
         languageIndex++

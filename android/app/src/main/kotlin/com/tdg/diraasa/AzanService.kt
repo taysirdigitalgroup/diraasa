@@ -11,7 +11,14 @@ import android.os.PowerManager
 
 class AzanService:Service(){
     private var player:MediaPlayer?=null
+    private fun reportFailure(message:String){
+        android.util.Log.e("DiraasaAlarms",message)
+        if(activeKind=="adhan")getSharedPreferences("diraasa_azan_v1",Context.MODE_PRIVATE).edit().putString("lastError",message).commit()
+    }
+    private val prepareTimeout=Runnable{if(!prepared){reportFailure("Audio de l’alarme indisponible ou préparation trop longue");stopSelf()}}
+
     private var prepared=false
+    private val startupWake by lazy {(getSystemService(POWER_SERVICE) as PowerManager).newWakeLock(PowerManager.PARTIAL_WAKE_LOCK,"Diraasa:AlarmAudioPrepare").apply{setReferenceCounted(false)}}
     private val handler=android.os.Handler(android.os.Looper.getMainLooper())
     companion object{
         private var instance:AzanService?=null
@@ -33,6 +40,7 @@ class AzanService:Service(){
     @Suppress("DEPRECATION")
     override fun onStartCommand(intent:Intent?,flags:Int,startId:Int):Int{
         if(intent?.action=="STOP"){stopSelf();return START_NOT_STICKY}
+        startupWake.acquire(30000)
         QuranAudio.pauseForAlarm()
         instance=this
         previewId=intent?.getStringExtra("previewId")?:""
@@ -47,6 +55,7 @@ class AzanService:Service(){
         if(Build.VERSION.SDK_INT>=29)startForeground(8520,notification,android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK)else startForeground(8520,notification)
         handler.removeCallbacksAndMessages(null)
         prepared=false
+        handler.postDelayed(prepareTimeout,20000)
         player?.release()
         try{
             player=MediaPlayer().apply{
@@ -54,12 +63,12 @@ class AzanService:Service(){
                 setWakeMode(this@AzanService,PowerManager.PARTIAL_WAKE_LOCK)
                 setDataSource(intent?.getStringExtra("audio")?:"")
                 isLooping=intent?.getBooleanExtra("reminder",false)==true
-                setOnPreparedListener{prepared=true;it.start()};setOnCompletionListener{stopSelf()};setOnErrorListener{_,_,_->stopSelf();true};prepareAsync()
+                setOnPreparedListener{prepared=true;handler.removeCallbacks(prepareTimeout);it.start();if(activeKind=="adhan")getSharedPreferences("diraasa_azan_v1",Context.MODE_PRIVATE).edit().putString("lastError","").apply();if(startupWake.isHeld)startupWake.release()};setOnCompletionListener{stopSelf()};setOnErrorListener{_,what,extra->reportFailure("Erreur audio alarme : $what/$extra");stopSelf();true};prepareAsync()
             }
             if(intent?.getBooleanExtra("reminder",false)==true)handler.postDelayed({stopSelf()},30000)
-        }catch(_:Exception){stopSelf()}
+        }catch(e:Exception){reportFailure(e.message?:"Erreur audio alarme");stopSelf()}
         return START_NOT_STICKY
     }
     @Suppress("DEPRECATION")
-    override fun onDestroy(){instance=null;previewId="";activeKind="";handler.removeCallbacksAndMessages(null);player?.release();player=null;stopForeground(true);super.onDestroy()}
+    override fun onDestroy(){if(startupWake.isHeld)startupWake.release();instance=null;previewId="";activeKind="";handler.removeCallbacksAndMessages(null);player?.release();player=null;stopForeground(true);super.onDestroy()}
 }

@@ -1,6 +1,6 @@
 # Diraasa — Fiche technique et historique
-Version application : **2.4.5+48**  
-Date : **28 octobre 2026**  
+Version application : **2.5.1+50**  
+Date : **30 octobre 2026**  
 Application Android : **com.tdg.diraasa**  
 Éditeur : Taysir Digital Group — Aliou Mbengue
 
@@ -716,3 +716,33 @@ Le test SQL ne remplace pas un essai de mise à jour sur appareil.
 - Illustration fournie à Notification.largeIcon et aux métadonnées MediaSession ART, ALBUM_ART, DISPLAY_ICON, pour les différents lecteurs système Android.
 - Petite icône de notification : ressource Diraasa monochrome existante (teinte contrôlée par Android).
 - Aucun changement du séquençage, du cache ou de la base de données.
+
+## 2.5.0+49 — 30 octobre 2026
+
+### Alarmes
+- Cause certaine du rappel tardif : ZikrReminderReceiver ne transportait/vérifiait pas l’instant programmé. Chaque intent porte désormais son échéance, comparée à la programmation persistée ; tolérance maximale 120 s, refus des échéances futures incohérentes, antérieures, remplacées ou déjà consommées. Cas 21:13 reçu à 01:30 ajouté au contrôle JVM.
+- setAlarmClock remplace setExactAndAllowWhileIdle pour ces alarmes audibles explicitement programmées par l’utilisateur. Préserve les permissions d’alarmes exactes et notifications existantes.
+- Fenêtre de 10 prochains azans pour limiter le nombre d’alarmes Android ; réarmement après chaque réception, même ignorée. Rappels : occurrence suivante recalculée avec jours/fuseau ; réarmement à l’ouverture et aux événements système (boot, déverrouillage, changement heure/fuseau, mise à jour). Les calendriers utilisateur restent conservés.
+- Révision de configuration et consommation persistée des déclenchements ; réceptions périmées ignorées au lieu de sonner au lancement.
+- Service Azan : WakeLock borné pour la préparation, timeout 20 s, diagnostics natifs de préparation/lecture ; receiver protégé pendant le passage au service.
+- État Activé basé sur échéances armées et autorisations ; prochain appel et erreurs natives visibles. La cause exacte des suppressions d’alarmes sur le TECNO doit être confirmée sur appareil : aucune promesse de contourner un arrêt forcé ou les restrictions du fabricant.
+
+### Coran et audio
+- Cache simple : courant + 2 suivants ; cache mixte : les langues du verset courant et du suivant (6 fichiers maximum pour AR/FR/EN), plafond de volume conservé. Aucune conservation arrière.
+- UI : suppression des compteurs/mentions de cache ; les erreurs affichent le nom du MP3 et la langue.
+- Échec d’un fichier : saut au prochain élément de la séquence en continu/mixte ; délai borné 15 s par chargement, aucun saut silencieux. Une sélection isolée mono-langue reste isolée.
+- Extraction reproductible des deux PDF fournis, contrôle par référence contre Hafs : 114 sourates et 6 236 versets dans chaque langue, aucun manquant ou doublon, 112 basmalas séparées par langue. Audit exhaustif des numéros et provenance des pages conservés. Les césures anglaises de fin de ligne et retours de paragraphe sont réunis sans traduction automatique.
+- JSON FR/EN intégrés aux assets ; fusion par numéros de sourate/verset dans un isolate. Le texte suit la langue effectivement lue ; arabe par défaut et repli. Choix Texte hors lecture audio. Recherche des traductions, police standard FR/EN, direction adaptée au texte.
+- Sources : Hamidullah / coran-francais.com ; Talal Itani / ClearQuran, licence Attribution NonCommercial NoDerivs mentionnée dans le PDF. Originaux et crédits conservés. Synchronisation par référence/langue, sans certifier une identité mot à mot avec les narrations.
+
+### Données et vérification
+Aucun changement de schéma SQLite, aucune réinitialisation, préférences/notes/auteurs/thèmes conservés. Les métadonnées d’armement sont des données natives dérivées et reconstruites. Vérifications détaillées dans source/quran_audio/VALIDATION_2.5.0.md. Flutter analyze/test, APK et essais physiques ne sont pas exécutés ici.
+
+## 2.5.1+50 — 30 octobre 2026
+- Audit d’usage : seule la requête intro accède à pages, avec id<=5. Les définitions et recherches utilisent entries/search ; entries.page est une référence numérique affichée et non une jointure vers pages.
+- Suppression exclusive des 3 767 enregistrements pages.id>5. Conservation des 5 blocs intro, dont le bloc 4 خطبة المؤلف, des 3 767 entrées, de tous les textes et de l’index FTS. Empreintes SHA-256 avant/après identiques pour entries, intro et search.
+- Nouveaux assets : user_version=2, taille compactée de 10 268 672 à 6 660 096 octets. Importeur et contrôles adaptés pour empêcher la réapparition des copies brutes.
+- Migration Android transactionnelle de dictionary_v1.db existant : ouverture temporaire en écriture, DELETE pages WHERE id>5, version=2, puis VACUUM hors transaction et réouverture en lecture seule. NotesDatabase et notes.db ne sont jamais ouverts ni modifiés par cette migration. Réexécution sans effet après migration.
+- Vérifications : intégrité, recherches FTS/préfixe/lettre, empreintes inchangées, importeur reproduisant le même jeu de données, nettoyage d’une copie héritée reconstituée depuis le SQL original et idempotence.
+- Livraison : tar.gz cumulatif et ZIP plus petit contenant lib/ complet + changements depuis 2.4.5, pour offrir un autre téléchargement avec l’ensemble des ajouts 2.5.0/2.5.1.
+- Essais Flutter/APK/appareil non exécutés ici. La taille du dictionnaire privé sera réduite au premier démarrage utilisant les données après installation.

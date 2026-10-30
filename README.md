@@ -1,9 +1,9 @@
-# Diraasa · دراسة — 2.4.5+48
+# Diraasa · دراسة — 2.5.1+50
 Carnet d’études arabes et dictionnaire مختار الصحاح, Android, hors ligne.
 Package : **com.tdg.diraasa**.
 
 ## Installer la mise à jour
-L’archive Diraasa_MAJ_2.4.5.tar.gz contient **lib/ complet** et les autres fichiers
+L’archive Diraasa_MAJ_2.5.1.tar.gz contient **lib/ complet** et les autres fichiers
 nécessaires, aux chemins de la racine du projet existant.
 Arrêter flutter run, extraire à côté de pubspec.yaml, puis :
 ```bash
@@ -544,3 +544,21 @@ Mise à jour native : arrêter complètement `flutter run`, extraire à la racin
 
 ### 2.4.5 — illustration du lecteur
 Le lecteur multimédia du Coran utilise l’icône Diraasa comme illustration (notification et métadonnées de session pour le lecteur système/écran verrouillé). La petite icône système utilise la version monochrome Diraasa. Aucun changement de données ni de dépendances.
+
+### 2.5.0 — alarmes et textes du Coran
+- Azans et rappels : programmation utilisateur via AlarmManager.setAlarmClock pour la veille, réarmement après déclenchement, ouverture, mise à jour et redémarrage/déverrouillage. Les 10 prochains azans sont armés, puis la fenêtre avance à chaque déclenchement ; le calendrier conservé reste complet. L’interface affiche le prochain appel armé et les erreurs natives connues.
+- Un rappel reçu plus de 2 minutes après son heure est ignoré, jamais joué comme rattrapage à l’ouverture. Les anciens intents/remplacements et doublons sont vérifiés. Préparation audio protégée par WakeLock borné, erreurs remontées et délai maximal de préparation.
+- Cache audio : lecture simple = courant + 2 suivants ; mixte = langues du verset courant + suivant. Aucun historique arrière. Les textes/counters de cache ne sont plus affichés.
+- Fichier absent/invalide ou réseau instable : message avec nom du fichier et langue ; la lecture continue/mixte poursuit la séquence. Lecture isolée dans une seule langue : message d’échec, sans démarrer d’autres versets.
+- FR (Muhammad Hamidullah) et EN (Talal Itani / ClearQuran, édition Allah) extraits des PDF fournis : chacun 114 sourates, 6 236 versets et 112 basmalas séparées ; aucun numéro de verset manquant. Textes et audit sous source/quran_translations/.
+- Texte de la sourate Hafs synchronisé sur la langue de l’audio effectivement lu, ou choix de lecture sans audio via Texte. Arabe par défaut et repli. Recherche FR/EN prise en charge. Pas de transposition de la numérotation Hafs à Warsh.
+- Sources de compilation et versions du Dev Env inchangées. Aucun effacement de données. Relance Android complète requise.
+
+Les essais sur appareil restent nécessaires pour les comportements de veille propres au TECNO KL4. Le contrôle technique hors Flutter n’est pas un test de déclenchement matériel en veille prolongée. Un arrêt forcé Android bloque les alarmes jusqu’à réouverture de l’application ; la mise à jour n’en contourne pas les restrictions.
+
+### 2.5.1 — suppression des pages redondantes du dictionnaire
+La table pages contient uniquement les 5 blocs de l’introduction/référence réellement affichés. Les 3 767 autres blocs bruts ont été retirés de pages ; leurs articles restent intégralement dans entries avec l’index FTS et les références numériques d’origine. La « page 4 — خطبة المؤلف » fait partie de l’introduction et reste conservée.
+
+Les deux assets dictionary.db sont compactés de 10 268 672 à 6 660 096 octets chacun. À l’installation d’une mise à jour, DictionaryMaintenance migre aussi dictionary_v1.db sur place (user_version=2), puis le rouvre en lecture seule. Aucune recopie sur une base existante, aucune action sur notes.db ou les données utilisateur. La source SQL originale reste conservée et l’importeur ne recrée plus les doublons.
+
+Téléchargement alternatif : Diraasa_MAJ_2.5.1_depuis_2.4.5.zip contient lib/ complet et toutes les modifications depuis 2.4.5, y compris les ajouts 2.5.0. Extraire à la racine du projet existant. L’archive tar.gz est cumulative pour toutes les mises à jour précédentes.
