@@ -63,7 +63,9 @@ def extract_en(path):
         assert len(footer)==1,(i,footer)
         split=(footer[0][0]+footer[0][2])/2
         for x0,x1 in [(0,split),(split,page.rect.width)]:
-            text=page.get_text('text',clip=fitz.Rect(x0,44,x1,620),sort=True)
+            # Content order within each clipped column is already correct.
+            # sort=True reconstructs bold basmala lines and drops their spaces.
+            text=page.get_text('text',clip=fitz.Rect(x0,44,x1,620),sort=False)
             lines.extend((i+1,line) for line in text.splitlines())
     return lines
 

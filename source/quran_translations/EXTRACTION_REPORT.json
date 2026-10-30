@@ -18814,7 +18814,7 @@
           300
         ]
       },
-      "source": "coran-en-francais-Français.pdf",
+      "source": "quran_fr_source.pdf",
       "sha256": "368ec4753ab044aa622729bc9d0dd8c343f1f48903612ba35b31a08b897fefe7",
       "pages": 300
     },
@@ -37619,7 +37619,7 @@
           252
         ]
       },
-      "source": "Holly Coran in English.pdf",
+      "source": "quran_en_source.pdf",
       "sha256": "df24111025c282fe478353767a817f56285455e57359353b239ebf4bacc63abb",
       "pages": 254
     }

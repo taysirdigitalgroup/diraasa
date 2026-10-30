@@ -87,7 +87,7 @@ void main() {
     expect(verse['number'], 2);
   });
   testWidgets(
-    'Le texte suit la langue effective du son, cache sans texte technique',
+    'Seul le verset en cours suit la langue du son, autres cartes stables',
     (tester) async {
       var session = '';
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
@@ -125,6 +125,14 @@ void main() {
                     'en': 'In the name of the Most Merciful.',
                   },
                 },
+                {
+                  'number': 2,
+                  'text': 'الحمد لله',
+                  'translations': {
+                    'fr': 'Autre verset en français.',
+                    'en': 'Another verse in English.',
+                  },
+                },
               ],
             },
           ),
@@ -156,6 +164,18 @@ void main() {
           'In the name of the Most Merciful.',
           findRichText: true,
         ),
+        findsWidgets,
+      );
+      expect(
+        find.textContaining('Autre verset en français.', findRichText: true),
+        findsNothing,
+      );
+      expect(
+        find.textContaining('Another verse in English.', findRichText: true),
+        findsNothing,
+      );
+      expect(
+        find.textContaining('الحمد لله', findRichText: true),
         findsWidgets,
       );
       expect(find.textContaining('Cache temporaire'), findsNothing);

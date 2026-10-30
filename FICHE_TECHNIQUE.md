@@ -1,5 +1,5 @@
 # Diraasa — Fiche technique et historique
-Version application : **2.5.1+50**  
+Version application : **2.5.2+51**  
 Date : **30 octobre 2026**  
 Application Android : **com.tdg.diraasa**  
 Éditeur : Taysir Digital Group — Aliou Mbengue
@@ -746,3 +746,11 @@ Aucun changement de schéma SQLite, aucune réinitialisation, préférences/note
 - Vérifications : intégrité, recherches FTS/préfixe/lettre, empreintes inchangées, importeur reproduisant le même jeu de données, nettoyage d’une copie héritée reconstituée depuis le SQL original et idempotence.
 - Livraison : tar.gz cumulatif et ZIP plus petit contenant lib/ complet + changements depuis 2.4.5, pour offrir un autre téléchargement avec l’ensemble des ajouts 2.5.0/2.5.1.
 - Essais Flutter/APK/appareil non exécutés ici. La taille du dictionnaire privé sera réduite au premier démarrage utilisant les données après installation.
+
+## 2.5.2+51 — 30 octobre 2026
+- Cause des basmalas EN collées : get_text(sort=True) de PyMuPDF reconstruisait les lignes de basmala en gras en perdant leurs espaces. Dans les mêmes colonnes géométriques, sort=False respecte l’ordre source déjà correct et les espaces.
+- Réextraction : 112 basmalas corrigées, 6 236 versets anglais numérotés strictement inchangés ; 114 sourates, aucun manque/doublon. Importeur corrigé pour rendre le résultat reproductible.
+- Affichage pendant lecture mixte : le choix de langue audio s’applique uniquement à la carte du verset courant, et à la basmala séparée seulement quand verse=0. Les autres cartes gardent la langue de lecture ; les résultats de recherche continuent de montrer le texte correspondant.
+- Un seul calcul du texte/style affiché par construction d’une carte. Les textes étaient déjà chargés et mis en mémoire une fois par QuranData ; cette évolution évite surtout la relayout des textes voisins au changement de langue, sans promettre de gain mesuré de mémoire ou de CPU.
+- Police et langue de repli arabe correctes pour la basmala si sa traduction manque.
+- Vérification Dart autonome des assets complets, des 112 basmalas et des alternances limitées au verset courant : réussite. Tests Flutter enrichis pour vérifier que les cartes voisines restent en arabe, non exécutés ici. Aucune modification de base utilisateur ni de lecture native.

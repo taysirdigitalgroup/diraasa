@@ -1,9 +1,9 @@
-# Diraasa · دراسة — 2.5.1+50
+# Diraasa · دراسة — 2.5.2+51
 Carnet d’études arabes et dictionnaire مختار الصحاح, Android, hors ligne.
 Package : **com.tdg.diraasa**.
 
 ## Installer la mise à jour
-L’archive Diraasa_MAJ_2.5.1.tar.gz contient **lib/ complet** et les autres fichiers
+L’archive Diraasa_MAJ_2.5.2.tar.gz contient **lib/ complet** et les autres fichiers
 nécessaires, aux chemins de la racine du projet existant.
 Arrêter flutter run, extraire à côté de pubspec.yaml, puis :
 ```bash
@@ -561,4 +561,9 @@ La table pages contient uniquement les 5 blocs de l’introduction/référence r
 
 Les deux assets dictionary.db sont compactés de 10 268 672 à 6 660 096 octets chacun. À l’installation d’une mise à jour, DictionaryMaintenance migre aussi dictionary_v1.db sur place (user_version=2), puis le rouvre en lecture seule. Aucune recopie sur une base existante, aucune action sur notes.db ou les données utilisateur. La source SQL originale reste conservée et l’importeur ne recrée plus les doublons.
 
-Téléchargement alternatif : Diraasa_MAJ_2.5.1_depuis_2.4.5.zip contient lib/ complet et toutes les modifications depuis 2.4.5, y compris les ajouts 2.5.0. Extraire à la racine du projet existant. L’archive tar.gz est cumulative pour toutes les mises à jour précédentes.
+Téléchargement alternatif : Diraasa_MAJ_2.5.2_depuis_2.4.5.zip contient lib/ complet et toutes les modifications depuis 2.4.5, y compris les ajouts 2.5.0. Extraire à la racine du projet existant. L’archive tar.gz est cumulative pour toutes les mises à jour précédentes.
+
+### 2.5.2 — basmala anglaise et alternance localisée
+Les 112 basmalas anglaises séparées retrouvent leurs espaces. L’extraction conserve l’ordre original du texte dans chaque colonne du PDF, sans reconstruction qui fusionnait les espaces du texte gras. Aucun des 6 236 versets anglais numérotés n’a changé.
+
+La lecture audio alternait déjà par verset. Désormais, seul le texte du verset en cours suit sa langue audio ; les autres cartes restent dans la langue de lecture choisie (arabe par défaut). La basmala séparée change uniquement pendant sa propre lecture. Les traductions restent chargées une seule fois, sans nouveau téléchargement. Cela limite les changements de mise en page des cartes voisines ; aucun gain chiffré de performances n’est revendiqué. Le repli arabe et la recherche dans les traductions sont conservés.

@@ -43,3 +43,18 @@ List<Map<String, dynamic>> mergeQuranTranslations(List<String> sources) {
   }
   return (text: verse['text']?.toString() ?? '', language: 'ar');
 }
+
+/// Only the currently played verse follows the audio language. Other cards keep
+/// the selected reading language, avoiding unnecessary text layout changes.
+String quranPlaybackTextLanguage(
+  int number, {
+  required String readingLanguage,
+  required bool hasPlayback,
+  required int playingVerse,
+  required String playingLanguage,
+}) =>
+    hasPlayback &&
+        number == playingVerse &&
+        ['ar', 'fr', 'en'].contains(playingLanguage)
+    ? playingLanguage
+    : readingLanguage;

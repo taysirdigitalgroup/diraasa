@@ -303,22 +303,22 @@ class _SurahPageState extends State<SurahPage> with WidgetsBindingObserver {
   int anchorVerse = 1;
   String audioMark = '';
   String textLanguage = 'ar';
-  String get basmalaText {
-    final translated =
-        (widget.chapter['translationBasmalas'] as Map?)?[displayLanguage];
-    return translated is String && translated.isNotEmpty
-        ? translated
-        : widget.chapter['basmala'].toString();
-  }
-
-  String get displayLanguage =>
-      audio.hasPlayback && audio.playingLanguage.isNotEmpty
-      ? audio.playingLanguage
-      : textLanguage;
+  String get displayLanguage => textLanguage;
+  String languageFor(int number) => quranPlaybackTextLanguage(
+    number,
+    readingLanguage: textLanguage,
+    hasPlayback: audio.hasPlayback,
+    playingVerse: audio.verse,
+    playingLanguage: audio.playingLanguage,
+  );
+  ({String text, String language}) get basmalaDisplay => quranVerseText({
+    'text': widget.chapter['basmala'],
+    'translations': widget.chapter['translationBasmalas'],
+  }, languageFor(0));
   ({String text, String language}) verseDisplay(AppRecord verse) {
-    final current = quranVerseText(verse, displayLanguage);
+    final current = quranVerseText(verse, languageFor(verse['number'] as int));
     final needle = query.isNotEmpty ? query : widget.initialQuery;
-    if (!audio.hasPlayback &&
+    if (!(audio.hasPlayback && verse['number'] == audio.verse) &&
         needle.isNotEmpty &&
         parseReference(needle) == null &&
         !matchesSearch(current.text, needle)) {
@@ -431,72 +431,76 @@ class _SurahPageState extends State<SurahPage> with WidgetsBindingObserver {
       final anchorIndex = verses.indexWhere((v) => v['number'] == anchorVerse);
       final start = anchorIndex < 0 ? 0 : anchorIndex;
       const anchor = ValueKey('surah-anchor');
-      Widget verseCard(AppRecord verse) => Card(
-        key: ValueKey('ayah-${verse['number']}'),
-        color: audio.hasPlayback && verse['number'] == audio.verse
-            ? Theme.of(context).colorScheme.secondaryContainer
-            : verse['number'] == widget.initialVerse && widget.initialVerse != 1
-            ? Theme.of(context).colorScheme.primaryContainer
-            : null,
-        child: Padding(
-          padding: const EdgeInsets.all(18),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: SacredText(
-                      '${widget.chapter['number']}:${verse['number']}',
-                      textAlign: TextAlign.right,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+      Widget verseCard(AppRecord verse) {
+        final display = verseDisplay(verse);
+        return Card(
+          key: ValueKey('ayah-${verse['number']}'),
+          color: audio.hasPlayback && verse['number'] == audio.verse
+              ? Theme.of(context).colorScheme.secondaryContainer
+              : verse['number'] == widget.initialVerse &&
+                    widget.initialVerse != 1
+              ? Theme.of(context).colorScheme.primaryContainer
+              : null,
+          child: Padding(
+            padding: const EdgeInsets.all(18),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: SacredText(
+                        '${widget.chapter['number']}:${verse['number']}',
+                        textAlign: TextAlign.right,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
                       ),
                     ),
-                  ),
-                  if (widget.reading == 'hafs')
-                    IconButton(
-                      key: ValueKey('play-ayah-${verse['number']}'),
-                      tooltip:
-                          audio.active &&
-                              audio.verse == verse['number'] &&
-                              audio.state == 'playing'
-                          ? qa('pause')
-                          : qa('play'),
-                      icon: Icon(
-                        audio.active &&
+                    if (widget.reading == 'hafs')
+                      IconButton(
+                        key: ValueKey('play-ayah-${verse['number']}'),
+                        tooltip:
+                            audio.active &&
                                 audio.verse == verse['number'] &&
                                 audio.state == 'playing'
-                            ? Icons.pause_circle_outline
-                            : Icons.play_circle_outline,
+                            ? qa('pause')
+                            : qa('play'),
+                        icon: Icon(
+                          audio.active &&
+                                  audio.verse == verse['number'] &&
+                                  audio.state == 'playing'
+                              ? Icons.pause_circle_outline
+                              : Icons.play_circle_outline,
+                        ),
+                        onPressed: () => playVerse(verse['number'] as int),
                       ),
-                      onPressed: () => playVerse(verse['number'] as int),
-                    ),
-                ],
-              ),
-              MatchText(
-                verseDisplay(verse).text,
-                selectable: true,
-                query: query.isNotEmpty && reference == null
-                    ? query
-                    : widget.initialQuery,
-                style: TextStyle(
-                  fontFamily: verseDisplay(verse).language != 'ar'
-                      ? null
-                      : widget.reading == 'warsh'
-                      ? 'UthmaniWarsh'
-                      : 'UthmaniHafs',
-                  fontSize:
-                      settings.textSize +
-                      (verseDisplay(verse).language == 'ar' ? 4 : 0),
-                  height: verseDisplay(verse).language == 'ar' ? 2 : 1.6,
+                  ],
                 ),
-              ),
-            ],
+                MatchText(
+                  display.text,
+                  selectable: true,
+                  query: query.isNotEmpty && reference == null
+                      ? query
+                      : widget.initialQuery,
+                  style: TextStyle(
+                    fontFamily: display.language != 'ar'
+                        ? null
+                        : widget.reading == 'warsh'
+                        ? 'UthmaniWarsh'
+                        : 'UthmaniHafs',
+                    fontSize:
+                        settings.textSize + (display.language == 'ar' ? 4 : 0),
+                    height: display.language == 'ar' ? 2 : 1.6,
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
-      );
+        );
+      }
+
       return Scaffold(
         appBar: AppBar(
           title: SacredText(
@@ -594,10 +598,10 @@ class _SurahPageState extends State<SurahPage> with WidgetsBindingObserver {
                     children: [
                       Expanded(
                         child: SacredText(
-                          basmalaText,
+                          basmalaDisplay.text,
                           textAlign: TextAlign.center,
                           style: TextStyle(
-                            fontFamily: displayLanguage != 'ar'
+                            fontFamily: basmalaDisplay.language != 'ar'
                                 ? null
                                 : widget.reading == 'warsh'
                                 ? 'UthmaniWarsh'
